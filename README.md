@@ -55,7 +55,7 @@ For more information, check the wiki and the example projects:
 
 ## Supported auth providers
 * [Auth0](https://auth0.com/) - JWT based authentication and authorization
-* [Local](https://github.com/Interel-Grup/core3/wiki) - local credentials DB
+* [Local](https://github.com/Interel-Group/core3/wiki) - local credentials DB
 
 ## Additional dependencies
 Depending on your data layer setup, you may have to include one or more of the following dependencies:
