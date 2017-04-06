@@ -1,4 +1,3 @@
-import ReleaseHelpers.{checkoutDevelop, checkoutMaster, mergeWithDevelop, mergeWithMaster}
 import com.typesafe.sbt.SbtMultiJvm
 import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
 import sbt.Keys._
