@@ -7,42 +7,18 @@ Scala framework for building web applications and services based on [Play](https
 * Disconnects application logic from data layer and action management
 
 ## Getting Started
-1. **Add dependency**
 ```
 libraryDependencies += "com.interelgroup" %% "core3" % "1.0.0"
 ```
 
-> See 'Additional dependencies' for other libraries you may need
-
-2. **Define containers**
-
-3. **Define workflows**
-
-4. **Create application**
-    1. Create backend service ([Example Engine](https://github.com/Interel-Group/core3-example-engine))
-    2. Create frontend service ([Example UI](https://github.com/Interel-Group/core3-example-ui))
-
-    or
-
-    1. Create one frontend service that includes the workflow engine component
+> See [Additional dependencies](https://github.com/Interel-Group/core3/wiki/Additional-Dependencies) for other libraries you may need.
 
 For more information, check the wiki and the example projects:
 
-* [Wiki](https://github.com/Interel-Group/core3/wiki) - Docs
+* [Getting Started](https://github.com/Interel-Group/core3/wiki/Getting-Started)
+* [Wiki](https://github.com/Interel-Group/core3/wiki)
 * [Example Engine](https://github.com/Interel-Group/core3-example-engine) - Example backend web service
 * [Example UI](https://github.com/Interel-Group/core3-example-ui) - Example user interface application, utilizing the example backend service
-
-## Components
-* Config - TODO
-* Core  - TODO
-* Database - TODO
-* HTTP - TODO
-* Mail - TODO
-* Security - TODO
-* Test - TODO
-* Utils - TODO
-* Workflows - TODO
-* Services Setup - TODO
 
 ## Supported data sources
 * [MariaDB](https://mariadb.org/) (tested on 10.0)
@@ -58,45 +34,7 @@ For more information, check the wiki and the example projects:
 * [Local](https://github.com/Interel-Group/core3/wiki) - local credentials DB
 
 ## Additional dependencies
-Depending on your data layer setup, you may have to include one or more of the following dependencies:
-
-###### MariaDB
-```
-libraryDependencies += "org.mariadb.jdbc" % "mariadb-java-client" % "1.5.9"
-```
-
-###### Redis
-```
-libraryDependencies += "com.github.etaty" %% "rediscala" % "1.8.0"
-```
-
-###### Elasticsearch
-```
-libraryDependencies += "com.sksamuel.elastic4s" %% "elastic4s-core" % "5.1.4"
-```
-
-###### DistributedCache
-```
-libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-cluster" % "2.4.17",
-  "com.typesafe.akka" %% "akka-cluster-tools" % "2.4.17",
-  "com.github.blemale" %% "scaffeine" % "2.0.0"
-)
-```
-
-###### E-mail support
-```
-resolvers += "lightshed-maven" at "http://dl.bintray.com/content/lightshed/maven"
-libraryDependencies += "ch.lightshed" %% "courier" % "0.1.4"
-```
-
-###### CLI support
-```
-libraryDependencies ++= Seq(
-  "org.jline" % "jline" % "3.2.0",
-  "com.github.scopt" %% "scopt" % "3.5.0"
-)
-```
+Depending on your data layer setup, you may have to include one or more of the dependencies listed [here](https://github.com/Interel-Group/core3/wiki/Additional-Dependencies).
 
 > CouchDB and Solr require no additional libraries
 
