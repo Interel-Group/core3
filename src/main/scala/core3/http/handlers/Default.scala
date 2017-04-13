@@ -41,6 +41,15 @@ object Default {
   }
 
   /**
+    * Default handler for requests when an internal error occurs (500).
+    *
+    * @return HTTP result
+    */
+  def internalError(): Future[Result] = {
+    Future.successful(Results.InternalServerError("500 - Internal server error"))
+  }
+
+  /**
     * Default handler for requests when a service is unavailable / under maintenance (503).
     *
     * @return HTTP result
