@@ -26,12 +26,12 @@ For more information, check the wiki and the example projects:
 * [Elasticsearch](https://www.elastic.co/products/elasticsearch) (tested on 5.1.2)
 * [Redis](https://redis.io/) (tested on 3.2.5)
 * [Solr](http://lucene.apache.org/solr/) (tested on 6.3.0)
-* [DistributedCache](https://github.com/Interel-Group/core3/wiki) (uses another source for persistence)
-* [MemoryOnly](https://github.com/Interel-Group/core3/wiki) (offers no persistence)
+* [DistributedCache](https://github.com/Interel-Group/core3/wiki/DistributedCache) (uses another source for persistence)
+* [MemoryOnly](https://github.com/Interel-Group/core3/wiki/Databases#memoryonly) (offers no persistence)
 
 ## Supported auth providers
 * [Auth0](https://auth0.com/) - JWT based authentication and authorization
-* [Local](https://github.com/Interel-Group/core3/wiki) - local credentials DB
+* [Local](https://github.com/Interel-Group/core3/wiki/Controllers-(Basics)) - local credentials DB
 
 ## Additional dependencies
 Depending on your data layer setup, you may have to include one or more of the dependencies listed [here](https://github.com/Interel-Group/core3/wiki/Additional-Dependencies).
