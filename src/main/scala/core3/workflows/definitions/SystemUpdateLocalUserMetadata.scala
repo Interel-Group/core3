@@ -45,7 +45,7 @@ object SystemUpdateLocalUserMetadata extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemUpdateLocalUserMetadata"
+  override def name: String = "SystemUpdateLocalUserMetadata"
 
   override def readOnly: Boolean = false
 

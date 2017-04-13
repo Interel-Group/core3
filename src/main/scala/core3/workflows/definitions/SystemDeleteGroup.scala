@@ -39,7 +39,7 @@ object SystemDeleteGroup extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemDeleteGroup"
+  override def name: String = "SystemDeleteGroup"
 
   override def readOnly: Boolean = false
 

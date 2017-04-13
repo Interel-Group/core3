@@ -30,7 +30,7 @@ object SystemQueryLocalUsers extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemQueryLocalUsers"
+  override def name: String = "SystemQueryLocalUsers"
 
   override def readOnly: Boolean = true
 

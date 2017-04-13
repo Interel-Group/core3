@@ -34,7 +34,7 @@ object SystemCreateGroup extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemCreateGroup"
+  override def name: String = "SystemCreateGroup"
 
   override def readOnly: Boolean = false
 

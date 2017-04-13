@@ -39,7 +39,7 @@ object SystemDeleteLocalUser extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemDeleteLocalUser"
+  override def name: String = "SystemDeleteLocalUser"
 
   override def readOnly: Boolean = false
 

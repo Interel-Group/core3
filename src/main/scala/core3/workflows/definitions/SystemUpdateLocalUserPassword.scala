@@ -47,7 +47,7 @@ object SystemUpdateLocalUserPassword extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemUpdateLocalUserPassword"
+  override def name: String = "SystemUpdateLocalUserPassword"
 
   override def readOnly: Boolean = false
 

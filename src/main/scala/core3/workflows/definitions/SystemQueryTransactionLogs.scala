@@ -38,7 +38,7 @@ object SystemQueryTransactionLogs extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemQueryTransactionLogs"
+  override def name: String = "SystemQueryTransactionLogs"
 
   override def readOnly: Boolean = true
 

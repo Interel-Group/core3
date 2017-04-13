@@ -30,7 +30,7 @@ object SystemQueryGroups extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemQueryGroups"
+  override def name: String = "SystemQueryGroups"
 
   override def readOnly: Boolean = true
 

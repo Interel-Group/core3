@@ -45,7 +45,7 @@ object SystemUpdateLocalUserPermissions extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemUpdateLocalUserPermissions"
+  override def name: String = "SystemUpdateLocalUserPermissions"
 
   override def readOnly: Boolean = false
 

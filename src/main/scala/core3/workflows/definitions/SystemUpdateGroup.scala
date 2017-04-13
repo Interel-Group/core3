@@ -47,7 +47,7 @@ object SystemUpdateGroup extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemUpdateGroup"
+  override def name: String = "SystemUpdateGroup"
 
   override def readOnly: Boolean = false
 

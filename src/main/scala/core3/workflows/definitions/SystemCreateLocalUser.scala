@@ -43,7 +43,7 @@ object SystemCreateLocalUser extends WorkflowBase {
     )
   }
 
-  override def name: String = "core3.workflows.definitions.SystemCreateLocalUser"
+  override def name: String = "SystemCreateLocalUser"
 
   override def readOnly: Boolean = false
 
