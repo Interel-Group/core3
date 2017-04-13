@@ -54,7 +54,7 @@ class PasswordHashingSpec extends AsyncUnitSpec {
 
       for {
         _ <- fixture.db.createObject(
-          new core.LocalUser(
+          core.LocalUser(
             testUserID,
             hashedPassword,
             passwordSalt,

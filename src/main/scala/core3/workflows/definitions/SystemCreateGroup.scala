@@ -56,7 +56,7 @@ object SystemCreateGroup extends WorkflowBase {
   override def executeAction(requestID: RequestID, user: UserTokenBase, params: WorkflowParameters, data: InputData)(implicit ec: ExecutionContext): Future[(WorkflowResult, OutputData)] = {
     params match {
       case actualParams: SystemAddGroupParameters =>
-        val group = new core.Group(actualParams.shortName, actualParams.name, actualParams.items, actualParams.itemsType, user.userID)
+        val group = core.Group(actualParams.shortName, actualParams.name, actualParams.items, actualParams.itemsType, user.userID)
 
         Future.successful((WorkflowResult(wasSuccessful = true, requestID), OutputData(add = Vector(group))))
     }

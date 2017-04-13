@@ -96,7 +96,7 @@ object Generators {
     initiatingUser <- arbitrary[String] suchThat (c => c.length > 0)
     workflowResult <- arbitrary[Boolean]
     workflowState <- arbitrary[String] suchThat (c => c.length > 0)
-  } yield new core.TransactionLog(workflowName, requestID, readOnlyWorkflow, parameters, data, initiatingUser, workflowResult, workflowState)
+  } yield core.TransactionLog(workflowName, requestID, readOnlyWorkflow, parameters, data, initiatingUser, workflowResult, workflowState)
 
   /**
     * Generator for [[core3.database.containers.core.Group]] containers.
@@ -107,7 +107,7 @@ object Generators {
     items <- generateObjectIDsList
     itemsType <- Gen.oneOf("TransactionLog", "Group")
     createdBy <- Gen.uuid
-  } yield new core.Group(shortName, name, items, itemsType, createdBy.toString)
+  } yield core.Group(shortName, name, items, itemsType, createdBy.toString)
 
   /**
     * Generator for [[core3.database.containers.core.LocalUser]] containers.
@@ -120,5 +120,5 @@ object Generators {
     userType <- Gen.oneOf(UserType.Service, UserType.Client)
     metadata <- generateJsonObject
     createdBy <- Gen.uuid
-  } yield new core.LocalUser(userID, hashedPassword, passwordSalt, permissions, userType, metadata, createdBy.toString)
+  } yield core.LocalUser(userID, hashedPassword, passwordSalt, permissions, userType, metadata, createdBy.toString)
 }

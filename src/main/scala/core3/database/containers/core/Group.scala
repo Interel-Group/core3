@@ -40,25 +40,6 @@ case class Group(
   var revisionNumber: RevisionSequenceNumber)
   extends MutableContainer {
   override val objectType: ContainerType = "Group"
-
-  def this(
-    shortName: String,
-    name: String,
-    items: Vector[ObjectID],
-    itemsType: ContainerType,
-    createdBy: String
-  ) = this(
-    shortName,
-    name,
-    items,
-    itemsType,
-    Time.getCurrentTimestamp,
-    Time.getCurrentTimestamp,
-    createdBy,
-    database.getNewObjectID,
-    database.getNewRevisionID,
-    database.getInitialRevisionSequenceNumber
-  )
 }
 
 object Group
@@ -289,4 +270,23 @@ object Group
       case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Group::matchCustomQuery > Query [$queryName] is not supported.")
     }
   }
+
+  def apply(
+    shortName: String,
+    name: String,
+    items: Vector[ObjectID],
+    itemsType: ContainerType,
+    createdBy: String
+  ) = new Group(
+    shortName,
+    name,
+    items,
+    itemsType,
+    Time.getCurrentTimestamp,
+    Time.getCurrentTimestamp,
+    createdBy,
+    database.getNewObjectID,
+    database.getNewRevisionID,
+    database.getInitialRevisionSequenceNumber
+  )
 }

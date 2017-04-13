@@ -30,7 +30,7 @@ object Generators {
         i =>
           val container = containerType match {
             case "TransactionLog" =>
-              new core.TransactionLog(
+              core.TransactionLog(
                 "TestWorkflowName",
                 core3.workflows.getNewRequestID,
                 readOnlyWorkflow = true,
@@ -42,7 +42,7 @@ object Generators {
               )
 
             case "Group" =>
-              new core.Group(
+              core.Group(
                 s"${i}_${count}_${core3.database.getNewObjectID.getMostSignificantBits}",
                 "testName",
                 Vector.empty,

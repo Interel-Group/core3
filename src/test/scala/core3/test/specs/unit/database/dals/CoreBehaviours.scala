@@ -62,25 +62,25 @@ trait CoreBehaviours {
 
     it should "add, get and verify containers to all databases" in {
       _ =>
-        val testLog1 = new core.TransactionLog("wfName#1", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-        val testLog2 = new core.TransactionLog("wfName#2", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-        val testLog3 = new core.TransactionLog("wfName#3", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-        val testLog4 = new core.TransactionLog("wfName#4", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+        val testLog1 = core.TransactionLog("wfName#1", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+        val testLog2 = core.TransactionLog("wfName#2", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+        val testLog3 = core.TransactionLog("wfName#3", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+        val testLog4 = core.TransactionLog("wfName#4", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
 
         val emptyGroupPeople: Vector[ObjectID] = Vector.empty
         val nonEmptyGroupLogs = Vector[ObjectID](testLog1.id, testLog2.id)
-        val testGroup1 = new core.Group("sname_1", "Group 1", emptyGroupPeople, "TransactionLog", "test-user")
-        val testGroup2 = new core.Group("sname_2", "Group 2", nonEmptyGroupLogs, "TransactionLog", "test-user")
-        val testGroup3 = new core.Group("sname_3", "Group 3", nonEmptyGroupLogs, "TransactionLog", "test-user")
+        val testGroup1 = core.Group("sname_1", "Group 1", emptyGroupPeople, "TransactionLog", "test-user")
+        val testGroup2 = core.Group("sname_2", "Group 2", nonEmptyGroupLogs, "TransactionLog", "test-user")
+        val testGroup3 = core.Group("sname_3", "Group 3", nonEmptyGroupLogs, "TransactionLog", "test-user")
 
         val emptyActionParams = Json.obj()
         val emptyActionDataContainers = Json.obj()
         val nonEmptyActionParams = Json.obj("init_param" -> 123, "string_param_1" -> "string_1", "init_param_2" -> 456, "string_param_2" -> "string_2")
         val nonEmptyActionDataContainers = Json.obj(testLog1.id.toString -> core.TransactionLog.toJsonData(testLog1, JsonDataFormat.Full))
-        val testTransactionLog1 = new core.TransactionLog("Test Workflow 1", getNewRequestID, true, emptyActionParams, emptyActionDataContainers, "test-user-ok", true, "TEST_1")
-        val testTransactionLog2 = new core.TransactionLog("Test Workflow 2", getNewRequestID, true, nonEmptyActionParams, nonEmptyActionDataContainers, "test-user-ok", false, "TEST_2")
-        val testTransactionLog3 = new core.TransactionLog("Test Workflow 3", getNewRequestID, false, nonEmptyActionParams, nonEmptyActionDataContainers, "test-user-ok", true, "TEST_3")
-        val testTransactionLog4 = new core.TransactionLog("Test Workflow 4", getNewRequestID, false, emptyActionParams, emptyActionDataContainers, "test-user-ok", false, "TEST_4")
+        val testTransactionLog1 = core.TransactionLog("Test Workflow 1", getNewRequestID, true, emptyActionParams, emptyActionDataContainers, "test-user-ok", true, "TEST_1")
+        val testTransactionLog2 = core.TransactionLog("Test Workflow 2", getNewRequestID, true, nonEmptyActionParams, nonEmptyActionDataContainers, "test-user-ok", false, "TEST_2")
+        val testTransactionLog3 = core.TransactionLog("Test Workflow 3", getNewRequestID, false, nonEmptyActionParams, nonEmptyActionDataContainers, "test-user-ok", true, "TEST_3")
+        val testTransactionLog4 = core.TransactionLog("Test Workflow 4", getNewRequestID, false, emptyActionParams, emptyActionDataContainers, "test-user-ok", false, "TEST_4")
 
         val futures = Seq(
           db.createObject(testLog1),

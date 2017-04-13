@@ -138,7 +138,7 @@ class WorkflowEngineComponent(
     requestID: RequestID
   ): Future[Unit] = {
     def createLog(): Future[Unit] = {
-      val transactionLog = new core.TransactionLog(
+      val transactionLog = core.TransactionLog(
         workflow.name,
         requestID,
         workflow.readOnly,

@@ -58,29 +58,6 @@ case class LocalUser(
   var revisionNumber: RevisionSequenceNumber)
   extends MutableContainer {
   override val objectType: ContainerType = "LocalUser"
-
-  def this(
-    userID: String,
-    hashedPassword: String,
-    passwordSalt: String,
-    permissions: Seq[String],
-    userType: UserType,
-    metadata: JsValue,
-    createdBy: String
-  ) = this(
-    userID,
-    hashedPassword,
-    passwordSalt,
-    permissions,
-    userType,
-    metadata,
-    Time.getCurrentTimestamp,
-    Time.getCurrentTimestamp,
-    createdBy,
-    database.getNewObjectID,
-    database.getNewRevisionID,
-    database.getInitialRevisionSequenceNumber
-  )
 }
 
 object LocalUser
@@ -319,4 +296,27 @@ object LocalUser
       case _ => throw new IllegalArgumentException(s"core3.database.containers.core.LocalUser::matchCustomQuery > Query [$queryName] is not supported.")
     }
   }
+
+  def apply(
+    userID: String,
+    hashedPassword: String,
+    passwordSalt: String,
+    permissions: Seq[String],
+    userType: UserType,
+    metadata: JsValue,
+    createdBy: String
+  ) = new LocalUser(
+    userID,
+    hashedPassword,
+    passwordSalt,
+    permissions,
+    userType,
+    metadata,
+    Time.getCurrentTimestamp,
+    Time.getCurrentTimestamp,
+    createdBy,
+    database.getNewObjectID,
+    database.getNewRevisionID,
+    database.getInitialRevisionSequenceNumber
+  )
 }

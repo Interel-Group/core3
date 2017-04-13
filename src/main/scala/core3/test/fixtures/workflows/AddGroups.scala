@@ -42,7 +42,7 @@ object AddGroups extends WorkflowBase {
       val groups = for {
         i <- 1 to testGroupsCount
       } yield {
-        new core.Group(s"testName$i", s"test #$i", Vector.empty, "Group", "test-user")
+        core.Group(s"testName$i", s"test #$i", Vector.empty, "Group", "test-user")
       }
 
       (WorkflowResult(wasSuccessful = true, requestID, message = None, data = None), OutputData(add = groups.toVector))

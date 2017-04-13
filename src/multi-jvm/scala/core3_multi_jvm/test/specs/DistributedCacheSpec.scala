@@ -99,16 +99,16 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
   "A DistributedCache cluster" should {
     "make changes to the database on one node and successfully propagate them to all nodes" in {
       enterBarrier("pre-test-01")
-      val testLog1 = new TransactionLog("wfName#1", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-      val testLog2 = new TransactionLog("wfName#2", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-      val testLog3 = new TransactionLog("wfName#3", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-      val testLog4 = new TransactionLog("wfName#4", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog1 = TransactionLog("wfName#1", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog2 = TransactionLog("wfName#2", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog3 = TransactionLog("wfName#3", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog4 = TransactionLog("wfName#4", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
 
       val emptyGroupPeople: Vector[ObjectID] = Vector.empty
       val nonEmptyGroupLogs = Vector[ObjectID](testLog1.id, testLog2.id)
-      val testGroup1 = new core.Group("sname_1", "Group 1", emptyGroupPeople, "TransactionLog", "test-user")
-      val testGroup2 = new core.Group("sname_2", "Group 2", nonEmptyGroupLogs, "TransactionLog", "test-user")
-      val testGroup3 = new core.Group("sname_3", "Group 3", nonEmptyGroupLogs, "TransactionLog", "test-user")
+      val testGroup1 = core.Group("sname_1", "Group 1", emptyGroupPeople, "TransactionLog", "test-user")
+      val testGroup2 = core.Group("sname_2", "Group 2", nonEmptyGroupLogs, "TransactionLog", "test-user")
+      val testGroup3 = core.Group("sname_3", "Group 3", nonEmptyGroupLogs, "TransactionLog", "test-user")
 
       val created: Future[Seq[Boolean]] = if (isNode(node1)) {
         Future.sequence(
@@ -196,7 +196,7 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
           groups should have size 2
           val dbGroup1 = groups.filter(_.shortName == "sname_1").head
           val dbGroup3 = groups.filter(_.shortName == "sname_3").head
-          val testGroup4 = new core.Group("sname_4", "Group 4", Vector.empty, "TransactionLog", "test-user")
+          val testGroup4 = core.Group("sname_4", "Group 4", Vector.empty, "TransactionLog", "test-user")
 
           dbGroup1.name = updatedGroupName1
           dbGroup1.revision = getNewRevisionID

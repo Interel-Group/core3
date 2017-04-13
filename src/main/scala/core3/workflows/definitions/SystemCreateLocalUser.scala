@@ -81,7 +81,7 @@ object SystemCreateLocalUser extends WorkflowBase {
   override def executeAction(requestID: RequestID, user: UserTokenBase, params: WorkflowParameters, data: InputData)(implicit ec: ExecutionContext): Future[(WorkflowResult, OutputData)] = {
     params match {
       case actualParams: SystemCreateLocalUserParameters =>
-        val newUser = new core.LocalUser(
+        val newUser = core.LocalUser(
           actualParams.userID,
           actualParams.hashedPassword,
           actualParams.passwordSalt,

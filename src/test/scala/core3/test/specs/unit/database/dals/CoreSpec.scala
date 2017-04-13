@@ -87,7 +87,7 @@ class CoreSpec extends AsyncUnitSpec with CoreBehaviours {
       import Core._
 
       val coreDAL = fixtures.Database.createCoreInstance(Some(mariaDBMasterMap))
-      val testLog = new core.TransactionLog("wfName#0", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog = core.TransactionLog("wfName#0", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
       for {
         _ <- coreDAL.createObject(testLog)
         _ <- couchDAL.clearDatabaseStructure("TransactionLog").ignoreFailure
@@ -122,14 +122,14 @@ class CoreSpec extends AsyncUnitSpec with CoreBehaviours {
     _ =>
       val coreDAL = fixtures.Database.createCoreInstance(Some(mariaDBMasterMap))
 
-      val testLog1 = new core.TransactionLog("wfName#1", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-      val testLog2 = new core.TransactionLog("wfName#2", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-      val testLog3 = new core.TransactionLog("wfName#3", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-      val testLog4 = new core.TransactionLog("wfName#4", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog1 = core.TransactionLog("wfName#1", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog2 = core.TransactionLog("wfName#2", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog3 = core.TransactionLog("wfName#3", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog4 = core.TransactionLog("wfName#4", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
 
       val nonEmptyGroupLogs: Vector[database.ObjectID] = Vector(testLog1.id, testLog2.id, testLog3.id)
 
-      val testGroup4 = new core.Group("sname_4", "Group 4", nonEmptyGroupLogs, "TransactionLog", "test-user")
+      val testGroup4 = core.Group("sname_4", "Group 4", nonEmptyGroupLogs, "TransactionLog", "test-user")
       val testView1 = views.core.Group(testGroup4)
 
       val futures = Seq(
@@ -179,14 +179,14 @@ class CoreSpec extends AsyncUnitSpec with CoreBehaviours {
     _ =>
       val coreDAL = fixtures.Database.createCoreInstance(Some(distributedCacheMasterMap))
 
-      val testLog1 = new core.TransactionLog("wfName#1", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-      val testLog2 = new core.TransactionLog("wfName#2", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-      val testLog3 = new core.TransactionLog("wfName#3", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
-      val testLog4 = new core.TransactionLog("wfName#4", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog1 = core.TransactionLog("wfName#1", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog2 = core.TransactionLog("wfName#2", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog3 = core.TransactionLog("wfName#3", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
+      val testLog4 = core.TransactionLog("wfName#4", java.util.UUID.randomUUID(), readOnlyWorkflow = false, Json.obj(), Json.obj(), "test-user", workflowResult = true, "test")
 
       val nonEmptyGroupLogs: Vector[database.ObjectID] = Vector(testLog1.id, testLog2.id, testLog3.id)
 
-      val testGroup4 = new core.Group("sname_4", "Group 4", nonEmptyGroupLogs, "TransactionLog", "test-user")
+      val testGroup4 = core.Group("sname_4", "Group 4", nonEmptyGroupLogs, "TransactionLog", "test-user")
       val testView1 = views.core.Group(testGroup4)
 
       val futures = Seq(

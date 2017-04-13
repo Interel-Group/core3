@@ -41,28 +41,6 @@ case class TransactionLog(
   id: ObjectID)
   extends ImmutableContainer {
   override val objectType: ContainerType = "TransactionLog"
-
-  def this(
-    workflowName: String,
-    requestID: RequestID,
-    readOnlyWorkflow: Boolean,
-    parameters: JsValue,
-    data: JsValue,
-    initiatingUser: String,
-    workflowResult: Boolean,
-    workflowState: String
-  ) = this(
-    workflowName,
-    requestID,
-    readOnlyWorkflow,
-    parameters,
-    data,
-    initiatingUser,
-    workflowResult,
-    workflowState,
-    Time.getCurrentTimestamp,
-    database.getNewObjectID
-  )
 }
 
 object TransactionLog
@@ -282,4 +260,26 @@ object TransactionLog
       case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Log::matchCustomQuery > Query [$queryName] is not supported.")
     }
   }
+
+  def apply(
+    workflowName: String,
+    requestID: RequestID,
+    readOnlyWorkflow: Boolean,
+    parameters: JsValue,
+    data: JsValue,
+    initiatingUser: String,
+    workflowResult: Boolean,
+    workflowState: String
+  ) = new TransactionLog(
+    workflowName,
+    requestID,
+    readOnlyWorkflow,
+    parameters,
+    data,
+    initiatingUser,
+    workflowResult,
+    workflowState,
+    Time.getCurrentTimestamp,
+    database.getNewObjectID
+  )
 }
