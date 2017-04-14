@@ -340,7 +340,7 @@ class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
     }
   }
 
-  override def LogoutAction(returnToURI: Option[String]): Action[AnyContent] = {
+  override def LogoutAction(returnToURI: Option[String] = None): Action[AnyContent] = {
     Action {
       request =>
         request.session.get("idToken").flatMap {

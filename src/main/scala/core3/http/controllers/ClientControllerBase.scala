@@ -69,5 +69,5 @@ trait ClientControllerBase[T <: UserTokenBase] extends Controller {
     * @param returnToURI the URI to redirect to, after the logout has completed (if any); defaults based on implementation
     * @return the generated action
     */
-  def LogoutAction(returnToURI: Option[String]): Action[AnyContent]
+  def LogoutAction(returnToURI: Option[String] = None): Action[AnyContent]
 }
