@@ -220,7 +220,7 @@ class ClientController(cache: CacheApi, authConfig: Config, db: DatabaseAbstract
     }
   }
 
-  override def LogoutAction(returnToURI: String): Action[AnyContent] = {
+  override def LogoutAction(returnToURI: Option[String]): Action[AnyContent] = {
     Action {
       request =>
         request.session.get("sessionToken").flatMap {
@@ -232,7 +232,7 @@ class ClientController(cache: CacheApi, authConfig: Config, db: DatabaseAbstract
             cache.remove(s"${userToken.sessionToken}_data")
         }
 
-        Redirect(returnToURI)
+        Redirect(returnToURI.getOrElse("/"))
     }
   }
 }

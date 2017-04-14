@@ -56,6 +56,7 @@ class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
   private val clientSecretAlgo = authConfig.getString("clientSecretAlgo")
   private val jwtAlgo = authConfig.getString("jwtAlgo")
   private val redirectURI = authConfig.getString("callbackURI")
+  private val logoutReturnURI = authConfig.getString("logoutReturnURI")
   private val grantType = authConfig.getString("grantType")
   private val backendGrantType = authConfig.getString("backendGrantType")
   private val localTokenExpiration = authConfig.getInt("localTokenExpiration").minutes
@@ -339,7 +340,7 @@ class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
     }
   }
 
-  override def LogoutAction(returnToURI: String): Action[AnyContent] = {
+  override def LogoutAction(returnToURI: Option[String]): Action[AnyContent] = {
     Action {
       request =>
         request.session.get("idToken").flatMap {
@@ -354,7 +355,7 @@ class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
         Redirect(
           s"https://$domain/v2/logout",
           Map(
-            "returnTo" -> Seq(returnToURI),
+            "returnTo" -> Seq(returnToURI.getOrElse(logoutReturnURI)),
             "federated" -> Seq(),
             "client_id" -> Seq(clientID)))
     }

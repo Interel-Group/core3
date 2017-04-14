@@ -70,7 +70,7 @@ class ClientController extends ClientControllerBase[NoAuthUserToken] {
     }
   }
 
-  override def LogoutAction(returnToURI: String): Action[AnyContent] = {
+  override def LogoutAction(returnToURI: Option[String]): Action[AnyContent] = {
     Action.async {
       auditLogger.error("core3.http.controllers.noauth.ClientController::LogoutAction > Action not supported.")
       handlers.JSON.internalError()
