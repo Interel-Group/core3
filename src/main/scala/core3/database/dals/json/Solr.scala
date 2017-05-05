@@ -173,18 +173,22 @@ class Solr(
         )
         .execute("POST")
       _ <- checkResponse(createResponse, 200, "handle_BuildDatabaseStructure")
-      fields <- Future.successful(
-        getSearchFields(objectsType).map {
-          case (fieldName, fieldType) =>
-            JsObject(Map[String, JsValue](
-              "add-field" -> JsObject(Map[String, JsValue](
-                "name" -> JsString(fieldName),
-                "type" -> JsString(fieldType)))))
-        }.toVector)
+      requestData <- Future.successful(
+        Json.obj(
+          "add-field" ->
+            getSearchFields(objectsType).map {
+              case (fieldName, fieldType) =>
+                Map(
+                  "name" -> JsString(fieldName),
+                  "type" -> JsString(fieldType)
+                )
+            }
+        )
+      )
       buildResponse <- ws.url(s"$baseURL/solr/${getCollectionName(objectsType)}/schema")
         .withAuth(username, password, WSAuthScheme.BASIC)
         .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
-        .post(JsArray(fields))
+        .post(requestData)
       _ <- checkResponse(buildResponse, 200, "handle_BuildDatabaseStructure")
     } yield {
       true
