@@ -18,8 +18,7 @@ package core3.database.dals.json
 import akka.actor.Props
 import akka.util.Timeout
 import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.mappings._
-import com.sksamuel.elastic4s.{ElasticClient, ElasticsearchClientUri}
+import com.sksamuel.elastic4s.{TcpClient, ElasticsearchClientUri}
 import com.typesafe.config.Config
 import core3.config.StaticConfig
 import core3.core.Component.{ActionDescriptor, ActionResult}
@@ -98,7 +97,7 @@ class ElasticSearch(
 
   private val serviceSettings = Settings.builder().put("cluster.name", clusterName).build()
   private val service = ElasticsearchClientUri(hostname, port)
-  private val client = ElasticClient.transport(serviceSettings, service)
+  private val client = TcpClient.transport(serviceSettings, service)
   private val (dataType: DataType, dataFormat: JsonDataFormat, docType: String, layerType: LayerType) =
     if (!searchOnly) {
       (DataType.JSON, JsonDataFormat.Full, "store", LayerType.ElasticStore)
@@ -163,16 +162,16 @@ class ElasticSearch(
                 objectsCompanion.asInstanceOf[SearchContainerCompanion].getSearchFields.map {
                   case (name, fieldType) =>
                     fieldType match {
-                      case "string" => new TextFieldDefinition(name)
-                      case "text" => new TextFieldDefinition(name)
-                      case "boolean" => new BooleanFieldDefinition(name)
-                      case "date" => new DateFieldDefinition(name)
-                      case "integer" => new IntegerFieldDefinition(name)
-                      case "long" => new LongFieldDefinition(name)
-                      case "double" => new DoubleFieldDefinition(name)
-                      case "float" => new FloatFieldDefinition(name)
-                      case "nested" => new NestedFieldDefinition(name)
-                      case "object" => new ObjectFieldDefinition(name)
+                      case "string" => textField(name)
+                      case "text" => textField(name)
+                      case "boolean" => booleanField(name)
+                      case "date" => dateField(name)
+                      case "integer" => intField(name)
+                      case "long" => longField(name)
+                      case "double" => doubleField(name)
+                      case "float" => floatField(name)
+                      case "nested" => nestedField(name)
+                      case "object" => objectField(name)
                       case _ => throw new RuntimeException(s"core3.database.dals.json.ElasticSearch::handle_BuildDatabaseStructure > " +
                         s"Cannot create field [$name] with type [$fieldType] for object type [$objectsType]; type is not supported.")
                     }
@@ -230,10 +229,10 @@ class ElasticSearch(
 
     for {
       sizeResponse <- client.execute {
-        search(indexName / docType).matchAll().size(0).fetchSource(false)
+        search(indexName / docType).matchAllQuery().size(0).fetchSource(false)
       }
       dataResponse <- client.execute {
-        search(indexName / docType).matchAll().size(sizeResponse.totalHits.toInt)
+        search(indexName / docType).matchAllQuery().size(sizeResponse.totalHits.toInt)
       }
     } yield {
       dataResponse.hits.map {

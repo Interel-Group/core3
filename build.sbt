@@ -85,7 +85,8 @@ lazy val dependencies_redis = Seq(
 )
 
 lazy val dependencies_elastic = Seq(
-  "com.sksamuel.elastic4s" %% "elastic4s-core" % "5.1.4"
+  "com.sksamuel.elastic4s" %% "elastic4s-core" % "5.3.2",
+  "com.sksamuel.elastic4s" %% "elastic4s-tcp" % "5.3.2"
 )
 
 lazy val dependencies_mail = Seq(
