@@ -21,11 +21,11 @@ For more information, check the wiki and the example projects:
 * [Example UI](https://github.com/Interel-Group/core3-example-ui) - Example user interface application, utilizing the example backend service
 
 ## Supported data sources
-* [MariaDB](https://mariadb.org/) (tested on 10.0)
-* [CouchDB](http://couchdb.apache.org/) (tested on 1.6.0)
-* [Elasticsearch](https://www.elastic.co/products/elasticsearch) (tested on 5.1.2)
-* [Redis](https://redis.io/) (tested on 3.2.5)
-* [Solr](http://lucene.apache.org/solr/) (tested on 6.3.0)
+* [MariaDB](https://mariadb.org/) (tested on `10.0`, `10.1`)
+* [CouchDB](http://couchdb.apache.org/) (tested on `1.6.0`, `2.0.0`)
+* [Elasticsearch](https://www.elastic.co/products/elasticsearch) (tested on `5.1.2`, `5.3.1`, `5.4.0`)
+* [Redis](https://redis.io/) (tested on `3.2.5`, `3.2.8`)
+* [Solr](http://lucene.apache.org/solr/) (tested on `6.3.0`, `6.5.1`)
 * [DistributedCache](https://github.com/Interel-Group/core3/wiki/DistributedCache) (uses another source for persistence)
 * [MemoryOnly](https://github.com/Interel-Group/core3/wiki/Databases#memoryonly) (offers no persistence)
 
@@ -45,6 +45,12 @@ Running the supplied tests will require all supported services to be present and
 The default test configuration can be found [here](src/test/resources/static.conf).
 
 For security, the various usernames and passwords have not been included and will need to be supplied either in the test `static.conf` file or via `-D` JVM options (preferred).
+
+> For MariaDB, a test database needs to be created and it needs to use UTF8:
+>
+> ```
+> CREATE DATABASE core3_test CHARACTER SET utf8 COLLATE utf8_general_ci;
+> ```
 
 ### Unit tests
 Main test suite for verifying core component functionality.
