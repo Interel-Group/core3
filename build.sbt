@@ -9,11 +9,12 @@ name := "core3"
 licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage := Some(url("https://github.com/Interel-Group/core3"))
 
+scalaVersion in ThisBuild := "2.11.11"
+
 lazy val core3 = (project in file("."))
-  .settings(SbtMultiJvm.multiJvmSettings: _*)
+  .settings(SbtMultiJvm.multiJvmSettings)
   .settings(
-    scalaVersion := "2.11.8",
-    crossScalaVersions := Seq("2.11.8"), //TODO - 2.12 support requires Play 2.6
+    crossScalaVersions := Seq("2.11.11"), //TODO - 2.12 support requires Play 2.6
     resolvers ++= Seq(
       "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/releases",
       "lightshed-maven" at "http://dl.bintray.com/content/lightshed/maven"
