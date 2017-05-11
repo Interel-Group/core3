@@ -18,7 +18,7 @@ package core3.utils
 import com.github.nscala_time.time.Imports._
 import org.joda.time.Seconds
 import org.joda.time.format.{DateTimeFormatter, ISODateTimeFormat}
-import play.api.libs.json.{JsError, JsSuccess, Reads}
+import play.api.libs.json._
 
 //enables implicit conversions
 import scala.language.implicitConversions
@@ -266,5 +266,20 @@ object Time {
         case JsSuccess(value, _) => JsSuccess(value.toTime(TimeFormat.DefaultTime))
         case JsError(e) => JsError(e)
       }
+  }
+
+  implicit val timestampWrites: Writes[Timestamp] = Writes {
+    timestamp =>
+      JsString(timestamp.toFormattedString(TimestampFormat.DefaultTimestamp))
+  }
+
+  implicit val dateWrites: Writes[Date] = Writes {
+    date =>
+      JsString(date.toFormattedString(DateFormat.DefaultDate))
+  }
+
+  implicit val timeWrites: Writes[Time] = Writes {
+    time =>
+      JsString(time.toFormattedString(TimeFormat.DefaultTime))
   }
 }
