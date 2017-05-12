@@ -43,7 +43,7 @@ case class Group(
 }
 
 object Group
-  extends JSONContainerCompanion
+  extends JsonContainerCompanion
     with SlickContainerCompanionImpl[(
     String, String, String, String, String, java.sql.Timestamp, java.sql.Timestamp, String, String, Int
     )] {
@@ -192,7 +192,7 @@ object Group
   }
 
   //
-  //JSONContainerCompanion Definitions
+  //JsonContainerCompanion Definitions
   //
   private val writes = Writes[Group] {
     obj =>

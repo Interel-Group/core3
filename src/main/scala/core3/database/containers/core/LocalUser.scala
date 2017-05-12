@@ -61,7 +61,7 @@ case class LocalUser(
 }
 
 object LocalUser
-  extends JSONContainerCompanion
+  extends JsonContainerCompanion
     with SlickContainerCompanionImpl[(
     String, String, String, String, String, String, String, java.sql.Timestamp, java.sql.Timestamp, String, String, Int
     )] {
@@ -220,7 +220,7 @@ object LocalUser
   }
 
   //
-  //JSONContainerCompanion Definitions
+  //JsonContainerCompanion Definitions
   //
   implicit val userTypeReads: Reads[UserType] = Reads {
     json =>

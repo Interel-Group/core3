@@ -19,11 +19,11 @@ import core3.database.ContainerType
 import play.api.libs.json.JsValue
 
 object JSONConverter {
-  private var jsonCompanions: Option[Map[ContainerType, JSONContainerCompanion]] = None
+  private var jsonCompanions: Option[Map[ContainerType, JsonContainerCompanion]] = None
 
   def isInitialized: Boolean = jsonCompanions.isDefined
 
-  def initialize(jsonContainerCompanions: Map[ContainerType, JSONContainerCompanion]): Unit = {
+  def initialize(jsonContainerCompanions: Map[ContainerType, JsonContainerCompanion]): Unit = {
     if (jsonCompanions.isEmpty) {
       jsonCompanions = Some(jsonContainerCompanions)
     } else {

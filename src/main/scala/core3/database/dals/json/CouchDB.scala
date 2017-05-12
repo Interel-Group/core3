@@ -46,13 +46,13 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param ws                  web service client
   */
 class CouchDB(
-  private val hostname: String,
-  private val port: Int,
-  private val schema: String,
-  private val username: String,
-  private val password: String,
-  private val containerCompanions: Map[ContainerType, JSONContainerCompanion],
-  ws: WSClient
+               private val hostname: String,
+               private val port: Int,
+               private val schema: String,
+               private val username: String,
+               private val password: String,
+               private val containerCompanions: Map[ContainerType, JsonContainerCompanion],
+               ws: WSClient
 )(implicit ec: ExecutionContext, timeout: Timeout)
   extends DatabaseAbstractionLayerComponent {
 
@@ -65,9 +65,9 @@ class CouchDB(
     * @return the new instance
     */
   def this(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    ws: WSClient,
-    config: Config = StaticConfig.get.getConfig("database.couchdb")
+            containerCompanions: Map[ContainerType, JsonContainerCompanion],
+            ws: WSClient,
+            config: Config = StaticConfig.get.getConfig("database.couchdb")
   )(implicit ec: ExecutionContext, timeout: Timeout) =
     this(
       config.getString("hostname"),
@@ -427,13 +427,13 @@ class CouchDB(
 
 object CouchDB extends ComponentCompanion {
   def props(
-    hostname: String,
-    port: Int,
-    schema: String,
-    dbUser: String,
-    dbUserPassword: String,
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    ws: WSClient
+             hostname: String,
+             port: Int,
+             schema: String,
+             dbUser: String,
+             dbUserPassword: String,
+             containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             ws: WSClient
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[CouchDB],
     hostname,
@@ -448,9 +448,9 @@ object CouchDB extends ComponentCompanion {
   )
 
   def props(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    ws: WSClient,
-    config: Config
+             containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             ws: WSClient,
+             config: Config
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[CouchDB],
     containerCompanions,
@@ -461,8 +461,8 @@ object CouchDB extends ComponentCompanion {
   )
 
   def props(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    ws: WSClient
+             containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             ws: WSClient
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[CouchDB],
     containerCompanions,

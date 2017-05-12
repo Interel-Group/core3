@@ -33,7 +33,7 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 
 object Database {
-  val defaultJsonCompanions: Map[ContainerType, JSONContainerCompanion] = Map[ContainerType, JSONContainerCompanion](
+  val defaultJsonCompanions: Map[ContainerType, JsonContainerCompanion] = Map[ContainerType, JsonContainerCompanion](
     "Group" -> core.Group,
     "TransactionLog" -> core.TransactionLog,
     "LocalUser" -> core.LocalUser
@@ -49,7 +49,7 @@ object Database {
 
   val defaultSupportedContainers: Vector[String] = Vector("Group", "TransactionLog", "LocalUser")
 
-  def createCouchDBInstance(companions: Map[ContainerType, JSONContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
+  def createCouchDBInstance(companions: Map[ContainerType, JsonContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
     if (!JSONConverter.isInitialized) JSONConverter.initialize(companions)
     val config = StaticConfig.get.getConfig("database.couchdb")
 
@@ -96,7 +96,7 @@ object Database {
     new DatabaseAbstractionLayer(actor)
   }
 
-  def createRedisInstance(companions: Map[ContainerType, JSONContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
+  def createRedisInstance(companions: Map[ContainerType, JsonContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
     val actor = system.actorOf(
       Redis.props(companions),
       name = s"Redis_$getNewActorID"
@@ -107,7 +107,7 @@ object Database {
 
   def createElasticSearchInstance(
     coexist: Boolean = false,
-    companions: Map[ContainerType, JSONContainerCompanion] = defaultSearchCompanions
+    companions: Map[ContainerType, JsonContainerCompanion] = defaultSearchCompanions
   ): DatabaseAbstractionLayer = {
     if (!JSONConverter.isInitialized) JSONConverter.initialize(companions)
     val config = StaticConfig.get.getConfig("database.elastic-search")
@@ -128,7 +128,7 @@ object Database {
     new DatabaseAbstractionLayer(actor)
   }
 
-  def createElasticStoreInstance(companions: Map[ContainerType, JSONContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
+  def createElasticStoreInstance(companions: Map[ContainerType, JsonContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
     if (!JSONConverter.isInitialized) JSONConverter.initialize(companions)
     val config = StaticConfig.get.getConfig("database.elastic-store")
 

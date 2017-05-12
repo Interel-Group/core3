@@ -44,7 +44,7 @@ case class TransactionLog(
 }
 
 object TransactionLog
-  extends JSONContainerCompanion
+  extends JsonContainerCompanion
     with SlickContainerCompanionImpl[(
     String, String, String, Boolean, String, String, String, Boolean, String, java.sql.Timestamp
     )] {
@@ -192,7 +192,7 @@ object TransactionLog
   }
 
   //
-  //JSONContainerCompanion Definitions
+  //JsonContainerCompanion Definitions
   //
   private val writes = Writes[TransactionLog] {
     obj =>

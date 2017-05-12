@@ -59,13 +59,13 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param refreshPolicy       the refresh policy to use when making updates
   */
 class ElasticSearch(
-  private val hostname: String,
-  private val port: Int,
-  private val clusterName: String,
-  private val containerCompanions: Map[ContainerType, JSONContainerCompanion],
-  private val searchOnly: Boolean,
-  private val coexist: Boolean,
-  private val refreshPolicy: RefreshPolicy
+                     private val hostname: String,
+                     private val port: Int,
+                     private val clusterName: String,
+                     private val containerCompanions: Map[ContainerType, JsonContainerCompanion],
+                     private val searchOnly: Boolean,
+                     private val coexist: Boolean,
+                     private val refreshPolicy: RefreshPolicy
 )(implicit ec: ExecutionContext, timeout: Timeout)
   extends DatabaseAbstractionLayerComponent {
 
@@ -77,8 +77,8 @@ class ElasticSearch(
     * @return the new instance
     */
   def this(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    config: Config = StaticConfig.get.getConfig("database.elastic")
+            containerCompanions: Map[ContainerType, JsonContainerCompanion],
+            config: Config = StaticConfig.get.getConfig("database.elastic")
   )(implicit ec: ExecutionContext, timeout: Timeout) =
     this(
       config.getString("hostname"),
@@ -224,7 +224,7 @@ class ElasticSearch(
     * @param companion   JSON companion object for the specified object type
     * @return the retrieved containers
     */
-  private def getAllContainers(objectsType: ContainerType, companion: JSONContainerCompanion): Future[Vector[Container]] = {
+  private def getAllContainers(objectsType: ContainerType, companion: JsonContainerCompanion): Future[Vector[Container]] = {
     val indexName = companion.getDatabaseName
 
     for {
@@ -450,13 +450,13 @@ class ElasticSearch(
 
 object ElasticSearch extends ComponentCompanion {
   def props(
-    hostname: String,
-    port: Int,
-    clusterName: String,
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    searchOnly: Boolean = true,
-    coexist: Boolean = false,
-    refreshPolicy: RefreshPolicy = RefreshPolicy.NONE
+             hostname: String,
+             port: Int,
+             clusterName: String,
+             containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             searchOnly: Boolean = true,
+             coexist: Boolean = false,
+             refreshPolicy: RefreshPolicy = RefreshPolicy.NONE
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[ElasticSearch],
     hostname,
@@ -471,8 +471,8 @@ object ElasticSearch extends ComponentCompanion {
   )
 
   def props(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    config: Config
+             containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             config: Config
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[ElasticSearch],
     containerCompanions,
@@ -482,7 +482,7 @@ object ElasticSearch extends ComponentCompanion {
   )
 
   def props(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion]
+    containerCompanions: Map[ContainerType, JsonContainerCompanion]
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[ElasticSearch],
     containerCompanions,

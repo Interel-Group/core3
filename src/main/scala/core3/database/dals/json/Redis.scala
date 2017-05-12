@@ -43,13 +43,13 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param scanCount           the minimum number of items to wait for when performing a Redis SCAN
   */
 class Redis(
-  private val hostname: String,
-  private val port: Int,
-  private val secret: String,
-  private val connectTimeout: Int,
-  private val containerCompanions: Map[ContainerType, JSONContainerCompanion],
-  private val databaseID: Int,
-  private val scanCount: Int
+             private val hostname: String,
+             private val port: Int,
+             private val secret: String,
+             private val connectTimeout: Int,
+             private val containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             private val databaseID: Int,
+             private val scanCount: Int
 )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem)
   extends DatabaseAbstractionLayerComponent {
 
@@ -61,8 +61,8 @@ class Redis(
     * @return the new instance
     */
   def this(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    config: Config = StaticConfig.get.getConfig("database.redis")
+            containerCompanions: Map[ContainerType, JsonContainerCompanion],
+            config: Config = StaticConfig.get.getConfig("database.redis")
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem) =
     this(
       config.getString("hostname"),
@@ -169,7 +169,7 @@ class Redis(
     * @param companion   JSON companion object for the specified object type
     * @return the retrieved containers
     */
-  private def getAllContainers(objectsType: ContainerType, companion: JSONContainerCompanion): Future[Vector[Container]] = {
+  private def getAllContainers(objectsType: ContainerType, companion: JsonContainerCompanion): Future[Vector[Container]] = {
     for {
       result <- client.scan(cursor = 0, matchGlob = Some(s"${getKeyPrefix(objectsType)}*"), count = Some(scanCount))
       keys <- processScan(objectsType, result, ArrayBuffer[String]())
@@ -326,13 +326,13 @@ class Redis(
 
 object Redis extends ComponentCompanion {
   def props(
-    hostname: String,
-    port: Int,
-    secret: String,
-    connectTimeout: Int,
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    databaseID: Int,
-    scanCount: Int
+             hostname: String,
+             port: Int,
+             secret: String,
+             connectTimeout: Int,
+             containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             databaseID: Int,
+             scanCount: Int
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem): Props = Props(
     classOf[Redis],
     hostname,
@@ -348,8 +348,8 @@ object Redis extends ComponentCompanion {
   )
 
   def props(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    config: Config
+             containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             config: Config
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem): Props = Props(
     classOf[Redis],
     containerCompanions,
@@ -360,7 +360,7 @@ object Redis extends ComponentCompanion {
   )
 
   def props(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion]
+    containerCompanions: Map[ContainerType, JsonContainerCompanion]
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem): Props = Props(
     classOf[Redis],
     containerCompanions,
