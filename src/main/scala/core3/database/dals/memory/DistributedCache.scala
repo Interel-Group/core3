@@ -233,14 +233,14 @@ class DistributedCache(
     }
   }
 
-  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet] = {
+  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     count_GenericQuery += 1
-    (store ? CacheStore.GenericQuery(objectsType)).mapTo[ContainerSet]
+    (store ? CacheStore.GenericQuery(objectsType)).mapTo[Vector[Container]]
   }
 
-  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] = {
+  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     count_CustomQuery += 1
-    (store ? CacheStore.CustomQuery(objectsType, customQueryName, queryParams)).mapTo[ContainerSet]
+    (store ? CacheStore.CustomQuery(objectsType, customQueryName, queryParams)).mapTo[Vector[Container]]
   }
 
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {

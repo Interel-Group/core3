@@ -217,7 +217,7 @@ class Redis(
     }
   }
 
-  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet] = {
+  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     assert(
       containerCompanions.contains(objectsType),
       s"core3.database.dals.json.Redis::handle_GetGenericQueryResult > Object type [$objectsType] is not supported."
@@ -227,14 +227,10 @@ class Redis(
 
     val companion = containerCompanions(objectsType)
 
-    for {
-      containers <- getAllContainers(objectsType, companion)
-    } yield {
-      ContainerSet(objectsType, containers)
-    }
+    getAllContainers(objectsType, companion)
   }
 
-  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] = {
+  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     assert(
       containerCompanions.contains(objectsType),
       s"core3.database.dals.json.Redis::handle_GetCustomQueryResult > Object type [$objectsType] is not supported."
@@ -244,16 +240,12 @@ class Redis(
 
     val companion = containerCompanions(objectsType)
 
-    for {
-      containers <- getAllContainers(objectsType, companion).map {
-        containers =>
-          containers.filter {
-            current =>
-              companion.matchCustomQuery(customQueryName, queryParams, current)
-          }
-      }
-    } yield {
-      ContainerSet(objectsType, containers)
+    getAllContainers(objectsType, companion).map {
+      containers =>
+        containers.filter {
+          current =>
+            companion.matchCustomQuery(customQueryName, queryParams, current)
+        }
     }
   }
 

@@ -18,7 +18,7 @@ package core3.database.dals
 import akka.pattern.pipe
 import akka.util.Timeout
 import core3.core.Component
-import core3.database.containers.{Container, ContainerSet, MutableContainer}
+import core3.database.containers.{Container, MutableContainer}
 import core3.database.views.{ContainerView, QueryType}
 import core3.database.{ContainerType, ObjectID}
 
@@ -43,9 +43,9 @@ abstract class DatabaseAbstractionLayerComponent(implicit ec: ExecutionContext, 
 
   protected def handle_ClearDatabaseStructure(objectsType: ContainerType): Future[Boolean]
 
-  protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet]
+  protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]]
 
-  protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet]
+  protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]]
 
   protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container]
 
@@ -64,8 +64,8 @@ abstract class DatabaseAbstractionLayerComponent(implicit ec: ExecutionContext, 
         }
 
         queryData.withFilter match {
-          case Some(filter) => (field, currentRequest.map(_.containers.filter(filter)))
-          case None => (field, currentRequest.map(_.containers))
+          case Some(filter) => (field, currentRequest.map(_.filter(filter)))
+          case None => (field, currentRequest)
         }
     }
 
@@ -147,7 +147,7 @@ object DatabaseAbstractionLayerComponent {
     * Performs a generic database query that retrieves all data in for the specified container type.
     *
     * @param objectsType the type of objects to be queried
-    * @return Future[ContainerSet] - a container set based on the query results
+    * @return Future[ Vector[Container] ] - a container set based on the query results
     */
   case class GetGenericQueryResult(objectsType: ContainerType)
 
@@ -157,7 +157,7 @@ object DatabaseAbstractionLayerComponent {
     * @param objectsType     the type of objects to be queried
     * @param customQueryName the custom query name to be performed
     * @param queryParams     the query parameters
-    * @return Future[ContainerSet] - a container set based on the query results
+    * @return Future[ Vector[Container] ] - a container set based on the query results
     */
   case class GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String])
 

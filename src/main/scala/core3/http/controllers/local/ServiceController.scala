@@ -99,7 +99,7 @@ class ServiceController(cache: CacheApi, authConfig: Config, db: DatabaseAbstrac
                 case None =>
                   val userQuery = db.queryDatabase("LocalUser", "getByUserID", Map("userID" -> delegatedUserID)).map {
                     result =>
-                      result.containers.headOption match {
+                      result.headOption match {
                         case Some(user) => user.asInstanceOf[LocalUser]
                         case None => throw new RuntimeException(s"Failed to retrieve user with id [$delegatedUserID]")
                       }
@@ -145,7 +145,7 @@ class ServiceController(cache: CacheApi, authConfig: Config, db: DatabaseAbstrac
 
                       val userQuery = db.queryDatabase("LocalUser", "getByUserID", Map("userID" -> delegatedUserID)).map {
                         result =>
-                          result.containers.headOption match {
+                          result.headOption match {
                             case Some(user) => user.asInstanceOf[LocalUser]
                             case None => throw new RuntimeException(s"Failed to retrieve user with id [$delegatedUserID]")
                           }

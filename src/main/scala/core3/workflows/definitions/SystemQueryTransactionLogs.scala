@@ -69,7 +69,7 @@ object SystemQueryTransactionLogs extends WorkflowBase {
                 "end" -> end.toFormattedString(TimestampFormat.DefaultTimestamp)
               )
             )
-        }.map(c => SystemQueryTransactionLogsInputData(c.containers.map(_.asInstanceOf[core.TransactionLog])))
+        }.map(c => SystemQueryTransactionLogsInputData(c.map(_.asInstanceOf[core.TransactionLog])))
     }
   }
 

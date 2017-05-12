@@ -59,8 +59,7 @@ trait CouchDBSpec extends PerformanceTimeSpec {
             0 until count foreach {
               _ =>
                 val result = CouchDBSpec.db.queryDatabase("TransactionLog").await
-                assert(result.objectsType == "TransactionLog")
-                assert(result.containers.size == maxContainers)
+                assert(result.size == maxContainers)
             }
         }
     }

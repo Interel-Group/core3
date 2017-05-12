@@ -40,7 +40,7 @@ object IncorrectGroupUpdate extends WorkflowBase {
 
   override def loadData(params: WorkflowParameters, queryHandlers: DataQueryHandlers)(implicit ec: ExecutionContext): Future[InputData] = {
     for {
-      groups <- queryHandlers.getAllContainers("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+      groups <- queryHandlers.getAllContainers("Group").map(_.map(_.asInstanceOf[core.Group]))
     } yield {
       IncorrectGroupUpdateInputData(groups.head)
     }

@@ -83,7 +83,7 @@ class WorkflowUnitSpec_SystemUpdateLocalUserPermissions extends AsyncUnitSpec {
           ),
           fixture.authorizedUser
         )).mapTo[WorkflowResult]
-        originalUsers <- fixture.db.queryDatabase("LocalUser").map(_.containers.map(_.asInstanceOf[core.LocalUser]))
+        originalUsers <- fixture.db.queryDatabase("LocalUser").map(_.map(_.asInstanceOf[core.LocalUser]))
         updateResult <- (fixture.engine ? ExecuteWorkflow(
           SystemUpdateLocalUserPermissions.name,
           rawParams = Json.obj(
@@ -94,7 +94,7 @@ class WorkflowUnitSpec_SystemUpdateLocalUserPermissions extends AsyncUnitSpec {
           ),
           fixture.authorizedUser
         )).mapTo[WorkflowResult]
-        updatedUsers <- fixture.db.queryDatabase("LocalUser").map(_.containers.map(_.asInstanceOf[core.LocalUser]))
+        updatedUsers <- fixture.db.queryDatabase("LocalUser").map(_.map(_.asInstanceOf[core.LocalUser]))
       } yield {
         createResult.wasSuccessful should be(true)
         originalUsers should have size 1

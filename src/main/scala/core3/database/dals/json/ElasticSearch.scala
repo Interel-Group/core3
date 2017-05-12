@@ -278,7 +278,7 @@ class ElasticSearch(
     }
   }
 
-  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet] = {
+  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     if (!searchOnly) {
       assert(
         containerCompanions.contains(objectsType),
@@ -289,18 +289,14 @@ class ElasticSearch(
 
       val companion = containerCompanions(objectsType)
 
-      for {
-        containers <- getAllContainers(objectsType, companion)
-      } yield {
-        ContainerSet(objectsType, containers)
-      }
+      getAllContainers(objectsType, companion)
     } else {
       Future.failed(new UnsupportedOperationException(s"core3.database.dals.json.ElasticSearch::handle_GetGenericQueryResult > " +
         s"Cannot query ElasticSearch DAL while running in 'searchOnly' mode."))
     }
   }
 
-  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] = {
+  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     if (!searchOnly) {
       assert(
         containerCompanions.contains(objectsType),
@@ -311,16 +307,12 @@ class ElasticSearch(
 
       val companion = containerCompanions(objectsType)
 
-      for {
-        containers <- getAllContainers(objectsType, companion).map {
-          containers =>
-            containers.filter {
-              current =>
-                companion.matchCustomQuery(customQueryName, queryParams, current)
-            }
-        }
-      } yield {
-        ContainerSet(objectsType, containers)
+      getAllContainers(objectsType, companion).map {
+        containers =>
+          containers.filter {
+            current =>
+              companion.matchCustomQuery(customQueryName, queryParams, current)
+          }
       }
     } else {
       Future.failed(

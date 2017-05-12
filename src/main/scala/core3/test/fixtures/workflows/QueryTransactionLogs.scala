@@ -63,7 +63,7 @@ object QueryTransactionLogs extends WorkflowBase {
           )
         ).map {
           set =>
-            QueryTransactionLogsInputData(set.containers.map(_.asInstanceOf[core.TransactionLog]))
+            QueryTransactionLogsInputData(set.map(_.asInstanceOf[core.TransactionLog]))
         }
     }
   }

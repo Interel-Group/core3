@@ -59,8 +59,7 @@ trait ElasticStoreSpec extends PerformanceTimeSpec {
             0 until count foreach {
               _ =>
                 val result = ElasticStoreSpec.db.queryDatabase("TransactionLog").await
-                assert(result.objectsType == "TransactionLog")
-                assert(result.containers.size == maxContainers)
+                assert(result.size == maxContainers)
             }
         }
     }

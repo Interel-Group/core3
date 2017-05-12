@@ -82,7 +82,7 @@ class WorkflowUnitSpec_SystemCreateLocalUser extends AsyncUnitSpec {
           ),
           fixture.authorizedUser
         )).mapTo[WorkflowResult]
-        users <- fixture.db.queryDatabase("LocalUser").map(_.containers.map(_.asInstanceOf[core.LocalUser]))
+        users <- fixture.db.queryDatabase("LocalUser").map(_.map(_.asInstanceOf[core.LocalUser]))
       } yield {
         result.wasSuccessful should be(true)
         users should have size 1
@@ -129,7 +129,7 @@ class WorkflowUnitSpec_SystemCreateLocalUser extends AsyncUnitSpec {
           ),
           fixture.authorizedUser
         )).mapTo[WorkflowResult]
-        users <- fixture.db.queryDatabase("LocalUser").map(_.containers.map(_.asInstanceOf[core.LocalUser]))
+        users <- fixture.db.queryDatabase("LocalUser").map(_.map(_.asInstanceOf[core.LocalUser]))
       } yield {
         result1.wasSuccessful should be(true)
         result2.wasSuccessful should be(false)

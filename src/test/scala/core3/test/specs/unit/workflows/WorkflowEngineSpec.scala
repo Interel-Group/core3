@@ -26,7 +26,7 @@ import core3.test.specs.unit.AsyncUnitSpec
 import core3.utils.Time._
 import core3.utils.TimestampFormat
 import core3.workflows.WorkflowEngineComponent._
-import core3.workflows.{WorkflowEngineComponent, WorkflowResult}
+import core3.workflows.WorkflowResult
 import play.api.libs.json.{JsArray, Json}
 
 class WorkflowEngineSpec extends AsyncUnitSpec {
@@ -50,7 +50,7 @@ class WorkflowEngineSpec extends AsyncUnitSpec {
     fixture =>
       for {
         addGroups <- (fixture.engine ? ExecuteWorkflow(AddGroups.name, rawParams = Json.obj(), fixture.authorizedUser)).mapTo[WorkflowResult]
-        actualGroupsBeforeUpdate <- fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+        actualGroupsBeforeUpdate <- fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group]))
         updateGroups <- (fixture.engine ? ExecuteWorkflow(UpdateGroups.name, rawParams = Json.obj(), fixture.authorizedUser)).mapTo[WorkflowResult]
         getTransactionLogs <- (fixture.engine ? ExecuteWorkflow(
           QueryTransactionLogs.name,
@@ -60,8 +60,8 @@ class WorkflowEngineSpec extends AsyncUnitSpec {
           ),
           fixture.authorizedUser
         )).mapTo[WorkflowResult]
-        actualGroupsAfterUpdate <- fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
-        actualTransactionLogs <- fixture.db.queryDatabase("TransactionLog").map(_.containers.map(_.asInstanceOf[core.TransactionLog]))
+        actualGroupsAfterUpdate <- fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group]))
+        actualTransactionLogs <- fixture.db.queryDatabase("TransactionLog").map(_.map(_.asInstanceOf[core.TransactionLog]))
       } yield {
         addGroups.wasSuccessful should be(true)
         updateGroups.wasSuccessful should be(true)
@@ -105,7 +105,7 @@ class WorkflowEngineSpec extends AsyncUnitSpec {
       for {
         _ <- fixture.engine ? SetWorkflowState(AddGroups.name, enabled = false)
         addGroups <- (fixture.engine ? ExecuteWorkflow(AddGroups.name, rawParams = Json.obj(), fixture.authorizedUser)).mapTo[WorkflowResult]
-        actualGroups <- fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+        actualGroups <- fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group]))
       } yield {
         addGroups.wasSuccessful should be(false)
         actualGroups.isEmpty should be(true)
@@ -116,7 +116,7 @@ class WorkflowEngineSpec extends AsyncUnitSpec {
     fixture =>
       for {
         addGroups <- (fixture.engine ? ExecuteWorkflow(AddGroups.name, rawParams = Json.obj(), fixture.unauthorizedUser)).mapTo[WorkflowResult]
-        actualGroups <- fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+        actualGroups <- fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group]))
       } yield {
         addGroups.wasSuccessful should be(false)
         actualGroups.isEmpty should be(true)

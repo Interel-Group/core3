@@ -19,7 +19,7 @@ import akka.actor.Props
 import akka.pattern.pipe
 import core3.core.Component.{ActionDescriptor, ActionResult}
 import core3.core.{Component, ComponentCompanion}
-import core3.database.containers.{ContainerSet, MutableContainer, core}
+import core3.database.containers.{Container, MutableContainer, core}
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.database.{ContainerType, ObjectID, RevisionID, RevisionSequenceNumber}
 import core3.security.UserTokenBase
@@ -70,11 +70,11 @@ class WorkflowEngineComponent(
   private def handle_getGroup(shortName: String): Future[core.Group] = {
     db.queryDatabase(objectsType = "Group", customQueryName = "getByShortName", Map("shortName" -> shortName))
       .map {
-        set =>
-          if (set.containers.size == 1) {
-            set.containers.head.asInstanceOf[core.Group]
+        containers =>
+          if (containers.size == 1) {
+            containers.head.asInstanceOf[core.Group]
           } else {
-            val message = s"core3.workflows.WorkflowEngineComponent[$instanceID]::handle_getGroup > [${set.containers.size}] containers found for [Group] with short name [$shortName]."
+            val message = s"core3.workflows.WorkflowEngineComponent[$instanceID]::handle_getGroup > [${containers.size}] containers found for [Group] with short name [$shortName]."
             auditLogger.warn(message)
             throw new RuntimeException(message)
           }
@@ -114,9 +114,9 @@ class WorkflowEngineComponent(
     * Query handler for retrieving all containers of a specified type.
     *
     * @param containersType the type of containers to retrieve
-    * @return Future[ [[core3.database.containers.ContainerSet]] ] - the requested data
+    * @return Future[ Vector[Container] ] - the requested data
     */
-  private def handle_getAllContainers(containersType: ContainerType): Future[ContainerSet] = {
+  private def handle_getAllContainers(containersType: ContainerType): Future[Vector[Container]] = {
     db.queryDatabase(containersType)
   }
 

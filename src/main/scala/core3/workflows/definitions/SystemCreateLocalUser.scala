@@ -69,10 +69,10 @@ object SystemCreateLocalUser extends WorkflowBase {
       case actualParams: SystemCreateLocalUserParameters =>
         queryHandlers.getContainers("LocalUser", "getByUserID", Map("userID" -> actualParams.userID)).map {
           set =>
-            if (set.containers.isEmpty) {
+            if (set.isEmpty) {
               NoInputData()
             } else {
-              throw new RuntimeException(s"core3.workflows.definitions.loadData > Cannot create user; [${set.containers.size}] user(s) with ID [${actualParams.userID}] found.")
+              throw new RuntimeException(s"core3.workflows.definitions.loadData > Cannot create user; [${set.size}] user(s) with ID [${actualParams.userID}] found.")
             }
         }
     }

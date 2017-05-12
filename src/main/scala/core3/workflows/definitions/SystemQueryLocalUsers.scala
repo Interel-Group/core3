@@ -46,7 +46,7 @@ object SystemQueryLocalUsers extends WorkflowBase {
     queryHandlers.getAllContainers("LocalUser").map {
       result =>
         SystemQueryLocalUsersInputData(
-          result.containers.map {
+          result.map {
             current =>
               current.asInstanceOf[core.LocalUser].copy(hashedPassword = "redacted", passwordSalt = "redacted")
           }

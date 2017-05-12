@@ -171,8 +171,8 @@ package object workflows {
     getGroup: (String) => Future[core3.database.containers.core.Group],
     getContainer: (ContainerType, ObjectID) => Future[Container],
     getContainerWithRevision: (ContainerType, ObjectID, RevisionID, RevisionSequenceNumber) => Future[MutableContainer],
-    getContainers: (ContainerType, String, Map[String, String]) => Future[ContainerSet],
-    getAllContainers: (ContainerType) => Future[ContainerSet],
+    getContainers: (ContainerType, String, Map[String, String]) => Future[Vector[Container]],
+    getAllContainers: (ContainerType) => Future[Vector[Container]],
     loadView: (ContainerView) => Future[Unit]
   )
 

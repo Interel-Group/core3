@@ -248,11 +248,11 @@ class Solr(
     }
   }
 
-  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet] = {
+  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     Future.failed(new UnsupportedOperationException(s"core3.database.dals.json.SolrLayer::handle_GetGenericQueryResult > Cannot query Solr DAL."))
   }
 
-  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] = {
+  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     Future.failed(new UnsupportedOperationException(s"core3.database.dals.json.SolrLayer::handle_GetCustomQueryResult > Cannot query Solr DAL."))
   }
 

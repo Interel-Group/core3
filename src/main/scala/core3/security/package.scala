@@ -86,7 +86,7 @@ package object security {
     val placeholderSaltSize = authConfig.getInt("saltSize")
 
     for {
-      user <- db.queryDatabase("LocalUser", "getByUserID", Map("userID" -> userID)).map(_.containers.headOption.map(_.asInstanceOf[LocalUser]))
+      user <- db.queryDatabase("LocalUser", "getByUserID", Map("userID" -> userID)).map(_.headOption.map(_.asInstanceOf[LocalUser]))
       salt <- Future.successful(user.map(_.passwordSalt).getOrElse(getRandomString(placeholderSaltSize, random)) + instanceSalt)
       hashedPassword <- Future {
         password.pbkdf2(salt, passwordIterations, keyLength)

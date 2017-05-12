@@ -310,7 +310,7 @@ class CouchDB(
     }
   }
 
-  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet] = {
+  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     assert(
       containerCompanions.contains(objectsType),
       s"core3.database.dals.json.CouchDB::queryDatabase > Object type [$objectsType] is not supported."
@@ -318,14 +318,10 @@ class CouchDB(
 
     count_GenericQuery += 1
 
-    for {
-      containers <- getAllContainers(objectsType)
-    } yield {
-      ContainerSet(objectsType, containers)
-    }
+    getAllContainers(objectsType)
   }
 
-  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] = {
+  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     assert(
       containerCompanions.contains(objectsType),
       s"core3.database.dals.json.CouchDB::queryDatabase > Object type [$objectsType] is not supported."
@@ -335,16 +331,12 @@ class CouchDB(
 
     val companion = containerCompanions(objectsType)
 
-    for {
-      containers <- getAllContainers(objectsType).map {
-        containers =>
-          containers.filter {
-            current =>
-              companion.matchCustomQuery(customQueryName, queryParams, current)
-          }
-      }
-    } yield {
-      ContainerSet(objectsType, containers)
+    getAllContainers(objectsType).map {
+      containers =>
+        containers.filter {
+          current =>
+            companion.matchCustomQuery(customQueryName, queryParams, current)
+        }
     }
   }
 

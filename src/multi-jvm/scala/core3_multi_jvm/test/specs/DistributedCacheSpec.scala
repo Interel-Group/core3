@@ -133,11 +133,11 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
             logs <- localCache.queryDatabase("TransactionLog")
             groups <- localCache.queryDatabase("Group")
           } yield {
-            logs.containers.size == 4 && groups.containers.size == 3
+            logs.size == 4 && groups.size == 3
           }
         }
-        logs <- localCache.queryDatabase("TransactionLog").map(_.containers.map(_.asInstanceOf[core.TransactionLog]))
-        groups <- localCache.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+        logs <- localCache.queryDatabase("TransactionLog").map(_.map(_.asInstanceOf[core.TransactionLog]))
+        groups <- localCache.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group]))
       } yield {
         logs should have size 4
         logs.map(_.workflowName) should contain allOf(testLog1.workflowName, testLog2.workflowName, testLog3.workflowName, testLog4.workflowName)
@@ -170,10 +170,10 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
             _ <- waitUntilFuture(what = "all updates are propagated", waitTimeMs = 1500, waitAttempts = 15) {
               localCache.queryDatabase("Group").map {
                 result =>
-                  result.containers.size == 2 && result.containers.exists(_.asInstanceOf[core.Group].revisionNumber == 2)
+                  result.size == 2 && result.exists(_.asInstanceOf[core.Group].revisionNumber == 2)
               }
             }
-            updatedGroups <- localCache.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+            updatedGroups <- localCache.queryDatabase("Group").map(c => c.map(_.asInstanceOf[core.Group]))
           } yield {
             updatedGroups should have size 2
             updatedGroups.map(_.shortName) should contain allOf("sname_1", "sname_3")
@@ -191,7 +191,7 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
         (for {
           _ <- testConductor.blackhole(node1, node2, ThrottlerTransportAdapter.Direction.Both)
 
-          groups <- localCache.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+          groups <- localCache.queryDatabase("Group").map(c => c.map(_.asInstanceOf[core.Group]))
         } yield {
           groups should have size 2
           val dbGroup1 = groups.filter(_.shortName == "sname_1").head
@@ -224,13 +224,13 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
           localCache.queryDatabase("Group").map {
             result =>
               myself match {
-                case x if x == node1 => result.containers.size == 3
-                case x if x == node2 => result.containers.size == 2
-                case x if x == node3 => result.containers.size == 3
+                case x if x == node1 => result.size == 3
+                case x if x == node2 => result.size == 2
+                case x if x == node3 => result.size == 3
               }
           }
         }
-        updatedGroups <- localCache.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+        updatedGroups <- localCache.queryDatabase("Group").map(c => c.map(_.asInstanceOf[core.Group]))
       } yield {
         updatedGroups.size should be >= 2
         val dbGroup1 = updatedGroups.filter(_.shortName == "sname_1").head
@@ -284,10 +284,10 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
         _ <- waitUntilFuture(what = "all updates are propagated", waitTimeMs = 1500, waitAttempts = 15) {
           localCache.queryDatabase("Group").map {
             result =>
-              result.containers.size == 3
+              result.size == 3
           }
         }
-        updatedGroups <- localCache.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+        updatedGroups <- localCache.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group]))
       } yield {
         updatedGroups should have size 3
         val dbGroup1 = updatedGroups.filter(_.shortName == "sname_1").head

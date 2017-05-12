@@ -18,7 +18,7 @@ package core3.database.dals
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
-import core3.database.containers.{Container, ContainerSet, MutableContainer}
+import core3.database.containers.{Container, MutableContainer}
 import core3.database.views.ContainerView
 import core3.database.{ContainerType, ObjectID}
 
@@ -101,8 +101,8 @@ class DatabaseAbstractionLayer(private val actor: ActorRef)(implicit ec: Executi
     * @param objectsType the type of objects to be queried
     * @return a container set based on the query results
     */
-  def queryDatabase(objectsType: ContainerType): Future[ContainerSet] =
-    (actor ? GetGenericQueryResult(objectsType)).mapTo[ContainerSet]
+  def queryDatabase(objectsType: ContainerType): Future[Vector[Container]] =
+    (actor ? GetGenericQueryResult(objectsType)).mapTo[Vector[Container]]
 
   /**
     * Performs a custom database query.
@@ -112,8 +112,8 @@ class DatabaseAbstractionLayer(private val actor: ActorRef)(implicit ec: Executi
     * @param queryParams     the query parameters
     * @return a container set based on the query results
     */
-  def queryDatabase(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] =
-    (actor ? GetCustomQueryResult(objectsType, customQueryName, queryParams)).mapTo[ContainerSet]
+  def queryDatabase(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] =
+    (actor ? GetCustomQueryResult(objectsType, customQueryName, queryParams)).mapTo[Vector[Container]]
 
   /**
     * Performs all queries defined in the supplied view and loads the resulting data in it.

@@ -39,7 +39,7 @@ object SystemQueryGroups extends WorkflowBase {
   }
 
   override def loadData(params: WorkflowParameters, queryHandlers: DataQueryHandlers)(implicit ec: ExecutionContext): Future[InputData] = {
-    queryHandlers.getAllContainers("Group").map(c => SystemQueryGroupsInputData(c.containers.map(_.asInstanceOf[core.Group])))
+    queryHandlers.getAllContainers("Group").map(c => SystemQueryGroupsInputData(c.map(_.asInstanceOf[core.Group])))
   }
 
   override def executeAction(requestID: RequestID, user: UserTokenBase, params: WorkflowParameters, data: InputData)(implicit ec: ExecutionContext): Future[(WorkflowResult, OutputData)] = {
