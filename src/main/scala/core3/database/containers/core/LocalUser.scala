@@ -239,11 +239,11 @@ object LocalUser
         "permissions" -> obj.permissions,
         "userType" -> obj.userType.toString,
         "metadata" -> obj.metadata,
-        "created" -> obj.created.toString,
-        "updated" -> obj.updated.toString,
+        "created" -> obj.created,
+        "updated" -> obj.updated,
         "updatedBy" -> obj.updatedBy,
-        "id" -> obj.id.toString,
-        "revision" -> obj.revision.toString,
+        "id" -> obj.id,
+        "revision" -> obj.revision,
         "revisionNumber" -> obj.revisionNumber
       )
   }

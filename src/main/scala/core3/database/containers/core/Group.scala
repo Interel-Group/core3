@@ -197,16 +197,16 @@ object Group
   private val writes = Writes[Group] {
     obj =>
       Json.obj(
-        "shortName" -> JsString(obj.shortName),
-        "name" -> JsString(obj.name),
-        "items" -> JsArray(obj.items.map { current => JsString(current.toString) }),
-        "itemsType" -> JsString(obj.itemsType.toString),
-        "created" -> JsString(obj.created.toString),
-        "updated" -> JsString(obj.updated.toString),
-        "updatedBy" -> JsString(obj.updatedBy),
-        "id" -> JsString(obj.id.toString),
-        "revision" -> JsString(obj.revision.toString),
-        "revisionNumber" -> JsNumber(obj.revisionNumber)
+        "shortName" -> obj.shortName,
+        "name" -> obj.name,
+        "items" -> obj.items,
+        "itemsType" -> obj.itemsType,
+        "created" -> obj.created,
+        "updated" -> obj.updated,
+        "updatedBy" -> obj.updatedBy,
+        "id" -> obj.id,
+        "revision" -> obj.revision,
+        "revisionNumber" -> obj.revisionNumber
       )
   }
 
@@ -231,11 +231,11 @@ object Group
   private val cacheWrites = Writes[Group] {
     obj =>
       Json.obj(
-        "shortName" -> JsString(obj.shortName),
-        "name" -> JsString(obj.name),
-        "items" -> JsArray(obj.items.map { current => JsString(current.toString) }),
-        "itemsType" -> JsString(obj.itemsType.toString),
-        "id" -> JsString(obj.id.toString)
+        "shortName" -> obj.shortName,
+        "name" -> obj.name,
+        "items" -> obj.items,
+        "itemsType" -> obj.itemsType,
+        "id" -> obj.id
       )
   }
 

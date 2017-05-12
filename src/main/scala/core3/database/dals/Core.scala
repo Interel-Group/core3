@@ -306,7 +306,7 @@ class Core(DALs: Map[ContainerType, Vector[ActorRef]])(implicit ec: ExecutionCon
                 "id" -> handle_GetDatabaseIdentifier,
                 "dals" -> Json.obj(
                   "config" -> configuredDALs.map {
-                    case (k, v) => k -> JsArray(v.map(c => JsString(c.toString)))
+                    case (k, v) => k -> v.map(c => c.toString)
                   },
                   "stats" -> results.map(result => result.data.orElse(result.message.map(JsString)).getOrElse(JsBoolean(result.wasSuccessful)))
                 ),

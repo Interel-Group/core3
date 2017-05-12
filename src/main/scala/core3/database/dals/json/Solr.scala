@@ -299,9 +299,7 @@ class Solr(
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
     count_Delete += 1
 
-    val jsonData = JsObject(Map[String, JsValue](
-      "delete" -> JsObject(Map[String, JsValue](
-        "id" -> JsString(objectID.toString)))))
+    val jsonData = Json.obj("delete" -> Json.obj("id" -> objectID))
 
     for {
       response <- ws.url(s"$baseURL/solr/${getCollectionName(objectType)}/update/json")

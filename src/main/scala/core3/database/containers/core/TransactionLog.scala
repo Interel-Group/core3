@@ -197,16 +197,16 @@ object TransactionLog
   private val writes = Writes[TransactionLog] {
     obj =>
       Json.obj(
-        "workflowName" -> JsString(obj.workflowName),
-        "requestID" -> JsString(obj.requestID.toString),
-        "readOnlyWorkflow" -> JsBoolean(obj.readOnlyWorkflow),
+        "workflowName" -> obj.workflowName,
+        "requestID" -> obj.requestID,
+        "readOnlyWorkflow" -> obj.readOnlyWorkflow,
         "parameters" -> obj.parameters,
         "data" -> obj.data,
-        "initiatingUser" -> JsString(obj.initiatingUser),
-        "workflowResult" -> JsBoolean(obj.workflowResult),
-        "workflowState" -> JsString(obj.workflowState),
-        "timestamp" -> JsString(obj.timestamp.toString),
-        "id" -> JsString(obj.id.toString)
+        "initiatingUser" -> obj.initiatingUser,
+        "workflowResult" -> obj.workflowResult,
+        "workflowState" -> obj.workflowState,
+        "timestamp" -> obj.timestamp,
+        "id" -> obj.id
       )
   }
 
