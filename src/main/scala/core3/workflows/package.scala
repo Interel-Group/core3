@@ -54,6 +54,28 @@ package object workflows {
     }
   }
 
+  sealed trait TransactionLogContent
+
+  object TransactionLogContent {
+
+    case object Empty extends TransactionLogContent
+
+    case object WithDataOnly extends TransactionLogContent
+
+    case object WithParamsOnly extends TransactionLogContent
+
+    case object WithDataAndParams extends TransactionLogContent
+
+    def fromString(value: String): TransactionLogContent = {
+      value.toLowerCase match {
+        case "Empty" => TransactionLogContent.Empty
+        case "WithDataOnly" => TransactionLogContent.WithDataOnly
+        case "WithParamsOnly" => TransactionLogContent.WithParamsOnly
+        case "WithDataAndParams" => TransactionLogContent.WithDataAndParams
+      }
+    }
+  }
+
   /**
     * Generates a new random request ID.
     *

@@ -35,11 +35,15 @@ import scala.util.control.NonFatal
   * @param workflowList a list of all available workflows
   * @param db           a DAL for allowing access to data
   * @param storeLogs    determines when transaction logs are to be created
+  * @param readOnlyLogsContent determines the additional content storage for read-only workflow logs
+  * @param writeLogsContent determines the additional content storage for write workflow logs
   */
 class WorkflowEngineComponent(
   private val workflowList: Seq[WorkflowBase],
   private val db: DatabaseAbstractionLayer,
-  private val storeLogs: StoreTransactionLogs
+  private val storeLogs: StoreTransactionLogs,
+  private val readOnlyLogsContent: TransactionLogContent,
+  private val writeLogsContent: TransactionLogContent
 )(implicit ec: ExecutionContext) extends Component {
 
   import WorkflowEngineComponent._
@@ -138,12 +142,24 @@ class WorkflowEngineComponent(
     requestID: RequestID
   ): Future[Unit] = {
     def createLog(): Future[Unit] = {
+      val removeParams = (
+        workflow.withSensitiveParams
+          || (workflow.readOnly && (readOnlyLogsContent == TransactionLogContent.Empty || readOnlyLogsContent == TransactionLogContent.WithDataOnly))
+          || (!workflow.readOnly && (writeLogsContent == TransactionLogContent.Empty || writeLogsContent == TransactionLogContent.WithDataOnly))
+        )
+
+      val removeData = (
+        workflow.withSensitiveData
+          || (workflow.readOnly && (readOnlyLogsContent == TransactionLogContent.Empty || readOnlyLogsContent == TransactionLogContent.WithParamsOnly))
+          || (!workflow.readOnly && (writeLogsContent == TransactionLogContent.Empty || writeLogsContent == TransactionLogContent.WithParamsOnly))
+        )
+
       val transactionLog = core.TransactionLog(
         workflow.name,
         requestID,
         workflow.readOnly,
-        if (workflow.withSensitiveParams) Json.obj("redacted" -> true) else params,
-        if (workflow.withSensitiveData) Json.obj("redacted" -> true) else data,
+        if (removeParams) Json.obj("removed" -> true) else params,
+        if (removeData) Json.obj("removed" -> true) else data,
         userID,
         result,
         state
@@ -381,13 +397,17 @@ object WorkflowEngineComponent extends ComponentCompanion {
   def props(
     workflowList: Seq[WorkflowBase],
     db: DatabaseAbstractionLayer,
-    storeLogs: StoreTransactionLogs
+    storeLogs: StoreTransactionLogs,
+    readOnlyLogsContent: TransactionLogContent,
+    writeLogsContent: TransactionLogContent
   )(implicit ec: ExecutionContext): Props =
     Props(
       classOf[WorkflowEngineComponent],
       workflowList,
       db,
       storeLogs,
+      readOnlyLogsContent,
+      writeLogsContent,
       ec)
 
   override def getActionDescriptors: Seq[ActionDescriptor] = {
