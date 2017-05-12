@@ -23,50 +23,6 @@ import slick.jdbc.SQLActionBuilder
 
 import scala.concurrent.{ExecutionContext, Future}
 
-sealed trait JsonDataFormat
-
-object JsonDataFormat {
-
-  case object Full extends JsonDataFormat
-
-  case object Partial extends JsonDataFormat
-
-  case object Cache extends JsonDataFormat
-
-  case object Search extends JsonDataFormat
-
-  def fromString(value: String): JsonDataFormat = {
-    value match {
-      case "Full" => JsonDataFormat.Full
-      case "Partial" => JsonDataFormat.Partial
-      case "Cache" => JsonDataFormat.Cache
-      case "Search" => JsonDataFormat.Search
-    }
-  }
-}
-
-sealed trait DataType
-
-object DataType {
-
-  case object JSON extends DataType
-
-  case object Cache extends DataType
-
-  case object Slick extends DataType
-
-  case object Search extends DataType
-
-  def fromString(value: String): DataType = {
-    value match {
-      case "JSON" => DataType.JSON
-      case "Cache" => DataType.Cache
-      case "Slick" => DataType.Slick
-      case "Search" => DataType.Search
-    }
-  }
-}
-
 /**
   * Base container trait.
   * <br><br>
@@ -101,13 +57,12 @@ trait ImmutableContainer extends Container
   */
 trait BasicContainerCompanion {
   /**
-    * Retrieves the container's database name for the specified data type, if supported.
+    * Retrieves the container's database name.
     *
-    * @param dataType the data type
     * @return the requested database name
     * @throws IllegalArgumentException if the data type is not supported
     */
-  def getDatabaseName(dataType: DataType): String
+  def getDatabaseName: String
 
   /**
     * Checks if the supplied container matches the specified query name and parameters.
@@ -130,10 +85,9 @@ trait JSONContainerCompanion extends BasicContainerCompanion {
     * Converts the supplied container to a JSON value.
     *
     * @param container the container to be converted
-    * @param format    the JSON data format to use
     * @return the container as a JSON value
     */
-  def toJsonData(container: Container, format: JsonDataFormat): JsValue
+  def toJsonData(container: Container): JsValue
 
   /**
     * Converts the supplied JSON value to a container.
@@ -146,6 +100,14 @@ trait JSONContainerCompanion extends BasicContainerCompanion {
 
 /**
   * Usage trait for containers supporting Slick data handling.
+  *
+  * <p>
+  * <b>Note:</b> When creating the slick table definition, the table name must match the name returned by
+  * [[core3.database.containers.BasicContainerCompanion.getDatabaseName]]
+  * with all non-alphanumeric characters replaced by underscores (_);
+  * for example, the [[core3.database.containers.core.TransactionLog]] container uses 'core-transaction-logs' for the
+  * database name and the slick table definition sets the table name as 'core_transaction_logs'.
+  * </p>
   */
 trait SlickContainerCompanion extends BasicContainerCompanion {
   def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean]

@@ -49,7 +49,7 @@ object Database {
 
   val defaultSupportedContainers: Vector[String] = Vector("Group", "TransactionLog", "LocalUser")
 
-  def createCouchDBInstance(cacheOnly: Boolean, companions: Map[ContainerType, JSONContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
+  def createCouchDBInstance(companions: Map[ContainerType, JSONContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
     if (!JSONConverter.isInitialized) JSONConverter.initialize(companions)
     val config = StaticConfig.get.getConfig("database.couchdb")
 
@@ -61,7 +61,6 @@ object Database {
         config.getString("username"),
         config.getString("password"),
         companions,
-        cacheOnly,
         AhcWSClient()
       ),
       name = s"CouchDB_$getNewActorID"
@@ -172,7 +171,7 @@ object Database {
         Core.props(dals.get)
       } else {
         val mariaDAL = createMariaDBInstance()
-        val couchDAL = createCouchDBInstance(cacheOnly = false)
+        val couchDAL = createCouchDBInstance()
         val memoryDAL = createMemoryOnlyDBInstance()
         val redisDAL = createRedisInstance()
         val elasticStoreDAL = createElasticStoreInstance()

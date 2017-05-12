@@ -40,7 +40,7 @@ class CoreSpec extends AsyncUnitSpec with CoreBehaviours {
 
   implicit val timeout = Timeout(15.seconds)
   val mariaDAL: DatabaseAbstractionLayer = fixtures.Database.createMariaDBInstance()
-  val couchDAL: DatabaseAbstractionLayer = fixtures.Database.createCouchDBInstance(cacheOnly = false)
+  val couchDAL: DatabaseAbstractionLayer = fixtures.Database.createCouchDBInstance()
   val memoryDAL: DatabaseAbstractionLayer = fixtures.Database.createMemoryOnlyDBInstance()
   val redisDAL: DatabaseAbstractionLayer = fixtures.Database.createRedisInstance()
   val elasticSearchDAL: DatabaseAbstractionLayer = fixtures.Database.createElasticSearchInstance()

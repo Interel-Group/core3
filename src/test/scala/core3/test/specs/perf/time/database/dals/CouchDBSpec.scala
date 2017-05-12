@@ -68,7 +68,7 @@ trait CouchDBSpec extends PerformanceTimeSpec {
 }
 
 object CouchDBSpec {
-  val db: DatabaseAbstractionLayer = core3.test.fixtures.Database.createCouchDBInstance(cacheOnly = false)
+  val db: DatabaseAbstractionLayer = core3.test.fixtures.Database.createCouchDBInstance()
   val core: DatabaseAbstractionLayer = core3.test.fixtures.Database.createCoreInstance(
     Some(
       Map(

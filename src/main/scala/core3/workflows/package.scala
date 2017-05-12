@@ -68,10 +68,10 @@ package object workflows {
 
     def fromString(value: String): TransactionLogContent = {
       value.toLowerCase match {
-        case "Empty" => TransactionLogContent.Empty
-        case "WithDataOnly" => TransactionLogContent.WithDataOnly
-        case "WithParamsOnly" => TransactionLogContent.WithParamsOnly
-        case "WithDataAndParams" => TransactionLogContent.WithDataAndParams
+        case "empty" => TransactionLogContent.Empty
+        case "withdataonly" => TransactionLogContent.WithDataOnly
+        case "withparamsonly" => TransactionLogContent.WithParamsOnly
+        case "withdataandparams" => TransactionLogContent.WithDataAndParams
       }
     }
   }
@@ -151,9 +151,9 @@ package object workflows {
       * @return the converted data
       */
     def asJson: JsValue = Json.obj(
-      "add" -> JsArray(add.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full))),
-      "update" -> JsArray(update.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full))),
-      "delete" -> JsArray(delete.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full)))
+      "add" -> add.map(JSONConverter.toJsonData),
+      "update" -> update.map(JSONConverter.toJsonData),
+      "delete" -> delete.map(JSONConverter.toJsonData)
     )
   }
 

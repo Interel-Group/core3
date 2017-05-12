@@ -15,7 +15,7 @@
   */
 package core3.database.views.core
 
-import core3.database.containers.{Container, JSONConverter, JsonDataFormat}
+import core3.database.containers.{Container, JSONConverter}
 import core3.database.views.{ContainerQueryData, ContainerView, JSONContainerViewCompanion}
 import core3.database.{ContainerType, ContainerViewType, ObjectID, containers}
 import play.api.libs.json._
@@ -65,8 +65,8 @@ object Group extends JSONContainerViewCompanion {
   private val writes = Writes[Group] {
     obj =>
       Json.obj(
-        "group" -> containers.core.Group.toJsonData(obj.core, JsonDataFormat.Full),
-        "items" -> obj.items.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full))
+        "group" -> containers.core.Group.toJsonData(obj.core),
+        "items" -> obj.items.map(c => JSONConverter.toJsonData(c))
       )
   }
 

@@ -56,7 +56,7 @@ object TransactionLog
   //SlickContainerCompanionImpl Definitions
   //
   private class TableDef(tag: Tag)
-    extends Table[ContainerTupleDef](tag, "TRANSACTION_LOGS") {
+    extends Table[ContainerTupleDef](tag, "core_transaction_logs") {
     def id = column[String]("ID", O.PrimaryKey, O.Length(36))
 
     def workflowName = column[String]("WORKFLOW_NAME")
@@ -84,7 +84,7 @@ object TransactionLog
   private val compiledGetByID = Compiled((objectID: Rep[String]) => query.filter(_.id === objectID))
   private val compiledGetBetweenTimestamps = Compiled((start: Rep[java.sql.Timestamp], end: Rep[java.sql.Timestamp]) => query.filter(_.timestamp between(start, end)))
 
-  protected def convertToTuple(container: Container): ContainerTupleDef = {
+  override protected def convertToTuple(container: Container): ContainerTupleDef = {
     val c = container.asInstanceOf[TransactionLog]
     val parameters = c.parameters.toString()
     val data = c.data.toString()
@@ -100,7 +100,7 @@ object TransactionLog
       new java.sql.Timestamp(c.timestamp.getMillis))
   }
 
-  protected def convertFromTuple(tuple: ContainerTupleDef): Container = {
+  override protected def convertFromTuple(tuple: ContainerTupleDef): Container = {
     val id = tuple._1
     val workflowName = tuple._2
     val requestID = tuple._3
@@ -126,7 +126,7 @@ object TransactionLog
     )
   }
 
-  def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       _ <- db.run(query.schema.create)
     } yield {
@@ -134,7 +134,7 @@ object TransactionLog
     }
   }
 
-  def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       _ <- db.run(query.schema.drop)
     } yield {
@@ -142,7 +142,7 @@ object TransactionLog
     }
   }
 
-  def runGenericQuery(query: SQLActionBuilder, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
+  override def runGenericQuery(query: SQLActionBuilder, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
     val action = query.as[ContainerTupleDef]
     db.run(action).map {
       result =>
@@ -150,7 +150,7 @@ object TransactionLog
     }
   }
 
-  def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
+  override def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
     val action = compiledGetByID(objectID.toString).result
     db.run(action).map {
       result =>
@@ -158,7 +158,7 @@ object TransactionLog
     }
   }
 
-  def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       _ <- db.run(query += convertToTuple(container))
     } yield {
@@ -166,11 +166,11 @@ object TransactionLog
     }
   }
 
-  def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     Future.failed(new IllegalArgumentException("core3.database.containers.core.TransactionLog::runUpdate > Cannot update 'TransactionLog' data."))
   }
 
-  def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     Future.failed(new IllegalArgumentException("core3.database.containers.core.TransactionLog::runDelete > Cannot delete 'TransactionLog' data."))
   }
 
@@ -228,28 +228,18 @@ object TransactionLog
       )
   }
 
-  def toJsonData(container: Container, format: JsonDataFormat): JsValue = {
-    format match {
-      case JsonDataFormat.Full => Json.toJson(container.asInstanceOf[TransactionLog])(writes)
-      case JsonDataFormat.Partial => Json.toJson(container.asInstanceOf[TransactionLog])(writes)
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::toJsonData > JSON format [$format] not supported.")
-    }
+  override def toJsonData(container: Container): JsValue = {
+    Json.toJson(container.asInstanceOf[TransactionLog])(writes)
   }
 
-  def fromJsonData(data: JsValue): Container = {
+  override def fromJsonData(data: JsValue): Container = {
     data.as[TransactionLog](reads)
   }
 
   //
   //BasicContainerCompanion Definitions
   //
-  def getDatabaseName(dataType: DataType): String = {
-    dataType match {
-      case DataType.JSON => "core-transaction-logs"
-      case DataType.Slick => "TRANSACTION_LOGS"
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::getDatabaseName > Data type [$dataType] not supported.")
-    }
-  }
+  override def getDatabaseName: String = "core-transaction-logs"
 
   override def matchCustomQuery(queryName: String, queryParams: Map[String, String], container: Container): Boolean = {
     queryName match {

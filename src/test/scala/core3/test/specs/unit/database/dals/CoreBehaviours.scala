@@ -76,7 +76,7 @@ trait CoreBehaviours {
         val emptyActionParams = Json.obj()
         val emptyActionDataContainers = Json.obj()
         val nonEmptyActionParams = Json.obj("init_param" -> 123, "string_param_1" -> "string_1", "init_param_2" -> 456, "string_param_2" -> "string_2")
-        val nonEmptyActionDataContainers = Json.obj(testLog1.id.toString -> core.TransactionLog.toJsonData(testLog1, JsonDataFormat.Full))
+        val nonEmptyActionDataContainers = Json.obj(testLog1.id.toString -> core.TransactionLog.toJsonData(testLog1))
         val testTransactionLog1 = core.TransactionLog("Test Workflow 1", getNewRequestID, true, emptyActionParams, emptyActionDataContainers, "test-user-ok", true, "TEST_1")
         val testTransactionLog2 = core.TransactionLog("Test Workflow 2", getNewRequestID, true, nonEmptyActionParams, nonEmptyActionDataContainers, "test-user-ok", false, "TEST_2")
         val testTransactionLog3 = core.TransactionLog("Test Workflow 3", getNewRequestID, false, nonEmptyActionParams, nonEmptyActionDataContainers, "test-user-ok", true, "TEST_3")

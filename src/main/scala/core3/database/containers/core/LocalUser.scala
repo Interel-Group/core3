@@ -73,7 +73,7 @@ object LocalUser
   //SlickContainerCompanionImpl Definitions
   //
   private class TableDef(tag: Tag)
-    extends Table[ContainerTupleDef](tag, "LOCAL_USERS") {
+    extends Table[ContainerTupleDef](tag, "core_local_users") {
     def id = column[String]("ID", O.PrimaryKey, O.Length(36))
 
     def userID = column[String]("USER_ID", O.Length(128))
@@ -107,7 +107,7 @@ object LocalUser
   private val compiledGetByID = Compiled((objectID: Rep[String]) => query.filter(_.id === objectID))
   private val compiledGetByUserID = Compiled((userID: Rep[String]) => query.filter(_.userID === userID))
 
-  protected def convertToTuple(container: Container): ContainerTupleDef = {
+  override protected def convertToTuple(container: Container): ContainerTupleDef = {
     val c = container.asInstanceOf[LocalUser]
     (c.id.toString,
       c.userID,
@@ -123,7 +123,7 @@ object LocalUser
       c.revisionNumber)
   }
 
-  protected def convertFromTuple(tuple: ContainerTupleDef): Container = {
+  override protected def convertFromTuple(tuple: ContainerTupleDef): Container = {
     val id = tuple._1
     val userID = tuple._2
     val hashedPassword = tuple._3
@@ -157,7 +157,7 @@ object LocalUser
     )
   }
 
-  def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       _ <- db.run(query.schema.create)
     } yield {
@@ -165,7 +165,7 @@ object LocalUser
     }
   }
 
-  def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       _ <- db.run(query.schema.drop)
     } yield {
@@ -173,7 +173,7 @@ object LocalUser
     }
   }
 
-  def runGenericQuery(query: SQLActionBuilder, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
+  override def runGenericQuery(query: SQLActionBuilder, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
     val action = query.as[ContainerTupleDef]
     db.run(action).map {
       result =>
@@ -181,7 +181,7 @@ object LocalUser
     }
   }
 
-  def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
+  override def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
     val action = compiledGetByID(objectID.toString).result
     db.run(action).map {
       result =>
@@ -189,7 +189,7 @@ object LocalUser
     }
   }
 
-  def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       _ <- db.run(query += convertToTuple(container))
     } yield {
@@ -197,12 +197,12 @@ object LocalUser
     }
   }
 
-  def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     val action = query.filter(_.id === container.id.toString).update(convertToTuple(container))
     db.run(action).map(_ == 1)
   }
 
-  def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     val action = query.filter(_.id === objectID.toString).delete
     db.run(action).map(_ == 1)
   }
@@ -268,27 +268,18 @@ object LocalUser
       )
   }
 
-  def toJsonData(container: Container, format: JsonDataFormat): JsValue = {
-    format match {
-      case JsonDataFormat.Full => Json.toJson(container.asInstanceOf[LocalUser])(writes)
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.LocalUser::toJsonData > JSON format [$format] not supported.")
-    }
+  override def toJsonData(container: Container): JsValue = {
+    Json.toJson(container.asInstanceOf[LocalUser])(writes)
   }
 
-  def fromJsonData(data: JsValue): Container = {
+  override def fromJsonData(data: JsValue): Container = {
     data.as[LocalUser](reads)
   }
 
   //
   //BasicContainerCompanion Definitions
   //
-  def getDatabaseName(dataType: DataType): String = {
-    dataType match {
-      case DataType.JSON => "core-local-users"
-      case DataType.Slick => "LOCAL_USERS"
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.LocalUser::getDatabaseName > Data type [$dataType] not supported.")
-    }
-  }
+  override def getDatabaseName: String = "core-local-users"
 
   override def matchCustomQuery(queryName: String, queryParams: Map[String, String], container: Container): Boolean = {
     queryName match {

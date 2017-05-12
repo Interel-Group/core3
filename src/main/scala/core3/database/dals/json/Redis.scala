@@ -92,7 +92,7 @@ class Redis(
   private var count_Delete: Long = 0
 
   private def getKeyPrefix(containerType: ContainerType) = {
-    s"${containerCompanions(containerType).getDatabaseName(DataType.JSON)}:"
+    s"${containerCompanions(containerType).getDatabaseName}:"
   }
 
   private def getKey(containerType: ContainerType, containerID: ObjectID) = {
@@ -289,7 +289,7 @@ class Redis(
     for {
       result <- client.set(
         getKey(container.objectType, container.id),
-        Json.stringify(containerCompanions(container.objectType).toJsonData(container, JsonDataFormat.Full)),
+        Json.stringify(containerCompanions(container.objectType).toJsonData(container)),
         NX = true //only set value if it does not exist
       )
     } yield {
@@ -308,7 +308,7 @@ class Redis(
     for {
       result <- client.set(
         getKey(container.objectType, container.id),
-        Json.stringify(containerCompanions(container.objectType).toJsonData(container, JsonDataFormat.Full)),
+        Json.stringify(containerCompanions(container.objectType).toJsonData(container)),
         XX = true //only set value if it exists
       )
     } yield {

@@ -55,7 +55,7 @@ object Group
   //SlickContainerCompanionImpl Definitions
   //
   private class TableDef(tag: Tag)
-    extends Table[ContainerTupleDef](tag, "GROUPS") {
+    extends Table[ContainerTupleDef](tag, "core_groups") {
     def id = column[String]("ID", O.PrimaryKey, O.Length(36))
 
     def shortName = column[String]("SHORT_NAME", O.Length(32))
@@ -85,7 +85,7 @@ object Group
   private val compiledGetByID = Compiled((objectID: Rep[String]) => query.filter(_.id === objectID))
   private val compiledGetByShortName = Compiled((shortName: Rep[String]) => query.filter(_.shortName === shortName))
 
-  protected def convertToTuple(container: Container): ContainerTupleDef = {
+  override protected def convertToTuple(container: Container): ContainerTupleDef = {
     val c = container.asInstanceOf[Group]
     (c.id.toString,
       c.shortName,
@@ -99,7 +99,7 @@ object Group
       c.revisionNumber)
   }
 
-  protected def convertFromTuple(tuple: ContainerTupleDef): Container = {
+  override protected def convertFromTuple(tuple: ContainerTupleDef): Container = {
     val id = tuple._1
     val shortName = tuple._2
     val name = tuple._3
@@ -129,7 +129,7 @@ object Group
     )
   }
 
-  def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       _ <- db.run(query.schema.create)
     } yield {
@@ -137,7 +137,7 @@ object Group
     }
   }
 
-  def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       _ <- db.run(query.schema.drop)
     } yield {
@@ -145,7 +145,7 @@ object Group
     }
   }
 
-  def runGenericQuery(query: SQLActionBuilder, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
+  override def runGenericQuery(query: SQLActionBuilder, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
     val action = query.as[ContainerTupleDef]
     db.run(action).map {
       result =>
@@ -153,7 +153,7 @@ object Group
     }
   }
 
-  def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
+  override def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
     val action = compiledGetByID(objectID.toString).result
     db.run(action).map {
       result =>
@@ -161,7 +161,7 @@ object Group
     }
   }
 
-  def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       _ <- db.run(query += convertToTuple(container))
     } yield {
@@ -169,12 +169,12 @@ object Group
     }
   }
 
-  def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     val action = query.filter(_.id === container.id.toString).update(convertToTuple(container))
     db.run(action).map(_ == 1)
   }
 
-  def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
+  override def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     val action = query.filter(_.id === objectID.toString).delete
     db.run(action).map(_ == 1)
   }
@@ -239,30 +239,18 @@ object Group
       )
   }
 
-  def toJsonData(container: Container, format: JsonDataFormat): JsValue = {
-    format match {
-      case JsonDataFormat.Full => Json.toJson(container.asInstanceOf[Group])(writes)
-      case JsonDataFormat.Partial => Json.toJson(container.asInstanceOf[Group])(writes)
-      case JsonDataFormat.Cache => Json.toJson(container.asInstanceOf[Group])(cacheWrites)
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Group::toJsonData > JSON format [$format] not supported.")
-    }
+  override def toJsonData(container: Container): JsValue = {
+    Json.toJson(container.asInstanceOf[Group])(writes)
   }
 
-  def fromJsonData(data: JsValue): Container = {
+  override def fromJsonData(data: JsValue): Container = {
     data.as[Group](reads)
   }
 
   //
   //BasicContainerCompanion Definitions
   //
-  def getDatabaseName(dataType: DataType): String = {
-    dataType match {
-      case DataType.JSON => "core-groups"
-      case DataType.Cache => "core-cache-groups"
-      case DataType.Slick => "GROUPS"
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Group::getDatabaseName > Data type [$dataType] not supported.")
-    }
-  }
+  override def getDatabaseName: String = "core-groups"
 
   override def matchCustomQuery(queryName: String, queryParams: Map[String, String], container: Container): Boolean = {
     queryName match {

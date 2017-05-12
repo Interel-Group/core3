@@ -21,7 +21,7 @@ import play.api.libs.json.JsValue
 object JSONConverter {
   private var jsonCompanions: Option[Map[ContainerType, JSONContainerCompanion]] = None
 
-  def isInitialized = jsonCompanions.isDefined
+  def isInitialized: Boolean = jsonCompanions.isDefined
 
   def initialize(jsonContainerCompanions: Map[ContainerType, JSONContainerCompanion]): Unit = {
     if (jsonCompanions.isEmpty) {
@@ -31,11 +31,11 @@ object JSONConverter {
     }
   }
 
-  def toJsonData(container: Container, format: JsonDataFormat): JsValue = {
+  def toJsonData(container: Container): JsValue = {
     jsonCompanions match {
       case Some(companions) =>
         if (companions.contains(container.objectType)) {
-          companions(container.objectType).toJsonData(container, format)
+          companions(container.objectType).toJsonData(container)
         } else {
           throw new IllegalArgumentException(s"core3.database.containers.JSONConverter::toJsonData > Container type [${container.objectType}] not found.")
         }

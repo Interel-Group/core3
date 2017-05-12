@@ -117,7 +117,7 @@ class Solr(
     */
   private def getCollectionName(objectType: ContainerType): String = {
     assert(containerCompanions.contains(objectType))
-    containerCompanions(objectType).getDatabaseName(DataType.Search)
+    containerCompanions(objectType).getDatabaseName
   }
 
   /**
@@ -128,7 +128,15 @@ class Solr(
     */
   private def getJSONDataFromContainer(container: Container): JsValue = {
     assert(containerCompanions.contains(container.objectType))
-    containerCompanions(container.objectType).toJsonData(container, JsonDataFormat.Search)
+    val objectsCompanion = containerCompanions(container.objectType)
+    val searchFields = objectsCompanion.getSearchFields.keys.toSeq
+    val filteredFields = objectsCompanion.toJsonData(container).as[JsObject].fields.filter {
+      case (k, _) =>
+        searchFields.contains(k)
+
+    }
+
+    JsObject(filteredFields)
   }
 
   /**

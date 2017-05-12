@@ -18,7 +18,7 @@ package core3.database.dals.json
 import akka.actor.Props
 import akka.util.Timeout
 import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.{TcpClient, ElasticsearchClientUri}
+import com.sksamuel.elastic4s.{ElasticsearchClientUri, TcpClient}
 import com.typesafe.config.Config
 import core3.config.StaticConfig
 import core3.core.Component.{ActionDescriptor, ActionResult}
@@ -29,7 +29,7 @@ import core3.database.{ContainerType, ObjectID}
 import org.elasticsearch.action.DocWriteResponse
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy
 import org.elasticsearch.common.settings.Settings
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -98,11 +98,11 @@ class ElasticSearch(
   private val serviceSettings = Settings.builder().put("cluster.name", clusterName).build()
   private val service = ElasticsearchClientUri(hostname, port)
   private val client = TcpClient.transport(serviceSettings, service)
-  private val (dataType: DataType, dataFormat: JsonDataFormat, docType: String, layerType: LayerType) =
+  private val (docType: String, layerType: LayerType) =
     if (!searchOnly) {
-      (DataType.JSON, JsonDataFormat.Full, "store", LayerType.ElasticStore)
+      ("store", LayerType.ElasticStore)
     } else {
-      (DataType.Search, JsonDataFormat.Search, "search", LayerType.ElasticSearch)
+      ("search", LayerType.ElasticSearch)
     }
 
   //stats
@@ -130,7 +130,7 @@ class ElasticSearch(
       s"core3.database.dals.json.ElasticSearch::handle_VerifyDatabaseStructure > Object type [$objectsType] is not supported."
     )
 
-    val indexName = containerCompanions(objectsType).getDatabaseName(dataType)
+    val indexName = containerCompanions(objectsType).getDatabaseName
     client.execute(indexExists(indexName)).map(_.isExists)
   }
 
@@ -141,7 +141,7 @@ class ElasticSearch(
     )
 
     val objectsCompanion = containerCompanions(objectsType)
-    val indexName = objectsCompanion.getDatabaseName(dataType)
+    val indexName = objectsCompanion.getDatabaseName
 
     if (coexist && searchOnly) {
       //skips the operation, when the search-only instance is expected to coexist with another one
@@ -203,7 +203,7 @@ class ElasticSearch(
       Future.successful(true)
     } else {
       val objectsCompanion = containerCompanions(objectsType)
-      val indexName = objectsCompanion.getDatabaseName(dataType)
+      val indexName = objectsCompanion.getDatabaseName
 
       client.execute(indexExists(indexName)).flatMap {
         response =>
@@ -225,7 +225,7 @@ class ElasticSearch(
     * @return the retrieved containers
     */
   private def getAllContainers(objectsType: ContainerType, companion: JSONContainerCompanion): Future[Vector[Container]] = {
-    val indexName = companion.getDatabaseName(dataType)
+    val indexName = companion.getDatabaseName
 
     for {
       sizeResponse <- client.execute {
@@ -265,8 +265,7 @@ class ElasticSearch(
                   "delete" -> count_Delete
                 ),
                 "settings" -> Json.obj(
-                  "dataType" -> dataType.toString,
-                  "dataFormat" -> dataFormat.toString,
+                  "searchOnly" -> searchOnly,
                   "docType" -> docType,
                   "coexist" -> coexist,
                   "refreshPolicy" -> refreshPolicy.toString,
@@ -341,7 +340,7 @@ class ElasticSearch(
       count_Get += 1
 
       val objectsCompanion = containerCompanions(objectType)
-      val indexName = objectsCompanion.getDatabaseName(dataType)
+      val indexName = objectsCompanion.getDatabaseName
 
       for {
         response <- client.execute {
@@ -365,12 +364,28 @@ class ElasticSearch(
     count_Create += 1
 
     val objectsCompanion = containerCompanions(container.objectType)
-    val indexName = objectsCompanion.getDatabaseName(dataType)
+    val indexName = objectsCompanion.getDatabaseName
 
     for {
+      data <- Future {
+        val jsonContainer = objectsCompanion.toJsonData(container)
+
+        if(searchOnly) {
+          val searchFields = objectsCompanion.asInstanceOf[SearchContainerCompanion].getSearchFields.keys.toSeq
+
+          val filteredFields = jsonContainer.as[JsObject].fields.filter {
+            case (k, _) =>
+              searchFields.contains(k)
+          }
+
+          JsObject(filteredFields)
+        } else {
+          jsonContainer
+        }
+      }
       response <- client.execute {
         indexInto(indexName, docType)
-          .doc(objectsCompanion.toJsonData(container, dataFormat).toString)
+          .doc(Json.stringify(data))
           .withId(container.id.toString)
           .createOnly(createOnly = true)
           .refresh(refreshPolicy)
@@ -389,13 +404,29 @@ class ElasticSearch(
     count_Update += 1
 
     val objectsCompanion = containerCompanions(container.objectType)
-    val indexName = objectsCompanion.getDatabaseName(dataType)
+    val indexName = objectsCompanion.getDatabaseName
 
     for {
+      data <- Future {
+        val jsonContainer = objectsCompanion.toJsonData(container)
+
+        if(searchOnly) {
+          val searchFields = objectsCompanion.asInstanceOf[SearchContainerCompanion].getSearchFields.keys.toSeq
+
+          val filteredFields = jsonContainer.as[JsObject].fields.filter {
+            case (k, _) =>
+              searchFields.contains(k)
+          }
+
+          JsObject(filteredFields)
+        } else {
+          jsonContainer
+        }
+      }
       response <- client.execute {
         update(container.id.toString)
           .in(indexName / docType)
-          .doc(Json.stringify(objectsCompanion.toJsonData(container, dataFormat)))
+          .doc(Json.stringify(data))
           .refresh(refreshPolicy)
       }
     } yield {
@@ -411,7 +442,7 @@ class ElasticSearch(
 
     count_Delete += 1
 
-    val indexName = containerCompanions(objectType).getDatabaseName(dataType)
+    val indexName = containerCompanions(objectType).getDatabaseName
 
     for {
       response <- client.execute {

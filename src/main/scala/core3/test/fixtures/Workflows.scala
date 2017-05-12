@@ -20,7 +20,7 @@ import core3.database.dals.DatabaseAbstractionLayer
 import core3.security.Auth0UserToken
 import core3.test.fixtures.TestSystem._
 import core3.test.fixtures.workflows._
-import core3.workflows.{StoreTransactionLogs, WorkflowBase, WorkflowEngineComponent}
+import core3.workflows.{StoreTransactionLogs, TransactionLogContent, WorkflowBase, WorkflowEngineComponent}
 import play.api.libs.json.{JsArray, Json}
 
 object Workflows {
@@ -38,13 +38,15 @@ object Workflows {
           StoreTransactionLogs.Always
         } else {
           StoreTransactionLogs.OnWriteOnly
-        }
+        },
+        TransactionLogContent.WithDataAndParams,
+        TransactionLogContent.WithDataAndParams
       ),
       name = s"mail_Service_${TestSystem.getNewActorID}"
     )
   }
 
-  def createAuthorizedUser(workflows: Vector[WorkflowBase] = defaultWorkflows) = {
+  def createAuthorizedUser(workflows: Vector[WorkflowBase] = defaultWorkflows): Auth0UserToken = {
     new Auth0UserToken(
       idToken = "none",
       accessToken = "none",

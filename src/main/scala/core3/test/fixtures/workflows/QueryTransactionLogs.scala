@@ -15,7 +15,7 @@
   */
 package core3.test.fixtures.workflows
 
-import core3.database.containers.{JSONConverter, JsonDataFormat, core}
+import core3.database.containers.{JSONConverter, core}
 import core3.security.UserTokenBase
 import core3.utils.Time._
 import core3.utils._
@@ -35,7 +35,7 @@ object QueryTransactionLogs extends WorkflowBase {
 
   case class QueryTransactionLogsInputData(logs: Vector[core.TransactionLog]) extends InputData {
     override def asJson: JsValue = Json.obj(
-      "logs" -> JsArray(logs.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full)))
+      "logs" -> logs.map(c => JSONConverter.toJsonData(c))
     )
   }
 

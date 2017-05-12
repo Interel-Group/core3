@@ -15,7 +15,7 @@
   */
 package core3.test.fixtures.workflows
 
-import core3.database.containers.{JSONConverter, JsonDataFormat, core}
+import core3.database.containers.{JSONConverter, core}
 import core3.security.UserTokenBase
 import core3.workflows._
 import play.api.libs.json.{JsValue, Json}
@@ -26,7 +26,7 @@ object IncorrectGroupUpdate extends WorkflowBase {
 
   case class IncorrectGroupUpdateInputData(group: core.Group) extends InputData {
     override def asJson: JsValue = Json.obj(
-      "group" -> JSONConverter.toJsonData(group, JsonDataFormat.Full)
+      "group" -> JSONConverter.toJsonData(group)
     )
   }
 

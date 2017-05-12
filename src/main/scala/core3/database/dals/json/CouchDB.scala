@@ -43,7 +43,6 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param username            the DB user to be used when authenticating each request
   * @param password            the password for the DB user
   * @param containerCompanions map with all registered container companion objects
-  * @param cacheOnly           set to 'true' to use the DAL for caching
   * @param ws                  web service client
   */
 class CouchDB(
@@ -53,7 +52,6 @@ class CouchDB(
   private val username: String,
   private val password: String,
   private val containerCompanions: Map[ContainerType, JSONContainerCompanion],
-  val cacheOnly: Boolean,
   ws: WSClient
 )(implicit ec: ExecutionContext, timeout: Timeout)
   extends DatabaseAbstractionLayerComponent {
@@ -78,7 +76,6 @@ class CouchDB(
       config.getString("username"),
       config.getString("password"),
       containerCompanions,
-      config.getBoolean("cacheOnly"),
       ws
     )
 
@@ -106,13 +103,7 @@ class CouchDB(
     */
   private def getDatabaseURLFromType(objectType: ContainerType): String = {
     assert(containerCompanions.contains(objectType))
-    val databaseName = if (cacheOnly) {
-      containerCompanions(objectType).getDatabaseName(DataType.Cache)
-    } else {
-      containerCompanions(objectType).getDatabaseName(DataType.JSON)
-    }
-
-    baseURL + "/" + databaseName
+    baseURL + "/" + containerCompanions(objectType).getDatabaseName
   }
 
   /**
@@ -187,10 +178,6 @@ class CouchDB(
     * @return the new container
     */
   private def fromJsonData(objectType: ContainerType, parsedJson: JsValue): Container = {
-    if (cacheOnly) {
-      throw new UnsupportedOperationException(s"core3.database.dals.json.CouchDB::fromJsonData > Cannot read cached objects.")
-    }
-
     assert(containerCompanions.contains(objectType))
     containerCompanions(objectType).fromJsonData(parsedJson)
   }
@@ -201,7 +188,7 @@ class CouchDB(
 
   override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerCompanions.keys.toVector
 
-  override protected def handle_GetLayerType: LayerType = if (cacheOnly) LayerType.CouchDBCache else LayerType.CouchDB
+  override protected def handle_GetLayerType: LayerType = LayerType.CouchDB
 
   override protected def handle_VerifyDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     assert(
@@ -388,7 +375,7 @@ class CouchDB(
 
     count_Create += 1
 
-    val jsonData = containerCompanions(container.objectType).toJsonData(container, if (cacheOnly) JsonDataFormat.Cache else JsonDataFormat.Full)
+    val jsonData = containerCompanions(container.objectType).toJsonData(container)
 
     for {
       response <- ws.url(getRequestURLFromType(container.objectType, container.id))
@@ -409,7 +396,7 @@ class CouchDB(
 
     count_Update += 1
 
-    val jsonData = containerCompanions(container.objectType).toJsonData(container, if (cacheOnly) JsonDataFormat.Cache else JsonDataFormat.Full)
+    val jsonData = containerCompanions(container.objectType).toJsonData(container)
 
     for {
       objectRevision <- getRevisionID(container.objectType, container.id)
@@ -454,7 +441,6 @@ object CouchDB extends ComponentCompanion {
     dbUser: String,
     dbUserPassword: String,
     containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    cacheOnly: Boolean = false,
     ws: WSClient
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[CouchDB],
@@ -464,7 +450,6 @@ object CouchDB extends ComponentCompanion {
     dbUser,
     dbUserPassword,
     containerCompanions,
-    cacheOnly,
     ws,
     ec,
     timeout

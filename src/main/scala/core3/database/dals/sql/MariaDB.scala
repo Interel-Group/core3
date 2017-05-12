@@ -95,15 +95,16 @@ class MariaDB(
     */
   private def getDatabaseName(objectType: ContainerType): String = {
     assert(containerCompanions.contains(objectType), s"core3.database.dals.sql.MariaDB::getDatabaseName > Object type [$objectType] is not supported.")
-    containerCompanions(objectType).getDatabaseName(DataType.Slick)
+    containerCompanions(objectType).getDatabaseName.replaceAll("[^A-Za-z0-9]", "_")
   }
 
   override protected def handle_VerifyDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     db.run(MTable.getTables).map {
       result =>
-        result.exists(current => {
-          current.name.name.toLowerCase == getDatabaseName(objectsType).toLowerCase
-        })
+        result.exists {
+          current =>
+            current.name.name.toLowerCase == getDatabaseName(objectsType).toLowerCase
+        }
     }
   }
 

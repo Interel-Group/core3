@@ -37,8 +37,8 @@ case class ContainerSet(objectsType: ContainerType, containers: Vector[Container
 object ContainerSetJsonProtocol {
   implicit val containerSetPartialWrites = new Writes[ContainerSet] {
     def writes(obj: ContainerSet) = Json.obj(
-      "objectsType" -> JsString(obj.objectsType),
-      "setSize" -> JsNumber(obj.containers.size)
+      "objectsType" -> obj.objectsType,
+      "setSize" -> obj.containers.size
     )
   }
 
@@ -49,9 +49,9 @@ object ContainerSetJsonProtocol {
 
   implicit val containerSetFullWrites = new Writes[ContainerSet] {
     def writes(obj: ContainerSet) = Json.obj(
-      "objectsType" -> JsString(obj.objectsType),
-      "setSize" -> JsNumber(obj.containers.size),
-      "containers" -> JsArray(obj.containers.map { c => JSONConverter.toJsonData(c, JsonDataFormat.Full) })
+      "objectsType" -> obj.objectsType,
+      "setSize" -> obj.containers.size,
+      "containers" -> obj.containers.map(JSONConverter.toJsonData)
     )
   }
 
