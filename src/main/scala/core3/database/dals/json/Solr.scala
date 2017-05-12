@@ -187,8 +187,8 @@ class Solr(
             getSearchFields(objectsType).map {
               case (fieldName, fieldType) =>
                 Map(
-                  "name" -> JsString(fieldName),
-                  "type" -> JsString(fieldType)
+                  "name" -> fieldName,
+                  "type" -> fieldType
                 )
             }
         )
@@ -263,13 +263,13 @@ class Solr(
   override protected def handle_CreateObject(container: Container): Future[Boolean] = {
     count_Create += 1
 
-    val containerData = getJSONDataFromContainer(container)
-
-    val jsonData = JsObject(Map[String, JsValue](
-      "add" -> JsObject(Map[String, JsValue](
-        "commitWithin" -> JsNumber(commitWithin),
-        "overwrite" -> JsBoolean(false),
-        "doc" -> containerData))))
+    val jsonData = Json.obj(
+      "add" -> Json.obj(
+        "commitWithin" -> commitWithin,
+        "overwrite" -> false,
+        "doc" -> getJSONDataFromContainer(container)
+      )
+    )
 
     for {
       response <- ws.url(s"$baseURL/solr/${getCollectionName(container.objectType)}/update/json")
@@ -285,13 +285,13 @@ class Solr(
   override protected def handle_UpdateObject(container: MutableContainer): Future[Boolean] = {
     count_Update += 1
 
-    val containerData = getJSONDataFromContainer(container)
-
-    val jsonData = JsObject(Map[String, JsValue](
-      "add" -> JsObject(Map[String, JsValue](
-        "commitWithin" -> JsNumber(commitWithin),
-        "overwrite" -> JsBoolean(true),
-        "doc" -> containerData))))
+    val jsonData = Json.obj(
+      "add" -> Json.obj(
+        "commitWithin" -> commitWithin,
+        "overwrite" -> true,
+        "doc" -> getJSONDataFromContainer(container)
+      )
+    )
 
     for {
       response <- ws.url(s"$baseURL/solr/${getCollectionName(container.objectType)}/update/json")

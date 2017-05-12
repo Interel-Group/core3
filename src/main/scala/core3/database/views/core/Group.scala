@@ -76,7 +76,7 @@ object Group extends JSONContainerViewCompanion {
       JsSuccess(
         Group(
           group,
-          (json \ "events").as[JsArray].value.map(c => JSONConverter.fromJsonData(group.itemsType, c)).toVector
+          (json \ "items").as[JsArray].value.map(c => JSONConverter.fromJsonData(group.itemsType, c)).toVector
         )
       )
   }

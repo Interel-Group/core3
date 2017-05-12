@@ -58,7 +58,7 @@ object SystemUpdateGroup extends WorkflowBase {
         (rawParams \ "revision").as[RevisionID],
         (rawParams \ "revisionNumber").as[RevisionSequenceNumber],
         (rawParams \ "name").asOpt[String],
-        (rawParams \ "items").asOpt[JsArray] map (_.value.map(_.as[ObjectID]).to[Vector])
+        (rawParams \ "items").asOpt[Vector[ObjectID]]
       )
     }
   }

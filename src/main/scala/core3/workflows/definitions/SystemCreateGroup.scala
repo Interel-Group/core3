@@ -43,7 +43,7 @@ object SystemCreateGroup extends WorkflowBase {
       SystemAddGroupParameters(
         (rawParams \ "shortName").as[String],
         (rawParams \ "name").as[String],
-        (rawParams \ "items").as[JsArray].value.map(_.as[ObjectID]).to[Vector],
+        (rawParams \ "items").as[Vector[ObjectID]],
         (rawParams \ "itemsType").as[String]
       )
     }
