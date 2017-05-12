@@ -92,7 +92,7 @@ object LocalUser
 
     def updated = column[java.sql.Timestamp]("UPDATED", O.SqlType("DATETIME(3)"))
 
-    def updatedBy = column[String]("UPDATED_BY", O.Length(36))
+    def updatedBy = column[String]("UPDATED_BY")
 
     def revision = column[String]("REVISION", O.Length(36))
 
