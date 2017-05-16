@@ -23,7 +23,6 @@ import core3.utils._
 import play.api.libs.json._
 import slick.jdbc.MySQLProfile.api._
 import slick.jdbc.MySQLProfile.backend.DatabaseDef
-import slick.jdbc.SQLActionBuilder
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,13 +40,26 @@ object UserType {
       case "Service" => UserType.Service
     }
   }
+
+  implicit val columnType_userType = MappedColumnType.base[UserType, String](
+    { tp => tp.toString },
+    { str => UserType.fromString(str) }
+  )
+
+  implicit val userTypeReads = Reads {
+    json =>
+      json.validate[String] match {
+        case JsSuccess(value, _) => JsSuccess(UserType.fromString(value))
+        case JsError(e) => JsError(e)
+      }
+  }
 }
 
 case class LocalUser(
   userID: String,
   var hashedPassword: String,
   var passwordSalt: String,
-  var permissions: Seq[String],
+  var permissions: Vector[String],
   userType: UserType,
   var metadata: JsValue,
   created: Timestamp,
@@ -55,107 +67,54 @@ case class LocalUser(
   var updatedBy: String,
   id: ObjectID,
   var revision: RevisionID,
-  var revisionNumber: RevisionSequenceNumber)
+  var revisionNumber: RevisionSequenceNumber
+)
   extends MutableContainer {
   override val objectType: ContainerType = "LocalUser"
 }
 
-object LocalUser
-  extends JsonContainerCompanion
-    with SlickContainerCompanionImpl[(
-    String, String, String, String, String, String, String, java.sql.Timestamp, java.sql.Timestamp, String, String, Int
-    )] {
-  private type ContainerTupleDef = (
-    String, String, String, String, String, String, String, java.sql.Timestamp, java.sql.Timestamp, String, String, Int
-    )
+object LocalUser extends JsonContainerCompanion with SlickContainerCompanion {
+  import core3.database.dals.sql.conversions.ForMySQLProfile._
+  import shapeless._
+  import slickless._
 
   //
-  //SlickContainerCompanionImpl Definitions
+  //SlickContainerCompanion Definitions
   //
   private class TableDef(tag: Tag)
-    extends Table[ContainerTupleDef](tag, "core_local_users") {
-    def id = column[String]("ID", O.PrimaryKey, O.Length(36))
-
+    extends Table[LocalUser](tag, "core_local_users") {
     def userID = column[String]("USER_ID", O.Length(128))
 
     def hashedPassword = column[String]("HASHED_PASSWORD")
 
     def passwordSalt = column[String]("PASSWORD_SALT")
 
-    def permissions = column[String]("PERMISSIONS")
+    def permissions = column[Vector[String]]("PERMISSIONS")
 
-    def userType = column[String]("USER_TYPE")
+    def userType = column[UserType]("USER_TYPE")
 
-    def metadata = column[String]("METADATA")
+    def metadata = column[JsValue]("METADATA")
 
-    def created = column[java.sql.Timestamp]("CREATED", O.SqlType("DATETIME(3)"))
+    def created = column[Timestamp]("CREATED", O.SqlType("DATETIME(3)"))
 
-    def updated = column[java.sql.Timestamp]("UPDATED", O.SqlType("DATETIME(3)"))
+    def updated = column[Timestamp]("UPDATED", O.SqlType("DATETIME(3)"))
 
     def updatedBy = column[String]("UPDATED_BY")
 
-    def revision = column[String]("REVISION", O.Length(36))
+    def id = column[ObjectID]("ID", O.PrimaryKey)
 
-    def revisionNumber = column[Int]("REVISION_NUMBER")
+    def revision = column[RevisionID]("REVISION")
 
-    def * = (id, userID, hashedPassword, passwordSalt, permissions, userType, metadata, created, updated, updatedBy, revision, revisionNumber)
+    def revisionNumber = column[RevisionSequenceNumber]("REVISION_NUMBER")
+
+    def * = (userID :: hashedPassword :: passwordSalt :: permissions :: userType :: metadata :: created :: updated :: updatedBy :: id :: revision :: revisionNumber :: HNil).mappedWith(Generic[LocalUser])
 
     def idx = index("idx_uid", userID, unique = true)
   }
 
   private val query = TableQuery[TableDef]
-  private val compiledGetByID = Compiled((objectID: Rep[String]) => query.filter(_.id === objectID))
+  private val compiledGetByID = Compiled((objectID: Rep[ObjectID]) => query.filter(_.id === objectID))
   private val compiledGetByUserID = Compiled((userID: Rep[String]) => query.filter(_.userID === userID))
-
-  override protected def convertToTuple(container: Container): ContainerTupleDef = {
-    val c = container.asInstanceOf[LocalUser]
-    (c.id.toString,
-      c.userID,
-      c.hashedPassword,
-      c.passwordSalt,
-      c.permissions.mkString(","),
-      c.userType.toString,
-      c.metadata.toString,
-      new java.sql.Timestamp(c.created.getMillis),
-      new java.sql.Timestamp(c.updated.getMillis),
-      c.updatedBy,
-      c.revision.toString,
-      c.revisionNumber)
-  }
-
-  override protected def convertFromTuple(tuple: ContainerTupleDef): Container = {
-    val id = tuple._1
-    val userID = tuple._2
-    val hashedPassword = tuple._3
-    val passwordSalt = tuple._4
-    val permissions = if (tuple._5.isEmpty) {
-      Seq.empty
-    } else {
-      tuple._5.split(",").toSeq
-    }
-    val userType = UserType.fromString(tuple._6)
-    val metadata = Json.parse(tuple._7)
-    val created = tuple._8
-    val updated = tuple._9
-    val updatedBy = tuple._10
-    val revision = tuple._11
-    val revisionNumber = tuple._12
-
-    new LocalUser(
-      userID,
-      hashedPassword,
-      passwordSalt,
-      permissions,
-      userType,
-      metadata,
-      new Timestamp(created),
-      new Timestamp(updated),
-      updatedBy,
-      database.getObjectIDFromString(id),
-      database.getRevisionIDFromString(revision),
-      revisionNumber
-    )
-  }
 
   override def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
@@ -173,37 +132,37 @@ object LocalUser
     }
   }
 
-  override def runGenericQuery(query: SQLActionBuilder, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
-    val action = query.as[ContainerTupleDef]
+  override def runGenericQuery(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
+    val action = query.result
     db.run(action).map {
       result =>
-        result.map(convertFromTuple)
+        result.toVector
     }
   }
 
   override def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
-    val action = compiledGetByID(objectID.toString).result
+    val action = compiledGetByID(objectID).result
     db.run(action).map {
       result =>
-        convertFromTuple(result.head)
+        result.head
     }
   }
 
   override def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
-      _ <- db.run(query += convertToTuple(container))
+      _ <- db.run(query += container.asInstanceOf[LocalUser])
     } yield {
       true
     }
   }
 
   override def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val action = query.filter(_.id === container.id.toString).update(convertToTuple(container))
+    val action = compiledGetByID(container.id).update(container.asInstanceOf[LocalUser])
     db.run(action).map(_ == 1)
   }
 
   override def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val action = query.filter(_.id === objectID.toString).delete
+    val action = compiledGetByID(objectID).delete
     db.run(action).map(_ == 1)
   }
 
@@ -215,21 +174,13 @@ object LocalUser
 
     db.run(action).map {
       result =>
-        result.map(convertFromTuple).toVector
+        result.toVector
     }
   }
 
   //
   //JsonContainerCompanion Definitions
   //
-  implicit val userTypeReads: Reads[UserType] = Reads {
-    json =>
-      json.validate[String] match {
-        case JsSuccess(value, _) => JsSuccess(UserType.fromString(value))
-        case JsError(e) => JsError(e)
-      }
-  }
-
   private val writes = Writes[LocalUser] {
     obj =>
       Json.obj(
@@ -255,7 +206,7 @@ object LocalUser
           (json \ "userID").as[String],
           (json \ "hashedPassword").as[String],
           (json \ "passwordSalt").as[String],
-          (json \ "permissions").as[Seq[String]],
+          (json \ "permissions").as[Vector[String]],
           (json \ "userType").as[UserType],
           (json \ "metadata").as[JsValue],
           (json \ "created").as[Timestamp],
@@ -292,7 +243,7 @@ object LocalUser
     userID: String,
     hashedPassword: String,
     passwordSalt: String,
-    permissions: Seq[String],
+    permissions: Vector[String],
     userType: UserType,
     metadata: JsValue,
     createdBy: String

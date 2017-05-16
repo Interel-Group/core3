@@ -2,7 +2,6 @@ package core3.database.containers
 
 import core3.database.ObjectID
 import slick.jdbc.MySQLProfile.backend.DatabaseDef
-import slick.jdbc.SQLActionBuilder
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,7 +21,7 @@ trait SlickContainerCompanion extends BasicContainerCompanion {
 
   def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean]
 
-  def runGenericQuery(query: SQLActionBuilder, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]]
+  def runGenericQuery(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]]
 
   def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container]
 
@@ -33,15 +32,4 @@ trait SlickContainerCompanion extends BasicContainerCompanion {
   def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean]
 
   def runCustomQuery(queryName: String, queryParams: Map[String, String], db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]]
-}
-
-/**
-  * Implementation trait for containers supporting Slick data handling.
-  *
-  * Note: Only used by containers.
-  */
-trait SlickContainerCompanionImpl[ContainerTupleDef] extends SlickContainerCompanion {
-  protected def convertToTuple(container: Container): ContainerTupleDef
-
-  protected def convertFromTuple(tuple: ContainerTupleDef): Container
 }

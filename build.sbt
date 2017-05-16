@@ -21,6 +21,7 @@ lazy val core3 = (project in file("."))
     ),
     libraryDependencies ++= Seq(
       dependencies_base,
+      dependencies_slick, //TODO - make optional
       dependencies_cli              map (_ % Optional),
       dependencies_mariaDB          map (_ % Optional),
       dependencies_redis            map (_ % Optional),
@@ -61,15 +62,20 @@ lazy val dependencies_base = Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.7",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.7",
   "com.typesafe.play" %% "play-logback" % "2.5.13",
-  jdbc,
   cache,
   ws,
   filters,
   "com.github.nscala-time" %% "nscala-time" % "2.16.0",
   "com.pauldijou" %% "jwt-play-json" % "0.12.1",
   "com.roundeights" %% "hasher" % "1.2.0",
-  "com.typesafe.slick" %% "slick" % "3.2.0",
   "com.google.code.findbugs" % "jsr305" % "3.0.1" % Compile
+)
+
+lazy val dependencies_slick = Seq(
+  jdbc,
+  "com.chuusai" %% "shapeless" % "2.3.2",
+  "com.typesafe.slick" %% "slick" % "3.2.0",
+  "io.underscore"      %% "slickless" % "0.3.2"
 )
 
 lazy val dependencies_cli = Seq(

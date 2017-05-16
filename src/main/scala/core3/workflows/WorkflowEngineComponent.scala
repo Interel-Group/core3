@@ -99,7 +99,7 @@ class WorkflowEngineComponent(
           Future.failed(
             new RuntimeException(s"core3.workflows.WorkflowEngineComponent[$instanceID]::handle_getContainerWithRevision > " +
               s"Expected revision [$revision] with number [$revisionNumber] " +
-              s"but found revision [${container.revision}] with number [${container.revision}] " +
+              s"but found revision [${container.revision}] with number [${container.revisionNumber}] " +
               s"for [$containerType] container with ID [$objectID].")
           )
         }

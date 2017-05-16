@@ -23,7 +23,6 @@ import core3.utils._
 import play.api.libs.json._
 import slick.jdbc.MySQLProfile.api._
 import slick.jdbc.MySQLProfile.backend.DatabaseDef
-import slick.jdbc.SQLActionBuilder
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,92 +41,45 @@ case class Group(
   override val objectType: ContainerType = "Group"
 }
 
-object Group
-  extends JsonContainerCompanion
-    with SlickContainerCompanionImpl[(
-    String, String, String, String, String, java.sql.Timestamp, java.sql.Timestamp, String, String, Int
-    )] {
-  private type ContainerTupleDef = (
-    String, String, String, String, String, java.sql.Timestamp, java.sql.Timestamp, String, String, Int
-    )
+object Group extends JsonContainerCompanion with SlickContainerCompanion {
+  import core3.database.dals.sql.conversions.ForMySQLProfile._
+  import shapeless._
+  import slickless._
 
   //
-  //SlickContainerCompanionImpl Definitions
+  //SlickContainerCompanion Definitions
   //
   private class TableDef(tag: Tag)
-    extends Table[ContainerTupleDef](tag, "core_groups") {
-    def id = column[String]("ID", O.PrimaryKey, O.Length(36))
+    extends Table[Group](tag, "core_groups") {
 
     def shortName = column[String]("SHORT_NAME", O.Length(32))
 
     def name = column[String]("NAME")
 
-    def items = column[String]("ITEMS")
+    def items = column[Vector[ObjectID]]("ITEMS")
 
-    def itemsType = column[String]("ITEMS_TYPE")
+    def itemsType = column[ContainerType]("ITEMS_TYPE")
 
-    def created = column[java.sql.Timestamp]("CREATED", O.SqlType("DATETIME(3)"))
+    def created = column[Timestamp]("CREATED", O.SqlType("DATETIME(3)"))
 
-    def updated = column[java.sql.Timestamp]("UPDATED", O.SqlType("DATETIME(3)"))
+    def updated = column[Timestamp]("UPDATED", O.SqlType("DATETIME(3)"))
 
     def updatedBy = column[String]("UPDATED_BY")
 
-    def revision = column[String]("REVISION", O.Length(36))
+    def id = column[ObjectID]("ID", O.PrimaryKey)
 
-    def revisionNumber = column[Int]("REVISION_NUMBER")
+    def revision = column[RevisionID]("REVISION")
 
-    def * = (id, shortName, name, items, itemsType, created, updated, updatedBy, revision, revisionNumber)
+    def revisionNumber = column[RevisionSequenceNumber]("REVISION_NUMBER")
+
+    def * = (shortName :: name :: items :: itemsType :: created :: updated :: updatedBy :: id :: revision :: revisionNumber :: HNil).mappedWith(Generic[Group])
 
     def idx = index("idx_sn", shortName, unique = true)
   }
 
   private val query = TableQuery[TableDef]
-  private val compiledGetByID = Compiled((objectID: Rep[String]) => query.filter(_.id === objectID))
+  private val compiledGetByID = Compiled((objectID: Rep[ObjectID]) => query.filter(_.id === objectID))
   private val compiledGetByShortName = Compiled((shortName: Rep[String]) => query.filter(_.shortName === shortName))
-
-  override protected def convertToTuple(container: Container): ContainerTupleDef = {
-    val c = container.asInstanceOf[Group]
-    (c.id.toString,
-      c.shortName,
-      c.name,
-      c.items.mkString(","),
-      c.itemsType.toString,
-      new java.sql.Timestamp(c.created.getMillis),
-      new java.sql.Timestamp(c.updated.getMillis),
-      c.updatedBy,
-      c.revision.toString,
-      c.revisionNumber)
-  }
-
-  override protected def convertFromTuple(tuple: ContainerTupleDef): Container = {
-    val id = tuple._1
-    val shortName = tuple._2
-    val name = tuple._3
-    val items = if (tuple._4.isEmpty) {
-      Vector.empty
-    } else {
-      tuple._4.split(",").map { current => database.getObjectIDFromString(current) }.to[Vector]
-    }
-    val itemsType = tuple._5
-    val created = tuple._6
-    val updated = tuple._7
-    val updatedBy = tuple._8
-    val revision = tuple._9
-    val revisionNumber = tuple._10
-
-    new Group(
-      shortName,
-      name,
-      items,
-      itemsType,
-      new Timestamp(created),
-      new Timestamp(updated),
-      updatedBy,
-      database.getObjectIDFromString(id),
-      database.getRevisionIDFromString(revision),
-      revisionNumber
-    )
-  }
 
   override def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
@@ -145,37 +97,37 @@ object Group
     }
   }
 
-  override def runGenericQuery(query: SQLActionBuilder, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
-    val action = query.as[ContainerTupleDef]
+  override def runGenericQuery(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
+    val action = query.result
     db.run(action).map {
       result =>
-        result.map(convertFromTuple)
+        result.toVector
     }
   }
 
   override def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
-    val action = compiledGetByID(objectID.toString).result
+    val action = compiledGetByID(objectID).result
     db.run(action).map {
       result =>
-        convertFromTuple(result.head)
+        result.head
     }
   }
 
   override def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
-      _ <- db.run(query += convertToTuple(container))
+      _ <- db.run(query += container.asInstanceOf[Group])
     } yield {
       true
     }
   }
 
   override def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val action = query.filter(_.id === container.id.toString).update(convertToTuple(container))
+    val action = compiledGetByID(container.id).update(container.asInstanceOf[Group])
     db.run(action).map(_ == 1)
   }
 
   override def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val action = query.filter(_.id === objectID.toString).delete
+    val action = compiledGetByID(objectID).delete
     db.run(action).map(_ == 1)
   }
 
@@ -187,7 +139,7 @@ object Group
 
     db.run(action).map {
       result =>
-        result.map(convertFromTuple).toVector
+        result.toVector
     }
   }
 

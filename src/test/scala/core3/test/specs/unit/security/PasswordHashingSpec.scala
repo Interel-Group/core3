@@ -58,7 +58,7 @@ class PasswordHashingSpec extends AsyncUnitSpec {
             testUserID,
             hashedPassword,
             passwordSalt,
-            permissions = Seq(),
+            permissions = Vector.empty,
             UserType.Service,
             metadata = Json.obj(),
             createdBy = "test-user"

@@ -29,7 +29,7 @@ object SystemCreateLocalUser extends WorkflowBase {
     userID: String,
     hashedPassword: String,
     passwordSalt: String,
-    permissions: Seq[String],
+    permissions: Vector[String],
     userType: UserType,
     metadata: JsValue
   ) extends WorkflowParameters {
@@ -57,8 +57,8 @@ object SystemCreateLocalUser extends WorkflowBase {
         (rawParams \ "userID").as[String],
         (rawParams \ "hashedPassword").as[String],
         (rawParams \ "passwordSalt").as[String],
-        (rawParams \ "permissions").as[Seq[String]],
-        (rawParams \ "userType").as[UserType](core.LocalUser.userTypeReads),
+        (rawParams \ "permissions").as[Vector[String]],
+        (rawParams \ "userType").as[UserType],
         (rawParams \ "metadata").as[JsValue]
       )
     }

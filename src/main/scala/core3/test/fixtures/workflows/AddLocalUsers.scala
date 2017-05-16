@@ -43,7 +43,7 @@ object AddLocalUsers extends WorkflowBase {
       val users = for {
         i <- 1 to testUsersCount
       } yield {
-        core.LocalUser(s"testID$i", s"test password #$i", s"test salt #$i", Seq("A", "B"), UserType.Client, Json.obj("C" -> "D"), "test-user")
+        core.LocalUser(s"testID$i", s"test password #$i", s"test salt #$i", Vector("A", "B"), UserType.Client, Json.obj("C" -> "D"), "test-user")
       }
 
       (WorkflowResult(wasSuccessful = true, requestID, message = None, data = None), OutputData(add = users.toVector))

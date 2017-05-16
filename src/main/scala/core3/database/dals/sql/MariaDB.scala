@@ -152,10 +152,8 @@ class MariaDB(
 
     count_GenericQuery += 1
 
-    val table = getDatabaseName(objectsType)
-
     assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_GetGenericQueryResult > Object type [$objectsType] is not supported.")
-    containerCompanions(objectsType).runGenericQuery(sql"""SELECT * FROM #$table""", db)
+    containerCompanions(objectsType).runGenericQuery(db)
   }
 
   override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {

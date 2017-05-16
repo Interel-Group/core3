@@ -29,7 +29,7 @@ object SystemUpdateLocalUserPermissions extends WorkflowBase {
     userUUID: ObjectID,
     revision: RevisionID,
     revisionNumber: RevisionSequenceNumber,
-    permissions: Seq[String]
+    permissions: Vector[String]
   ) extends WorkflowParameters {
     override def asJson: JsValue = Json.obj(
       "userUUID" -> userUUID,
@@ -59,7 +59,7 @@ object SystemUpdateLocalUserPermissions extends WorkflowBase {
         (rawParams \ "userUUID").as[ObjectID],
         (rawParams \ "revision").as[RevisionID],
         (rawParams \ "revisionNumber").as[RevisionSequenceNumber],
-        (rawParams \ "permissions").as[Seq[String]]
+        (rawParams \ "permissions").as[Vector[String]]
       )
     }
   }
