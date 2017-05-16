@@ -16,7 +16,7 @@
 package core3.workflows.definitions
 
 import core3.database.containers.core
-import core3.database.containers.core.UserType
+import core3.database.containers.core.LocalUser.UserType
 import core3.security.UserTokenBase
 import core3.workflows._
 import play.api.libs.json.{JsValue, Json}

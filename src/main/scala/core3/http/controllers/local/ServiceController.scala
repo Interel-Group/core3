@@ -16,7 +16,8 @@
 package core3.http.controllers.local
 
 import com.typesafe.config.Config
-import core3.database.containers.core.{LocalUser, UserType}
+import core3.database.containers.core.LocalUser
+import core3.database.containers.core.LocalUser.UserType
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.http.controllers.ServiceControllerBase
 import core3.http.handlers

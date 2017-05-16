@@ -110,12 +110,12 @@ class MariaDB(
 
   override protected def handle_BuildDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::buildDatabaseStructure > Object type [$objectsType] is not supported.")
-    containerCompanions(objectsType).runCreateSchema(db)
+    db.run(containerCompanions(objectsType).createSchemaAction()).map(_ => true)
   }
 
   override protected def handle_ClearDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_ClearDatabaseStructure > Object type [$objectsType] is not supported.")
-    containerCompanions(objectsType).runDropSchema(db)
+    db.run(containerCompanions(objectsType).dropSchemaAction()).map(_ => true)
   }
 
   override protected def handle_ExecuteAction(action: String, params: Option[Map[String, Option[String]]]): Future[ActionResult] = {
@@ -153,7 +153,7 @@ class MariaDB(
     count_GenericQuery += 1
 
     assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_GetGenericQueryResult > Object type [$objectsType] is not supported.")
-    containerCompanions(objectsType).runGenericQuery(db)
+    db.run(containerCompanions(objectsType).genericQueryAction).map(_.toVector)
   }
 
   override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
@@ -161,7 +161,7 @@ class MariaDB(
 
     count_CustomQuery += 1
 
-    containerCompanions(objectsType).runCustomQuery(customQueryName, queryParams, db)
+    db.run(containerCompanions(objectsType).customQueryAction(customQueryName, queryParams)).map(_.toVector)
   }
 
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
@@ -169,7 +169,7 @@ class MariaDB(
 
     count_Get += 1
 
-    containerCompanions(objectType).runGet(objectID, db)
+    db.run(containerCompanions(objectType).getAction(objectID)).map(_.head)
   }
 
   override protected def handle_CreateObject(container: Container): Future[Boolean] = {
@@ -177,7 +177,7 @@ class MariaDB(
 
     count_Create += 1
 
-    containerCompanions(container.objectType).runCreate(container, db)
+    db.run(containerCompanions(container.objectType).createAction(container)).map(_ == 1)
   }
 
   override protected def handle_UpdateObject(container: MutableContainer): Future[Boolean] = {
@@ -185,7 +185,7 @@ class MariaDB(
 
     count_Update += 1
 
-    containerCompanions(container.objectType).runUpdate(container, db)
+    db.run(containerCompanions(container.objectType).updateAction(container)).map(_ == 1)
   }
 
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
@@ -193,7 +193,7 @@ class MariaDB(
 
     count_Delete += 1
 
-    containerCompanions(objectType).runDelete(objectID, db)
+    db.run(containerCompanions(objectType).deleteAction(objectID)).map(_ == 1)
   }
 }
 

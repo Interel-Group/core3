@@ -1,9 +1,7 @@
 package core3.database.containers
 
 import core3.database.ObjectID
-import slick.jdbc.MySQLProfile.backend.DatabaseDef
-
-import scala.concurrent.{ExecutionContext, Future}
+import slick.dbio.{DBIOAction, NoStream, Effect}
 
 /**
   * Usage trait for containers supporting Slick data handling.
@@ -17,19 +15,19 @@ import scala.concurrent.{ExecutionContext, Future}
   * </p>
   */
 trait SlickContainerCompanion extends BasicContainerCompanion {
-  def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean]
+  def createSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema]
 
-  def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean]
+  def dropSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema]
 
-  def runGenericQuery(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]]
+  def genericQueryAction: DBIOAction[Seq[Container], NoStream, Effect.Read]
 
-  def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container]
+  def getAction(objectID: ObjectID): DBIOAction[Seq[Container], NoStream, Effect.Read]
 
-  def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean]
+  def createAction(container: Container): DBIOAction[Int, NoStream, Effect.Write]
 
-  def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean]
+  def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write]
 
-  def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean]
+  def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write]
 
-  def runCustomQuery(queryName: String, queryParams: Map[String, String], db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]]
+  def customQueryAction(queryName: String, queryParams: Map[String, String]): DBIOAction[Seq[Container], NoStream, Effect.Read]
 }

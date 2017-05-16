@@ -21,10 +21,6 @@ import core3.database.{ContainerType, ObjectID, RevisionID, RevisionSequenceNumb
 import core3.utils.Time._
 import core3.utils._
 import play.api.libs.json._
-import slick.jdbc.MySQLProfile.api._
-import slick.jdbc.MySQLProfile.backend.DatabaseDef
-
-import scala.concurrent.{ExecutionContext, Future}
 
 case class Group(
   shortName: String,
@@ -42,6 +38,8 @@ case class Group(
 }
 
 object Group extends JsonContainerCompanion with SlickContainerCompanion {
+
+  import slick.jdbc.MySQLProfile.api._
   import core3.database.dals.sql.conversions.ForMySQLProfile._
   import shapeless._
   import slickless._
@@ -81,65 +79,18 @@ object Group extends JsonContainerCompanion with SlickContainerCompanion {
   private val compiledGetByID = Compiled((objectID: Rep[ObjectID]) => query.filter(_.id === objectID))
   private val compiledGetByShortName = Compiled((shortName: Rep[String]) => query.filter(_.shortName === shortName))
 
-  override def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query.schema.create)
-    } yield {
-      true
-    }
-  }
+  override def createSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.create
+  override def dropSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.drop
+  override def genericQueryAction: DBIOAction[Seq[Container], NoStream, Effect.Read] = query.result
+  override def getAction(objectID: ObjectID): DBIOAction[Seq[Container], NoStream, Effect.Read] = compiledGetByID(objectID).result
+  override def createAction(container: Container): DBIOAction[Int, NoStream, Effect.Write] = query += container.asInstanceOf[Group]
+  override def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(container.id).update(container.asInstanceOf[Group])
+  override def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(objectID).delete
 
-  override def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query.schema.drop)
-    } yield {
-      true
-    }
-  }
-
-  override def runGenericQuery(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
-    val action = query.result
-    db.run(action).map {
-      result =>
-        result.toVector
-    }
-  }
-
-  override def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
-    val action = compiledGetByID(objectID).result
-    db.run(action).map {
-      result =>
-        result.head
-    }
-  }
-
-  override def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query += container.asInstanceOf[Group])
-    } yield {
-      true
-    }
-  }
-
-  override def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val action = compiledGetByID(container.id).update(container.asInstanceOf[Group])
-    db.run(action).map(_ == 1)
-  }
-
-  override def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val action = compiledGetByID(objectID).delete
-    db.run(action).map(_ == 1)
-  }
-
-  override def runCustomQuery(queryName: String, queryParams: Map[String, String], db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
-    val action = queryName match {
+  override def customQueryAction(queryName: String, queryParams: Map[String, String]): DBIOAction[Seq[Container], NoStream, Effect.Read] = {
+    queryName match {
       case "getByShortName" => compiledGetByShortName(queryParams("shortName")).result
       case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Group::runCustomQuery > Query [$queryName] is not supported.")
-    }
-
-    db.run(action).map {
-      result =>
-        result.toVector
     }
   }
 
@@ -177,17 +128,6 @@ object Group extends JsonContainerCompanion with SlickContainerCompanion {
           (json \ "revision").as[RevisionID],
           (json \ "revisionNumber").as[RevisionSequenceNumber]
         )
-      )
-  }
-
-  private val cacheWrites = Writes[Group] {
-    obj =>
-      Json.obj(
-        "shortName" -> obj.shortName,
-        "name" -> obj.name,
-        "items" -> obj.items,
-        "itemsType" -> obj.itemsType,
-        "id" -> obj.id
       )
   }
 

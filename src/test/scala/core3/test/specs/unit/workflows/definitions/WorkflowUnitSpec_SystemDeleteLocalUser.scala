@@ -18,7 +18,7 @@ package core3.test.specs.unit.workflows.definitions
 import akka.actor.ActorRef
 import akka.pattern.ask
 import core3.database.containers.core
-import core3.database.containers.core.UserType
+import core3.database.containers.core.LocalUser.UserType
 import core3.database.dals.Core.{BuildAllDatabases, ClearAllDatabases, VerifyAllDatabases}
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.security.Auth0UserToken

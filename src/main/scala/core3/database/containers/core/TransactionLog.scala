@@ -22,10 +22,6 @@ import core3.utils.Time._
 import core3.utils._
 import core3.workflows._
 import play.api.libs.json._
-import slick.jdbc.MySQLProfile.api._
-import slick.jdbc.MySQLProfile.backend.DatabaseDef
-
-import scala.concurrent.{ExecutionContext, Future}
 
 case class TransactionLog(
   workflowName: String,
@@ -43,6 +39,8 @@ case class TransactionLog(
 }
 
 object TransactionLog extends JsonContainerCompanion with SlickContainerCompanion {
+
+  import slick.jdbc.MySQLProfile.api._
   import core3.database.dals.sql.conversions.ForMySQLProfile._
   import shapeless._
   import slickless._
@@ -79,56 +77,16 @@ object TransactionLog extends JsonContainerCompanion with SlickContainerCompanio
   private val compiledGetByID = Compiled((objectID: Rep[ObjectID]) => query.filter(_.id === objectID))
   private val compiledGetBetweenTimestamps = Compiled((start: Rep[Timestamp], end: Rep[Timestamp]) => query.filter(_.timestamp between(start, end)))
 
-  override def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query.schema.create)
-    } yield {
-      true
-    }
-  }
+  override def createSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.create
+  override def dropSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.drop
+  override def genericQueryAction: DBIOAction[Seq[Container], NoStream, Effect.Read] = query.result
+  override def getAction(objectID: ObjectID): DBIOAction[Seq[Container], NoStream, Effect.Read] = compiledGetByID(objectID).result
+  override def createAction(container: Container): DBIOAction[Int, NoStream, Effect.Write] = query += container.asInstanceOf[TransactionLog]
+  override def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(container.id).update(container.asInstanceOf[TransactionLog])
+  override def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(objectID).delete
 
-  override def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query.schema.drop)
-    } yield {
-      true
-    }
-  }
-
-  override def runGenericQuery(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
-    val action = query.result
-    db.run(action).map {
-      result =>
-        result.toVector
-    }
-  }
-
-  override def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
-    val action = compiledGetByID(objectID).result
-    db.run(action).map {
-      result =>
-        result.head
-    }
-  }
-
-  override def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query += container.asInstanceOf[TransactionLog])
-    } yield {
-      true
-    }
-  }
-
-  override def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    Future.failed(new IllegalArgumentException("core3.database.containers.core.TransactionLog::runUpdate > Cannot update 'TransactionLog' data."))
-  }
-
-  override def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    Future.failed(new IllegalArgumentException("core3.database.containers.core.TransactionLog::runDelete > Cannot delete 'TransactionLog' data."))
-  }
-
-  override def runCustomQuery(queryName: String, queryParams: Map[String, String], db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
-    val action = queryName match {
+  override def customQueryAction(queryName: String, queryParams: Map[String, String]): DBIOAction[Seq[Container], NoStream, Effect.Read] = {
+    queryName match {
       case "getBetweenTimestamps" =>
         compiledGetBetweenTimestamps((
           queryParams("start").toTimestamp(TimestampFormat.DefaultTimestamp),
@@ -136,11 +94,6 @@ object TransactionLog extends JsonContainerCompanion with SlickContainerCompanio
         )).result
 
       case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::runCustomQuery > Query [$queryName] is not supported.")
-    }
-
-    db.run(action).map {
-      result =>
-        result.toVector
     }
   }
 

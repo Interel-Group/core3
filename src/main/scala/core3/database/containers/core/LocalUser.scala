@@ -21,46 +21,13 @@ import core3.database.{ContainerType, ObjectID, RevisionID, RevisionSequenceNumb
 import core3.utils.Time._
 import core3.utils._
 import play.api.libs.json._
-import slick.jdbc.MySQLProfile.api._
-import slick.jdbc.MySQLProfile.backend.DatabaseDef
-
-import scala.concurrent.{ExecutionContext, Future}
-
-sealed trait UserType
-
-object UserType {
-
-  case object Client extends UserType
-
-  case object Service extends UserType
-
-  def fromString(value: String): UserType = {
-    value match {
-      case "Client" => UserType.Client
-      case "Service" => UserType.Service
-    }
-  }
-
-  implicit val columnType_userType = MappedColumnType.base[UserType, String](
-    { tp => tp.toString },
-    { str => UserType.fromString(str) }
-  )
-
-  implicit val userTypeReads = Reads {
-    json =>
-      json.validate[String] match {
-        case JsSuccess(value, _) => JsSuccess(UserType.fromString(value))
-        case JsError(e) => JsError(e)
-      }
-  }
-}
 
 case class LocalUser(
   userID: String,
   var hashedPassword: String,
   var passwordSalt: String,
   var permissions: Vector[String],
-  userType: UserType,
+  userType: LocalUser.UserType,
   var metadata: JsValue,
   created: Timestamp,
   var updated: Timestamp,
@@ -74,9 +41,39 @@ case class LocalUser(
 }
 
 object LocalUser extends JsonContainerCompanion with SlickContainerCompanion {
+
+  import slick.jdbc.MySQLProfile.api._
   import core3.database.dals.sql.conversions.ForMySQLProfile._
   import shapeless._
   import slickless._
+
+  sealed trait UserType
+
+  object UserType {
+
+    case object Client extends UserType
+
+    case object Service extends UserType
+
+    def fromString(value: String): UserType = {
+      value match {
+        case "Client" => UserType.Client
+        case "Service" => UserType.Service
+      }
+    }
+
+    implicit val columnType_userType = MappedColumnType.base[UserType, String](
+      { tp => tp.toString }, { str => UserType.fromString(str) }
+    )
+
+    implicit val userTypeReads = Reads {
+      json =>
+        json.validate[String] match {
+          case JsSuccess(value, _) => JsSuccess(UserType.fromString(value))
+          case JsError(e) => JsError(e)
+        }
+    }
+  }
 
   //
   //SlickContainerCompanion Definitions
@@ -116,65 +113,18 @@ object LocalUser extends JsonContainerCompanion with SlickContainerCompanion {
   private val compiledGetByID = Compiled((objectID: Rep[ObjectID]) => query.filter(_.id === objectID))
   private val compiledGetByUserID = Compiled((userID: Rep[String]) => query.filter(_.userID === userID))
 
-  override def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query.schema.create)
-    } yield {
-      true
-    }
-  }
+  override def createSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.create
+  override def dropSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.drop
+  override def genericQueryAction: DBIOAction[Seq[Container], NoStream, Effect.Read] = query.result
+  override def getAction(objectID: ObjectID): DBIOAction[Seq[Container], NoStream, Effect.Read] = compiledGetByID(objectID).result
+  override def createAction(container: Container): DBIOAction[Int, NoStream, Effect.Write] = query += container.asInstanceOf[LocalUser]
+  override def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(container.id).update(container.asInstanceOf[LocalUser])
+  override def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(objectID).delete
 
-  override def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query.schema.drop)
-    } yield {
-      true
-    }
-  }
-
-  override def runGenericQuery(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
-    val action = query.result
-    db.run(action).map {
-      result =>
-        result.toVector
-    }
-  }
-
-  override def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
-    val action = compiledGetByID(objectID).result
-    db.run(action).map {
-      result =>
-        result.head
-    }
-  }
-
-  override def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query += container.asInstanceOf[LocalUser])
-    } yield {
-      true
-    }
-  }
-
-  override def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val action = compiledGetByID(container.id).update(container.asInstanceOf[LocalUser])
-    db.run(action).map(_ == 1)
-  }
-
-  override def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val action = compiledGetByID(objectID).delete
-    db.run(action).map(_ == 1)
-  }
-
-  override def runCustomQuery(queryName: String, queryParams: Map[String, String], db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
-    val action = queryName match {
+  override def customQueryAction(queryName: String, queryParams: Map[String, String]): DBIOAction[Seq[Container], NoStream, Effect.Read] = {
+    queryName match {
       case "getByUserID" => compiledGetByUserID(queryParams("userID")).result
       case _ => throw new IllegalArgumentException(s"core3.database.containers.core.LocalUser::runCustomQuery > Query [$queryName] is not supported.")
-    }
-
-    db.run(action).map {
-      result =>
-        result.toVector
     }
   }
 

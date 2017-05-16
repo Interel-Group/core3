@@ -20,7 +20,7 @@ import java.security.SecureRandom
 import com.typesafe.config.Config
 import core3.config.StaticConfig
 import core3.database.containers.core
-import core3.database.containers.core.UserType
+import core3.database.containers.core.LocalUser.UserType
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.test.fixtures.{Database, TestSystem}
 import core3.test.specs.unit.AsyncUnitSpec
