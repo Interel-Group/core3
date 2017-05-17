@@ -82,8 +82,12 @@ object TransactionLog extends JsonContainerCompanion with SlickContainerCompanio
   override def genericQueryAction: DBIOAction[Seq[Container], NoStream, Effect.Read] = query.result
   override def getAction(objectID: ObjectID): DBIOAction[Seq[Container], NoStream, Effect.Read] = compiledGetByID(objectID).result
   override def createAction(container: Container): DBIOAction[Int, NoStream, Effect.Write] = query += container.asInstanceOf[TransactionLog]
-  override def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(container.id).update(container.asInstanceOf[TransactionLog])
-  override def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(objectID).delete
+
+  override def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write] =
+    throw new IllegalStateException("core3.database.containers.core.TransactionLog::runUpdate > Cannot update 'TransactionLog' data.")
+
+  override def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write] =
+    throw new IllegalStateException("core3.database.containers.core.TransactionLog::runUpdate > Cannot delete 'TransactionLog' data.")
 
   override def customQueryAction(queryName: String, queryParams: Map[String, String]): DBIOAction[Seq[Container], NoStream, Effect.Read] = {
     queryName match {
