@@ -157,7 +157,7 @@ object TransactionLog extends JsonContainerCompanion with SlickContainerCompanio
         val log = container.asInstanceOf[TransactionLog]
         queryParams("start").toTimestamp(TimestampFormat.DefaultTimestamp).isBefore(log.timestamp) && queryParams("end").toTimestamp(TimestampFormat.DefaultTimestamp).isAfter(log.timestamp)
 
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Log::matchCustomQuery > Query [$queryName] is not supported.")
+      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::matchCustomQuery > Query [$queryName] is not supported.")
     }
   }
 
