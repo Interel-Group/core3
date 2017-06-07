@@ -126,7 +126,7 @@ class CouchDB(
     * @return a <code>Future[Boolean]</code> holding the result of the check
     * @throws RuntimeException if the response codes do not match
     */
-  private def checkResponse(response: WSResponse, expectedResponseCodes: Seq[Int], callerName: String): Future[Boolean] = {
+  private def checkResponse(response: WSResponse, expectedResponseCodes: Vector[Int], callerName: String): Future[Boolean] = {
     if (!expectedResponseCodes.contains(response.status)) {
       Future.failed(
         new RuntimeException(
@@ -148,7 +148,7 @@ class CouchDB(
     * @throws RuntimeException if the response codes do not match
     */
   private def checkResponse(response: WSResponse, expectedResponseCode: Int, callerName: String): Future[Boolean] = {
-    checkResponse(response, Seq(expectedResponseCode), callerName)
+    checkResponse(response, Vector(expectedResponseCode), callerName)
   }
 
   /**
@@ -374,7 +374,7 @@ class CouchDB(
         .withAuth(username, password, WSAuthScheme.BASIC)
         .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .put(jsonData)
-      _ <- checkResponse(response, Seq(200, 201), "createObject")
+      _ <- checkResponse(response, Vector(200, 201), "createObject")
     } yield {
       true
     }
@@ -472,7 +472,7 @@ object CouchDB extends ComponentCompanion {
     timeout
   )
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
   }
 }

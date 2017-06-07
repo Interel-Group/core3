@@ -104,7 +104,7 @@ object ServiceConnectionComponent extends ComponentCompanion {
   def props(ws: WSClient, authConfig: Config)(implicit ec: ExecutionContext): Props =
     Props(classOf[ServiceConnectionComponent], ws, authConfig, ec)
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
   }
 }

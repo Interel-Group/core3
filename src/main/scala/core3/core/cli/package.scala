@@ -37,7 +37,7 @@ package object cli {
     *
     * @param data the component and action data to be used for generating command suggestions
     */
-  class BasicCompleter(private val data: Map[String, Seq[ActionDescriptor]]) extends Completer {
+  class BasicCompleter(private val data: Map[String, Vector[ActionDescriptor]]) extends Completer {
     override def complete(reader: LineReader, line: ParsedLine, candidates: util.List[Candidate]): Unit = {
       line.wordIndex() match {
         case 0 => data.keys.foreach(component => candidates.add(new Candidate(component)))

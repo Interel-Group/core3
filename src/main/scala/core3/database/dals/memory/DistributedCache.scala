@@ -366,8 +366,8 @@ object DistributedCache extends ComponentCompanion {
     timeout
   )
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(
       ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None),
       ActionDescriptor("reload", "Reloads the cache for the specified objects/container type", arguments = Some(Map("objectsType" -> "(optional) [<container type>]")))
     )

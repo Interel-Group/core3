@@ -41,7 +41,7 @@ class LocalConsole(
   appName: String,
   appVersion: String,
   manager: ActorRef,
-  components: Seq[ComponentDescriptor],
+  components: Vector[ComponentDescriptor],
   private var enableStackTrace: Boolean
 )(implicit ec: ExecutionContext, timeout: Timeout) {
   private val parser = CommandParser(appVendor, appName, appVersion, components)
@@ -72,7 +72,7 @@ class LocalConsole(
           case "show-trace" => enableStackTrace = true
           case "hide-trace" => enableStackTrace = false
           case line =>
-            parser.parse(line.split(" "), CommandConfig()) match {
+            parser.parse(line.split(" ").toVector, CommandConfig()) match {
               case Some(config) => config.component.get match {
                 case "help" => printToConsole(parser.usageMessage(config.action))
                 case "version" => //do nothing
@@ -115,7 +115,7 @@ object LocalConsole {
     appVersion: String,
     manager: ActorRef
   )(implicit ec: ExecutionContext, timeout: Timeout): LocalConsole =
-    new LocalConsole(appVendor, appName, appVersion, manager, Seq.empty, enableStackTrace = false)
+    new LocalConsole(appVendor, appName, appVersion, manager, Vector.empty, enableStackTrace = false)
 
   def apply(
     appVendor: String,
@@ -124,14 +124,14 @@ object LocalConsole {
     manager: ActorRef,
     enableStackTrace: Boolean
   )(implicit ec: ExecutionContext, timeout: Timeout): LocalConsole =
-    new LocalConsole(appVendor, appName, appVersion, manager, Seq.empty, enableStackTrace)
+    new LocalConsole(appVendor, appName, appVersion, manager, Vector.empty, enableStackTrace)
 
   def apply(
     appVendor: String,
     appName: String,
     appVersion: String,
     manager: ActorRef,
-    components: Seq[ComponentDescriptor]
+    components: Vector[ComponentDescriptor]
   )(implicit ec: ExecutionContext, timeout: Timeout): LocalConsole =
     new LocalConsole(appVendor, appName, appVersion, manager, components, enableStackTrace = false)
 
@@ -140,7 +140,7 @@ object LocalConsole {
     appName: String,
     appVersion: String,
     manager: ActorRef,
-    components: Seq[ComponentDescriptor],
+    components: Vector[ComponentDescriptor],
     enableStackTrace: Boolean
   )(implicit ec: ExecutionContext, timeout: Timeout): LocalConsole =
     new LocalConsole(appVendor, appName, appVersion, manager, components, enableStackTrace)

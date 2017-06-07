@@ -16,6 +16,6 @@
 package core3.security
 
 class NoAuthUserToken extends UserTokenBase {
-  override def permissions: Seq[String] = Seq.empty
+  override def permissions: Vector[String] = Vector.empty
   override def userID: String = "none"
 }

@@ -581,8 +581,8 @@ object Core extends ComponentCompanion {
     timeout
   )
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(
       ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None),
       ActionDescriptor("sync", "Synchronizes data between DALs", arguments = Some(Map("objectsType" -> "(required) [all|<container type>]"))),
       ActionDescriptor("build", "Builds one or more of the configured databases", arguments = Some(Map("objectsType" -> "(required) [all|<container type>]"))),

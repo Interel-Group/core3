@@ -52,8 +52,8 @@ class ServiceSpec extends AsyncUnitSpec {
       val testBody = "<p>Test</p>"
 
       for {
-        _ <- fixture.srv ? SendMessage(testSource, Seq(testTarget1), testSubject, testBody)
-        _ <- fixture.srv ? SendMessage(testSource, Seq(testTarget1, testTarget2, testTarget3), testSubject, testBody, Seq.empty, Seq.empty)
+        _ <- fixture.srv ? SendMessage(testSource, Vector(testTarget1), testSubject, testBody)
+        _ <- fixture.srv ? SendMessage(testSource, Vector(testTarget1, testTarget2, testTarget3), testSubject, testBody, Vector.empty, Vector.empty)
       } yield {
         val targetMailbox1 = Mailbox.get(testTarget1)
         val targetMailbox2 = Mailbox.get(testTarget2)
@@ -85,43 +85,43 @@ class ServiceSpec extends AsyncUnitSpec {
       val testBody = "<p>Test</p>"
 
       assertThrows[IllegalArgumentException] {
-        (fixture.srv ? SendMessage("", Seq(testTarget1), testSubject, testBody)).await(printTrace = false)
+        (fixture.srv ? SendMessage("", Vector(testTarget1), testSubject, testBody)).await(printTrace = false)
       }
 
       assertThrows[IllegalArgumentException] {
-        (fixture.srv ? SendMessage(testSource, Seq(""), testSubject, testBody)).await(printTrace = false)
+        (fixture.srv ? SendMessage(testSource, Vector(""), testSubject, testBody)).await(printTrace = false)
       }
 
       assertThrows[IllegalArgumentException] {
-        (fixture.srv ? SendMessage(testSource, Seq(testTarget1), "", testBody)).await(printTrace = false)
+        (fixture.srv ? SendMessage(testSource, Vector(testTarget1), "", testBody)).await(printTrace = false)
       }
 
       assertThrows[IllegalArgumentException] {
-        (fixture.srv ? SendMessage(testSource, Seq(testTarget1), testSubject, "")).await(printTrace = false)
+        (fixture.srv ? SendMessage(testSource, Vector(testTarget1), testSubject, "")).await(printTrace = false)
       }
 
       assertThrows[IllegalArgumentException] {
-        (fixture.srv ? SendMessage("", Seq(testTarget1, testTarget2, testTarget3), testSubject, testBody, Seq.empty, Seq.empty)).await(printTrace = false)
+        (fixture.srv ? SendMessage("", Vector(testTarget1, testTarget2, testTarget3), testSubject, testBody, Vector.empty, Vector.empty)).await(printTrace = false)
       }
 
       assertThrows[IllegalArgumentException] {
-        (fixture.srv ? SendMessage(testSource, Seq(), testSubject, testBody, Seq.empty, Seq.empty)).await(printTrace = false)
+        (fixture.srv ? SendMessage(testSource, Vector(), testSubject, testBody, Vector.empty, Vector.empty)).await(printTrace = false)
       }
 
       assertThrows[IllegalArgumentException] {
-        (fixture.srv ? SendMessage(testSource, Seq(testTarget1, testTarget2, testTarget3), "", testBody, Seq.empty, Seq.empty)).await(printTrace = false)
+        (fixture.srv ? SendMessage(testSource, Vector(testTarget1, testTarget2, testTarget3), "", testBody, Vector.empty, Vector.empty)).await(printTrace = false)
       }
 
       assertThrows[IllegalArgumentException] {
-        (fixture.srv ? SendMessage(testSource, Seq(testTarget1, testTarget2, testTarget3), testSubject, "", Seq.empty, Seq.empty)).await(printTrace = false)
+        (fixture.srv ? SendMessage(testSource, Vector(testTarget1, testTarget2, testTarget3), testSubject, "", Vector.empty, Vector.empty)).await(printTrace = false)
       }
 
       assertThrows[IllegalArgumentException] {
-        (fixture.srv ? SendMessage(testSource, Seq(""), testSubject, testBody, Seq.empty, Seq.empty)).await(printTrace = false)
+        (fixture.srv ? SendMessage(testSource, Vector(""), testSubject, testBody, Vector.empty, Vector.empty)).await(printTrace = false)
       }
 
       assertThrows[IllegalArgumentException] {
-        (fixture.srv ? SendMessage(testSource, Seq("", ""), testSubject, testBody, Seq.empty, Seq.empty)).await(printTrace = false)
+        (fixture.srv ? SendMessage(testSource, Vector("", ""), testSubject, testBody, Vector.empty, Vector.empty)).await(printTrace = false)
       }
 
       val targetMailbox1 = Mailbox.get(testTarget1)

@@ -158,7 +158,7 @@ object MemoryOnlyDB extends ComponentCompanion {
   def props(supportedContainers: Vector[String])(implicit ec: ExecutionContext, timeout: Timeout): Props =
     Props(classOf[MemoryOnlyDB], supportedContainers, ec, timeout)
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
   }
 }

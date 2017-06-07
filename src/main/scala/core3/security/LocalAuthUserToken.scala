@@ -26,11 +26,11 @@ import play.api.libs.json.JsValue
   * @param profile      user profile data
   * @param sessionToken the session associated with the user
   */
-class LocalAuthUserToken(val userID: String, val permissions: Seq[String], val profile: JsValue, val sessionToken: String) extends UserTokenBase {
+class LocalAuthUserToken(val userID: String, val permissions: Vector[String], val profile: JsValue, val sessionToken: String) extends UserTokenBase {
 }
 
 object LocalAuthUserToken {
-  def apply(userID: String, permissions: Seq[String], profile: JsValue, sessionToken: String): LocalAuthUserToken = new LocalAuthUserToken(userID, permissions, profile, sessionToken)
+  def apply(userID: String, permissions: Vector[String], profile: JsValue, sessionToken: String): LocalAuthUserToken = new LocalAuthUserToken(userID, permissions, profile, sessionToken)
 
   def apply(user: LocalUser, sessionToken: String): LocalAuthUserToken = new LocalAuthUserToken(user.userID, user.permissions, user.metadata, sessionToken)
 }

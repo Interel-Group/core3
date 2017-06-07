@@ -39,7 +39,7 @@ import scala.collection.JavaConversions._
   */
 @Singleton
 class ExchangeRates @Inject()(implicit ec: ExecutionContext, ws: WSClient, cache: CacheApi) {
-  def availableCurrencies: Seq[String] = DynamicConfig.get.getStringList("currencies.exchange.availableCurrencies")
+  def availableCurrencies: Vector[String] = DynamicConfig.get.getStringList("currencies.exchange.availableCurrencies").toVector
   def decimalScale: Int = DynamicConfig.get.getInt("currencies.exchange.decimalScale")
   def roundingMode: BigDecimal.RoundingMode.Value = BigDecimal.RoundingMode.withName(DynamicConfig.get.getString("currencies.exchange.roundingMode"))
 
@@ -127,7 +127,7 @@ class ExchangeRates @Inject()(implicit ec: ExecutionContext, ws: WSClient, cache
     * @param targetCurrency the value's target currency
     * @return the value in the target currency
     */
-  def convert(sourceValue: BigDecimal, sourceCurrency: String, targetCurrency: String) =
+  def convert(sourceValue: BigDecimal, sourceCurrency: String, targetCurrency: String): BigDecimal =
     convertWith(sourceValue, sourceCurrency, targetCurrency, getCurrentRates, availableCurrencies)
 
   /**
@@ -141,7 +141,7 @@ class ExchangeRates @Inject()(implicit ec: ExecutionContext, ws: WSClient, cache
     * @return the value in the target currency
     */
   def convertWith(sourceValue: BigDecimal, sourceCurrency: String, targetCurrency: String,
-    rates: Map[String, BigDecimal], currencies: Seq[String]): BigDecimal = {
+    rates: Map[String, BigDecimal], currencies: Vector[String]): BigDecimal = {
     if (currencies.contains(sourceCurrency) && currencies.contains(targetCurrency)
       && rates.contains(sourceCurrency) && rates.contains(targetCurrency)) {
       if (sourceCurrency != targetCurrency) {
@@ -167,7 +167,7 @@ class ExchangeRates @Inject()(implicit ec: ExecutionContext, ws: WSClient, cache
     * @param targetCurrency the values' target currency
     * @return the converted values
     */
-  def convertSet(source: Seq[(BigDecimal, String)], targetCurrency: String) =
+  def convertSet(source: Vector[(BigDecimal, String)], targetCurrency: String): Vector[BigDecimal] =
     convertSetWith(source, targetCurrency, getCurrentRates, availableCurrencies)
 
   /**
@@ -179,7 +179,7 @@ class ExchangeRates @Inject()(implicit ec: ExecutionContext, ws: WSClient, cache
     * @param currencies     the supported currencies
     * @return the converted values
     */
-  def convertSetWith(source: Seq[(BigDecimal, String)], targetCurrency: String, rates: Map[String, BigDecimal], currencies: Seq[String]): Seq[BigDecimal] = {
+  def convertSetWith(source: Vector[(BigDecimal, String)], targetCurrency: String, rates: Map[String, BigDecimal], currencies: Vector[String]): Vector[BigDecimal] = {
     if (currencies.contains(targetCurrency) && rates.contains(targetCurrency)) {
       source.map {
         case (sourceValue, sourceCurrency) =>

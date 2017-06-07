@@ -110,9 +110,9 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
       val testGroup2 = core.Group("sname_2", "Group 2", nonEmptyGroupLogs, "TransactionLog", "test-user")
       val testGroup3 = core.Group("sname_3", "Group 3", nonEmptyGroupLogs, "TransactionLog", "test-user")
 
-      val created: Future[Seq[Boolean]] = if (isNode(node1)) {
+      val created: Future[Vector[Boolean]] = if (isNode(node1)) {
         Future.sequence(
-          Seq(
+          Vector(
             localCache.createObject(testLog1),
             localCache.createObject(testLog2),
             localCache.createObject(testLog3),
@@ -123,7 +123,7 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
           )
         )
       } else {
-        Future.successful(Seq.empty[Boolean])
+        Future.successful(Vector.empty[Boolean])
       }
 
       (for {
@@ -148,7 +148,7 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
         groups =>
           val newSourceNode = node3
           val updatedGroupName = "new group name"
-          val updated: Future[Seq[Boolean]] = if (isNode(newSourceNode)) {
+          val updated: Future[Vector[Boolean]] = if (isNode(newSourceNode)) {
             val dbGroup1 = groups.filter(_.shortName == "sname_1").head
             val dbGroup2 = groups.filter(_.shortName == "sname_2").head
             dbGroup1.name = updatedGroupName
@@ -156,13 +156,13 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
             dbGroup1.revisionNumber = getNewRevisionSequenceNumber(dbGroup1.revisionNumber)
 
             Future.sequence(
-              Seq(
+              Vector(
                 localCache.updateObject(dbGroup1),
                 localCache.deleteObject("Group", dbGroup2.id)
               )
             )
           } else {
-            Future.successful(Seq.empty[Boolean])
+            Future.successful(Vector.empty[Boolean])
           }
 
           for {
@@ -187,7 +187,7 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
       val updatedGroupName1 = "UGN_1"
       val updatedGroupName3 = "UGN_3"
 
-      val updated: Future[Seq[Boolean]] = if (isNode(node1)) {
+      val updated: Future[Vector[Boolean]] = if (isNode(node1)) {
         (for {
           _ <- testConductor.blackhole(node1, node2, ThrottlerTransportAdapter.Direction.Both)
 
@@ -207,7 +207,7 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
           dbGroup3.revisionNumber = getNewRevisionSequenceNumber(dbGroup3.revisionNumber)
 
           Future.sequence(
-            Seq(
+            Vector(
               localCache.updateObject(dbGroup1),
               localCache.updateObject(dbGroup3),
               localCache.createObject(testGroup4)
@@ -215,7 +215,7 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
           )
         }).flatMap(identity)
       } else {
-        Future.successful(Seq.empty[Boolean])
+        Future.successful(Vector.empty[Boolean])
       }
 
       for {

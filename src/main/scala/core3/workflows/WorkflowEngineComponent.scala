@@ -39,7 +39,7 @@ import scala.util.control.NonFatal
   * @param writeLogsContent determines the additional content storage for write workflow logs
   */
 class WorkflowEngineComponent(
-  private val workflowList: Seq[WorkflowBase],
+  private val workflowList: Vector[WorkflowBase],
   private val db: DatabaseAbstractionLayer,
   private val storeLogs: StoreTransactionLogs,
   private val readOnlyLogsContent: TransactionLogContent,
@@ -395,7 +395,7 @@ object WorkflowEngineComponent extends ComponentCompanion {
   private case class WorkflowContainer(workflow: WorkflowBase, var enabled: Boolean)
 
   def props(
-    workflowList: Seq[WorkflowBase],
+    workflowList: Vector[WorkflowBase],
     db: DatabaseAbstractionLayer,
     storeLogs: StoreTransactionLogs,
     readOnlyLogsContent: TransactionLogContent,
@@ -410,7 +410,7 @@ object WorkflowEngineComponent extends ComponentCompanion {
       writeLogsContent,
       ec)
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
   }
 }
