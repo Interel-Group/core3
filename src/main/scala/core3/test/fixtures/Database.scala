@@ -120,7 +120,9 @@ object Database {
         companions,
         searchOnly = true,
         coexist,
-        RefreshPolicy.NONE
+        RefreshPolicy.NONE,
+        scrollSize = 10,
+        scrollExpiration = 30 //in seconds
       ),
       name = s"ElasticSearch_searchOnly_${if (coexist) "coexist" else "no_coexist"}_$getNewActorID"
     )

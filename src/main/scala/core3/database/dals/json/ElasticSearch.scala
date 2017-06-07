@@ -57,15 +57,19 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param searchOnly          set to false to enable using ES as a data store, instead of just search
   * @param coexist             set to true to enable the use of ES as both data and search store
   * @param refreshPolicy       the refresh policy to use when making updates
+  * @param scrollSize          the number of elements to retrieve with each scroll request
+  * @param scrollExpiration    scroll context expiration (in seconds)
   */
 class ElasticSearch(
-                     private val hostname: String,
-                     private val port: Int,
-                     private val clusterName: String,
-                     private val containerCompanions: Map[ContainerType, JsonContainerCompanion],
-                     private val searchOnly: Boolean,
-                     private val coexist: Boolean,
-                     private val refreshPolicy: RefreshPolicy
+  private val hostname: String,
+  private val port: Int,
+  private val clusterName: String,
+  private val containerCompanions: Map[ContainerType, JsonContainerCompanion],
+  private val searchOnly: Boolean,
+  private val coexist: Boolean,
+  private val refreshPolicy: RefreshPolicy,
+  private val scrollSize: Int,
+  private val scrollExpiration: Int
 )(implicit ec: ExecutionContext, timeout: Timeout)
   extends DatabaseAbstractionLayerComponent {
 
@@ -92,9 +96,12 @@ class ElasticSearch(
         case "immediate" => RefreshPolicy.IMMEDIATE
         case "wait_until" => RefreshPolicy.WAIT_UNTIL
         case policy => throw new IllegalArgumentException(s"core3.database.dals.json.ElasticSearch::() > Invalid refresh policy configured: [$policy].")
-      }
+      },
+      config.getInt("scrollSize"),
+      config.getInt("scrollExpiration")
     )
 
+  private val scrollKeepAlive = s"${scrollExpiration}s"
   private val serviceSettings = Settings.builder().put("cluster.name", clusterName).build()
   private val service = ElasticsearchClientUri(hostname, port)
   private val client = TcpClient.transport(serviceSettings, service)
@@ -217,6 +224,26 @@ class ElasticSearch(
     }
   }
 
+  private def processScroll(
+    currentScrollId: String,
+    previousData: Array[String]
+  ): Future[Vector[String]] = {
+    if(previousData.length >= scrollSize) {
+      client.execute {
+        searchScroll(currentScrollId, scrollKeepAlive)
+      }.flatMap {
+        response =>
+          if (response.hits.nonEmpty) {
+            processScroll(response.scrollId, response.hits.map(_.sourceAsString) ++ previousData)
+          } else {
+            Future.successful(previousData.toVector)
+          }
+      }
+    } else {
+      Future.successful(previousData.toVector)
+    }
+  }
+
   /**
     * Retrieves all containers from the database.
     *
@@ -228,18 +255,16 @@ class ElasticSearch(
     val indexName = companion.getDatabaseName
 
     for {
-      sizeResponse <- client.execute {
-        search(indexName / docType).matchAllQuery().size(0).fetchSource(false)
+      initialResponse <- client.execute {
+        search(indexName / docType).matchAllQuery().size(scrollSize).scroll(scrollKeepAlive)
       }
-      dataResponse <- client.execute {
-        search(indexName / docType).matchAllQuery().size(sizeResponse.totalHits.toInt)
-      }
+      data <- processScroll(initialResponse.scrollId, initialResponse.hits.map(_.sourceAsString))
     } yield {
-      dataResponse.hits.map {
+      data.map {
         c =>
-          companion.fromJsonData(Json.parse(c.sourceAsString))
+          companion.fromJsonData(Json.parse(c))
       }
-    }.toVector
+    }
   }
 
   override protected def handle_ExecuteAction(action: String, params: Option[Map[String, Option[String]]]): Future[ActionResult] = {
@@ -450,13 +475,15 @@ class ElasticSearch(
 
 object ElasticSearch extends ComponentCompanion {
   def props(
-             hostname: String,
-             port: Int,
-             clusterName: String,
-             containerCompanions: Map[ContainerType, JsonContainerCompanion],
-             searchOnly: Boolean = true,
-             coexist: Boolean = false,
-             refreshPolicy: RefreshPolicy = RefreshPolicy.NONE
+    hostname: String,
+    port: Int,
+    clusterName: String,
+    containerCompanions: Map[ContainerType, JsonContainerCompanion],
+    searchOnly: Boolean = true,
+    coexist: Boolean = false,
+    refreshPolicy: RefreshPolicy = RefreshPolicy.NONE,
+    scrollSize: Int,
+    scrollExpiration: Int
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[ElasticSearch],
     hostname,
@@ -466,6 +493,8 @@ object ElasticSearch extends ComponentCompanion {
     searchOnly,
     coexist,
     refreshPolicy,
+    scrollSize,
+    scrollExpiration,
     ec,
     timeout
   )
