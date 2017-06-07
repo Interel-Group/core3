@@ -302,7 +302,7 @@ class Core(DALs: Map[ContainerType, Vector[ActorRef]])(implicit ec: ExecutionCon
             message = None,
             data = Some(
               Json.obj(
-                "layerType" -> handle_GetLayerType.toString,
+                "layerType" -> handle_GetLayerType,
                 "id" -> handle_GetDatabaseIdentifier,
                 "dals" -> Json.obj(
                   "config" -> configuredDALs.map {

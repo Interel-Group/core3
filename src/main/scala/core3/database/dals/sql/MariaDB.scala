@@ -138,7 +138,7 @@ class MariaDB(
             message = None,
             data = Some(
               Json.obj(
-                "layerType" -> handle_GetLayerType.toString,
+                "layerType" -> handle_GetLayerType,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,

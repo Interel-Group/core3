@@ -73,6 +73,11 @@ object LocalUser extends JsonContainerCompanion with SlickContainerCompanion {
           case JsError(e) => JsError(e)
         }
     }
+
+    implicit val userTypeWrites: Writes[UserType] = Writes {
+      userType =>
+        JsString(userType.toString)
+    }
   }
 
   //
@@ -138,7 +143,7 @@ object LocalUser extends JsonContainerCompanion with SlickContainerCompanion {
         "hashedPassword" -> obj.hashedPassword,
         "passwordSalt" -> obj.passwordSalt,
         "permissions" -> obj.permissions,
-        "userType" -> obj.userType.toString,
+        "userType" -> obj.userType,
         "metadata" -> obj.metadata,
         "created" -> obj.created,
         "updated" -> obj.updated,
