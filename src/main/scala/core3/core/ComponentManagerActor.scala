@@ -84,7 +84,7 @@ class ComponentManagerActor(private val components: Map[String, ActorRef])(impli
       Json.toJson(
         modes.map {
           case (k, v) =>
-            k.toString -> Json.obj("state" -> v.state, "lastUpdated" -> v.lastUpdated.toString)
+            k.toString -> Json.obj("state" -> v.state, "lastUpdated" -> v.lastUpdated)
         }
       )
 

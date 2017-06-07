@@ -54,6 +54,28 @@ package object workflows {
     }
   }
 
+  sealed trait TransactionLogContent
+
+  object TransactionLogContent {
+
+    case object Empty extends TransactionLogContent
+
+    case object WithDataOnly extends TransactionLogContent
+
+    case object WithParamsOnly extends TransactionLogContent
+
+    case object WithDataAndParams extends TransactionLogContent
+
+    def fromString(value: String): TransactionLogContent = {
+      value.toLowerCase match {
+        case "empty" => TransactionLogContent.Empty
+        case "withdataonly" => TransactionLogContent.WithDataOnly
+        case "withparamsonly" => TransactionLogContent.WithParamsOnly
+        case "withdataandparams" => TransactionLogContent.WithDataAndParams
+      }
+    }
+  }
+
   /**
     * Generates a new random request ID.
     *
@@ -129,9 +151,9 @@ package object workflows {
       * @return the converted data
       */
     def asJson: JsValue = Json.obj(
-      "add" -> JsArray(add.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full))),
-      "update" -> JsArray(update.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full))),
-      "delete" -> JsArray(delete.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full)))
+      "add" -> add.map(JSONConverter.toJsonData),
+      "update" -> update.map(JSONConverter.toJsonData),
+      "delete" -> delete.map(JSONConverter.toJsonData)
     )
   }
 
@@ -149,8 +171,8 @@ package object workflows {
     getGroup: (String) => Future[core3.database.containers.core.Group],
     getContainer: (ContainerType, ObjectID) => Future[Container],
     getContainerWithRevision: (ContainerType, ObjectID, RevisionID, RevisionSequenceNumber) => Future[MutableContainer],
-    getContainers: (ContainerType, String, Map[String, String]) => Future[ContainerSet],
-    getAllContainers: (ContainerType) => Future[ContainerSet],
+    getContainers: (ContainerType, String, Map[String, String]) => Future[Vector[Container]],
+    getAllContainers: (ContainerType) => Future[Vector[Container]],
     loadView: (ContainerView) => Future[Unit]
   )
 

@@ -26,12 +26,6 @@ object QueryType {
 
   case object Custom extends QueryType
 
-  def fromString(value: String): QueryType = {
-    value match {
-      case "Generic" => QueryType.Generic
-      case "Custom" => QueryType.Custom
-    }
-  }
 }
 
 /**

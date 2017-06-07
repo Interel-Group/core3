@@ -76,11 +76,11 @@ trait CoreBehaviours {
         val emptyActionParams = Json.obj()
         val emptyActionDataContainers = Json.obj()
         val nonEmptyActionParams = Json.obj("init_param" -> 123, "string_param_1" -> "string_1", "init_param_2" -> 456, "string_param_2" -> "string_2")
-        val nonEmptyActionDataContainers = Json.obj(testLog1.id.toString -> core.TransactionLog.toJsonData(testLog1, JsonDataFormat.Full))
-        val testTransactionLog1 = core.TransactionLog("Test Workflow 1", getNewRequestID, true, emptyActionParams, emptyActionDataContainers, "test-user-ok", true, "TEST_1")
-        val testTransactionLog2 = core.TransactionLog("Test Workflow 2", getNewRequestID, true, nonEmptyActionParams, nonEmptyActionDataContainers, "test-user-ok", false, "TEST_2")
-        val testTransactionLog3 = core.TransactionLog("Test Workflow 3", getNewRequestID, false, nonEmptyActionParams, nonEmptyActionDataContainers, "test-user-ok", true, "TEST_3")
-        val testTransactionLog4 = core.TransactionLog("Test Workflow 4", getNewRequestID, false, emptyActionParams, emptyActionDataContainers, "test-user-ok", false, "TEST_4")
+        val nonEmptyActionDataContainers = Json.obj(testLog1.id.toString -> core.TransactionLog.toJsonData(testLog1))
+        val testTransactionLog1 = core.TransactionLog("Test Workflow 1", getNewRequestID, readOnlyWorkflow = true, emptyActionParams, emptyActionDataContainers, "test-user-ok", workflowResult = true, "TEST_1")
+        val testTransactionLog2 = core.TransactionLog("Test Workflow 2", getNewRequestID, readOnlyWorkflow = true, nonEmptyActionParams, nonEmptyActionDataContainers, "test-user-ok", workflowResult = false, "TEST_2")
+        val testTransactionLog3 = core.TransactionLog("Test Workflow 3", getNewRequestID, readOnlyWorkflow = false, nonEmptyActionParams, nonEmptyActionDataContainers, "test-user-ok", workflowResult = true, "TEST_3")
+        val testTransactionLog4 = core.TransactionLog("Test Workflow 4", getNewRequestID, readOnlyWorkflow = false, emptyActionParams, emptyActionDataContainers, "test-user-ok", workflowResult = false, "TEST_4")
 
         val futures = Seq(
           db.createObject(testLog1),
@@ -137,11 +137,10 @@ trait CoreBehaviours {
         db.queryDatabase("Group")
           .flatMap {
             groups =>
-              groups.objectsType should equal("Group")
-              groups.containers should have length 3
-              groups.containers.head.isInstanceOf[core.Group] should equal(true)
+              groups should have length 3
+              groups.head.isInstanceOf[core.Group] should equal(true)
 
-              val testGroup = groups.containers.head.asInstanceOf[core.Group]
+              val testGroup = groups.head.asInstanceOf[core.Group]
               testGroup.name = newGroupName
 
               testGroup.name should equal(newGroupName)
@@ -161,12 +160,11 @@ trait CoreBehaviours {
         db.queryDatabase("Group")
           .flatMap {
             groups =>
-              groups.objectsType should equal("Group")
-              groups.containers should have length 3
+              groups should have length 3
 
               var remainingEntriesIDs: Vector[ObjectID] = Vector.empty
 
-              groups.containers.foreach {
+              groups.foreach {
                 currentEntry => {
                   currentEntry.isInstanceOf[core.Group] should equal(true)
                   remainingEntriesIDs :+= currentEntry.id
@@ -183,12 +181,11 @@ trait CoreBehaviours {
                 remainingEntriesIDs = remainingEntriesIDs.drop(2)
 
 
-                remainingGroups.containers.foreach {
+                remainingGroups.foreach {
                   currentContainer => remainingEntriesIDs should contain(currentContainer.id)
                 }
 
-                remainingGroups.objectsType should equal("Group")
-                remainingGroups.containers should have length 1
+                remainingGroups should have length 1
               }
           }
     }

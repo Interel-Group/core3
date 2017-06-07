@@ -105,11 +105,11 @@ class Service(
 
   private def handle_send(
     from: String,
-    to: Seq[String],
+    to: Vector[String],
     subject: String,
     htmlBody: String,
-    attachments: Seq[java.io.File],
-    inlineAttachments: Seq[(String, String)]
+    attachments: Vector[java.io.File],
+    inlineAttachments: Vector[(String, String)]
   ): Future[Unit] = {
     if (from.isEmpty) throw new IllegalArgumentException(s"core3.mail.Core::send > Empty 'from' field supplied.")
     if (to.isEmpty || to.forall(_.isEmpty)) throw new IllegalArgumentException(s"core3.mail.Core::send > Empty 'to' field supplied.")
@@ -190,11 +190,11 @@ object Service extends ComponentCompanion {
     */
   case class SendMessage(
     from: String,
-    to: Seq[String],
+    to: Vector[String],
     subject: String,
     htmlBody: String,
-    attachments: Seq[java.io.File] = Seq.empty,
-    inlineAttachments: Seq[(String, String)] = Seq.empty
+    attachments: Vector[java.io.File] = Vector.empty,
+    inlineAttachments: Vector[(String, String)] = Vector.empty
   )
 
   /**
@@ -217,7 +217,7 @@ object Service extends ComponentCompanion {
     classOf[Service], ec
   )
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
   }
 }

@@ -79,7 +79,7 @@ class WorkflowUnitSpec_SystemUpdateGroup extends AsyncUnitSpec {
           ),
           fixture.authorizedUser
         )).mapTo[WorkflowResult]
-        originalGroups <- fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+        originalGroups <- fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group]))
         updateResult <- (fixture.engine ? ExecuteWorkflow(
           SystemUpdateGroup.name,
           rawParams = Json.obj(
@@ -91,7 +91,7 @@ class WorkflowUnitSpec_SystemUpdateGroup extends AsyncUnitSpec {
           ),
           fixture.authorizedUser
         )).mapTo[WorkflowResult]
-        updatedGroups <- fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+        updatedGroups <- fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group]))
       } yield {
         createResult.wasSuccessful should be(true)
         originalGroups should have size 1

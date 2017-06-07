@@ -117,7 +117,7 @@ object Generators {
     hashedPassword <- arbitrary[String]
     passwordSalt <- arbitrary[String]
     permissions <- generateStringsList
-    userType <- Gen.oneOf(UserType.Service, UserType.Client)
+    userType <- Gen.oneOf(LocalUser.UserType.Service, LocalUser.UserType.Client)
     metadata <- generateJsonObject
     createdBy <- Gen.uuid
   } yield core.LocalUser(userID, hashedPassword, passwordSalt, permissions, userType, metadata, createdBy.toString)

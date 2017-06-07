@@ -43,13 +43,13 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param scanCount           the minimum number of items to wait for when performing a Redis SCAN
   */
 class Redis(
-  private val hostname: String,
-  private val port: Int,
-  private val secret: String,
-  private val connectTimeout: Int,
-  private val containerCompanions: Map[ContainerType, JSONContainerCompanion],
-  private val databaseID: Int,
-  private val scanCount: Int
+             private val hostname: String,
+             private val port: Int,
+             private val secret: String,
+             private val connectTimeout: Int,
+             private val containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             private val databaseID: Int,
+             private val scanCount: Int
 )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem)
   extends DatabaseAbstractionLayerComponent {
 
@@ -61,8 +61,8 @@ class Redis(
     * @return the new instance
     */
   def this(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    config: Config = StaticConfig.get.getConfig("database.redis")
+            containerCompanions: Map[ContainerType, JsonContainerCompanion],
+            config: Config = StaticConfig.get.getConfig("database.redis")
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem) =
     this(
       config.getString("hostname"),
@@ -92,7 +92,7 @@ class Redis(
   private var count_Delete: Long = 0
 
   private def getKeyPrefix(containerType: ContainerType) = {
-    s"${containerCompanions(containerType).getDatabaseName(DataType.JSON)}:"
+    s"${containerCompanions(containerType).getDatabaseName}:"
   }
 
   private def getKey(containerType: ContainerType, containerID: ObjectID) = {
@@ -169,7 +169,7 @@ class Redis(
     * @param companion   JSON companion object for the specified object type
     * @return the retrieved containers
     */
-  private def getAllContainers(objectsType: ContainerType, companion: JSONContainerCompanion): Future[Vector[Container]] = {
+  private def getAllContainers(objectsType: ContainerType, companion: JsonContainerCompanion): Future[Vector[Container]] = {
     for {
       result <- client.scan(cursor = 0, matchGlob = Some(s"${getKeyPrefix(objectsType)}*"), count = Some(scanCount))
       keys <- processScan(objectsType, result, ArrayBuffer[String]())
@@ -199,7 +199,7 @@ class Redis(
             message = None,
             data = Some(
               Json.obj(
-                "layerType" -> handle_GetLayerType.toString,
+                "layerType" -> handle_GetLayerType,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,
@@ -217,7 +217,7 @@ class Redis(
     }
   }
 
-  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet] = {
+  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     assert(
       containerCompanions.contains(objectsType),
       s"core3.database.dals.json.Redis::handle_GetGenericQueryResult > Object type [$objectsType] is not supported."
@@ -227,14 +227,10 @@ class Redis(
 
     val companion = containerCompanions(objectsType)
 
-    for {
-      containers <- getAllContainers(objectsType, companion)
-    } yield {
-      ContainerSet(objectsType, containers)
-    }
+    getAllContainers(objectsType, companion)
   }
 
-  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] = {
+  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     assert(
       containerCompanions.contains(objectsType),
       s"core3.database.dals.json.Redis::handle_GetCustomQueryResult > Object type [$objectsType] is not supported."
@@ -244,16 +240,12 @@ class Redis(
 
     val companion = containerCompanions(objectsType)
 
-    for {
-      containers <- getAllContainers(objectsType, companion).map {
-        containers =>
-          containers.filter {
-            current =>
-              companion.matchCustomQuery(customQueryName, queryParams, current)
-          }
-      }
-    } yield {
-      ContainerSet(objectsType, containers)
+    getAllContainers(objectsType, companion).map {
+      containers =>
+        containers.filter {
+          current =>
+            companion.matchCustomQuery(customQueryName, queryParams, current)
+        }
     }
   }
 
@@ -289,7 +281,7 @@ class Redis(
     for {
       result <- client.set(
         getKey(container.objectType, container.id),
-        Json.stringify(containerCompanions(container.objectType).toJsonData(container, JsonDataFormat.Full)),
+        Json.stringify(containerCompanions(container.objectType).toJsonData(container)),
         NX = true //only set value if it does not exist
       )
     } yield {
@@ -308,7 +300,7 @@ class Redis(
     for {
       result <- client.set(
         getKey(container.objectType, container.id),
-        Json.stringify(containerCompanions(container.objectType).toJsonData(container, JsonDataFormat.Full)),
+        Json.stringify(containerCompanions(container.objectType).toJsonData(container)),
         XX = true //only set value if it exists
       )
     } yield {
@@ -334,13 +326,13 @@ class Redis(
 
 object Redis extends ComponentCompanion {
   def props(
-    hostname: String,
-    port: Int,
-    secret: String,
-    connectTimeout: Int,
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    databaseID: Int,
-    scanCount: Int
+             hostname: String,
+             port: Int,
+             secret: String,
+             connectTimeout: Int,
+             containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             databaseID: Int,
+             scanCount: Int
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem): Props = Props(
     classOf[Redis],
     hostname,
@@ -356,8 +348,8 @@ object Redis extends ComponentCompanion {
   )
 
   def props(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion],
-    config: Config
+             containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             config: Config
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem): Props = Props(
     classOf[Redis],
     containerCompanions,
@@ -368,7 +360,7 @@ object Redis extends ComponentCompanion {
   )
 
   def props(
-    containerCompanions: Map[ContainerType, JSONContainerCompanion]
+    containerCompanions: Map[ContainerType, JsonContainerCompanion]
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem): Props = Props(
     classOf[Redis],
     containerCompanions,
@@ -378,7 +370,7 @@ object Redis extends ComponentCompanion {
     system
   )
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
   }
 }

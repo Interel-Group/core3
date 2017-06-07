@@ -19,7 +19,7 @@ import akka.actor.Props
 import akka.util.Timeout
 import core3.core.Component.{ActionDescriptor, ActionResult}
 import core3.core.ComponentCompanion
-import core3.database.containers.{Container, ContainerSet, MutableContainer}
+import core3.database.containers.{Container, MutableContainer}
 import core3.database.dals.{DatabaseAbstractionLayerComponent, LayerType}
 import core3.database.{ContainerType, ObjectID}
 import play.api.libs.json.Json
@@ -98,7 +98,7 @@ class MemoryOnlyDB(private val supportedContainers: Vector[String])
             message = None,
             data = Some(
               Json.obj(
-                "layerType" -> handle_GetLayerType.toString,
+                "layerType" -> handle_GetLayerType,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,
@@ -116,18 +116,18 @@ class MemoryOnlyDB(private val supportedContainers: Vector[String])
     )
   }
 
-  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet] = {
+  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     count_GenericQuery += 1
 
     try {
-      Future.successful(ContainerSet(objectsType, store(objectsType).values.toVector))
+      Future.successful(store(objectsType).values.toVector)
     } catch {
       case NonFatal(e) => Future.failed(e)
     }
   }
 
-  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] = {
-    Future.failed[ContainerSet](new UnsupportedOperationException(s"core3.database.dals.memory.MemoryOnlyDB::handle_GetCustomQueryResult > [$instanceID] Custom queries are not supported."))
+  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
+    Future.failed[Vector[Container]](new UnsupportedOperationException(s"core3.database.dals.memory.MemoryOnlyDB::handle_GetCustomQueryResult > [$instanceID] Custom queries are not supported."))
   }
 
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
@@ -158,7 +158,7 @@ object MemoryOnlyDB extends ComponentCompanion {
   def props(supportedContainers: Vector[String])(implicit ec: ExecutionContext, timeout: Timeout): Props =
     Props(classOf[MemoryOnlyDB], supportedContainers, ec, timeout)
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
   }
 }

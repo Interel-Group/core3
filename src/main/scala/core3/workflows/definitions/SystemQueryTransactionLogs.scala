@@ -15,7 +15,7 @@
   */
 package core3.workflows.definitions
 
-import core3.database.containers.{JSONConverter, JsonDataFormat, core}
+import core3.database.containers.{JSONConverter, core}
 import core3.security.UserTokenBase
 import core3.utils.Time._
 import core3.utils.{Timestamp, TimestampFormat}
@@ -34,7 +34,7 @@ object SystemQueryTransactionLogs extends WorkflowBase {
 
   case class SystemQueryTransactionLogsInputData(logs: Vector[core.TransactionLog]) extends InputData {
     override def asJson: JsValue = Json.obj(
-      "logs" -> JsArray(logs.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full)))
+      "logs" -> logs.map(JSONConverter.toJsonData)
     )
   }
 
@@ -69,7 +69,7 @@ object SystemQueryTransactionLogs extends WorkflowBase {
                 "end" -> end.toFormattedString(TimestampFormat.DefaultTimestamp)
               )
             )
-        }.map(c => SystemQueryTransactionLogsInputData(c.containers.map(_.asInstanceOf[core.TransactionLog])))
+        }.map(c => SystemQueryTransactionLogsInputData(c.map(_.asInstanceOf[core.TransactionLog])))
     }
   }
 

@@ -85,7 +85,7 @@ class WorkflowPropSpec_SystemCreateGroup extends PropertySpec {
 
           result.wasSuccessful should be(true)
 
-          val groups = fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group])).await
+          val groups = fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group])).await
           groups should not be empty
           groups.filter(c => c.name == name && c.shortName == shortName && c.itemsType == itemsType) should have size 1
       }

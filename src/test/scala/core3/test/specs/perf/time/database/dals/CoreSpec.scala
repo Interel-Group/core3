@@ -71,8 +71,7 @@ trait CoreSpec extends PerformanceTimeSpec {
             0 until count foreach {
               _ =>
                 val result = CoreSpec.db.queryDatabase("TransactionLog").await
-                assert(result.objectsType == "TransactionLog")
-                assert(result.containers.size == maxContainers)
+                assert(result.size == maxContainers)
             }
         }
 
@@ -90,8 +89,7 @@ trait CoreSpec extends PerformanceTimeSpec {
             0 until count foreach {
               _ =>
                 val result = CoreSpec.db.queryDatabase("Group").await
-                assert(result.objectsType == "Group")
-                assert(result.containers.size == maxContainers)
+                assert(result.size == maxContainers)
             }
         }
     }

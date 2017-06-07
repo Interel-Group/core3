@@ -65,7 +65,7 @@ class WorkflowUnitSpec_SystemQueryLocalUsers extends AsyncUnitSpec {
       for {
         addUsers <- (fixture.engine ? ExecuteWorkflow(AddLocalUsers.name, rawParams = Json.obj(), fixture.authorizedUser)).mapTo[WorkflowResult]
         result <- (fixture.engine ? ExecuteWorkflow(SystemQueryLocalUsers.name, rawParams = Json.obj(), fixture.authorizedUser)).mapTo[WorkflowResult]
-        dbUsers <- fixture.db.queryDatabase("LocalUser").map(_.containers.map(_.asInstanceOf[core.LocalUser]))
+        dbUsers <- fixture.db.queryDatabase("LocalUser").map(_.map(_.asInstanceOf[core.LocalUser]))
       } yield {
         addUsers.wasSuccessful should be(true)
         result.wasSuccessful should be(true)

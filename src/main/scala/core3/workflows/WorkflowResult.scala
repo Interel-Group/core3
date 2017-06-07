@@ -15,7 +15,7 @@
   */
 package core3.workflows
 
-import core3.database.containers.{JSONConverter, JsonDataFormat}
+import core3.database.containers.JSONConverter
 import core3.http.responses.ServiceResponse
 import play.api.libs.json._
 
@@ -34,8 +34,8 @@ case class WorkflowResult(wasSuccessful: Boolean, requestID: RequestID, message:
     this.copy(
       data = Some(
         Json.obj(
-          "add" -> data.add.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full)),
-          "update" -> data.update.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full))
+          "add" -> data.add.map(JSONConverter.toJsonData),
+          "update" -> data.update.map(JSONConverter.toJsonData)
         )
       )
     )

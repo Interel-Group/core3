@@ -15,7 +15,7 @@
   */
 package core3.workflows.definitions
 
-import core3.database.containers.{JSONConverter, JsonDataFormat, core}
+import core3.database.containers.{JSONConverter, core}
 import core3.security.UserTokenBase
 import core3.workflows._
 import play.api.libs.json.{JsArray, JsValue, Json}
@@ -26,7 +26,7 @@ object SystemQueryLocalUsers extends WorkflowBase {
 
   case class SystemQueryLocalUsersInputData(users: Vector[core.LocalUser]) extends InputData {
     override def asJson: JsValue = Json.obj(
-      "users" -> JsArray(users.map(c => JSONConverter.toJsonData(c, JsonDataFormat.Full)))
+      "users" -> users.map(JSONConverter.toJsonData)
     )
   }
 
@@ -46,7 +46,7 @@ object SystemQueryLocalUsers extends WorkflowBase {
     queryHandlers.getAllContainers("LocalUser").map {
       result =>
         SystemQueryLocalUsersInputData(
-          result.containers.map {
+          result.map {
             current =>
               current.asInstanceOf[core.LocalUser].copy(hashedPassword = "redacted", passwordSalt = "redacted")
           }

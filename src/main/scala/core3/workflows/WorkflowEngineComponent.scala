@@ -19,7 +19,7 @@ import akka.actor.Props
 import akka.pattern.pipe
 import core3.core.Component.{ActionDescriptor, ActionResult}
 import core3.core.{Component, ComponentCompanion}
-import core3.database.containers.{ContainerSet, MutableContainer, core}
+import core3.database.containers.{Container, MutableContainer, core}
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.database.{ContainerType, ObjectID, RevisionID, RevisionSequenceNumber}
 import core3.security.UserTokenBase
@@ -35,11 +35,15 @@ import scala.util.control.NonFatal
   * @param workflowList a list of all available workflows
   * @param db           a DAL for allowing access to data
   * @param storeLogs    determines when transaction logs are to be created
+  * @param readOnlyLogsContent determines the additional content storage for read-only workflow logs
+  * @param writeLogsContent determines the additional content storage for write workflow logs
   */
 class WorkflowEngineComponent(
-  private val workflowList: Seq[WorkflowBase],
+  private val workflowList: Vector[WorkflowBase],
   private val db: DatabaseAbstractionLayer,
-  private val storeLogs: StoreTransactionLogs
+  private val storeLogs: StoreTransactionLogs,
+  private val readOnlyLogsContent: TransactionLogContent,
+  private val writeLogsContent: TransactionLogContent
 )(implicit ec: ExecutionContext) extends Component {
 
   import WorkflowEngineComponent._
@@ -66,11 +70,11 @@ class WorkflowEngineComponent(
   private def handle_getGroup(shortName: String): Future[core.Group] = {
     db.queryDatabase(objectsType = "Group", customQueryName = "getByShortName", Map("shortName" -> shortName))
       .map {
-        set =>
-          if (set.containers.size == 1) {
-            set.containers.head.asInstanceOf[core.Group]
+        containers =>
+          if (containers.size == 1) {
+            containers.head.asInstanceOf[core.Group]
           } else {
-            val message = s"core3.workflows.WorkflowEngineComponent[$instanceID]::handle_getGroup > [${set.containers.size}] containers found for [Group] with short name [$shortName]."
+            val message = s"core3.workflows.WorkflowEngineComponent[$instanceID]::handle_getGroup > [${containers.size}] containers found for [Group] with short name [$shortName]."
             auditLogger.warn(message)
             throw new RuntimeException(message)
           }
@@ -95,7 +99,7 @@ class WorkflowEngineComponent(
           Future.failed(
             new RuntimeException(s"core3.workflows.WorkflowEngineComponent[$instanceID]::handle_getContainerWithRevision > " +
               s"Expected revision [$revision] with number [$revisionNumber] " +
-              s"but found revision [${container.revision}] with number [${container.revision}] " +
+              s"but found revision [${container.revision}] with number [${container.revisionNumber}] " +
               s"for [$containerType] container with ID [$objectID].")
           )
         }
@@ -110,9 +114,9 @@ class WorkflowEngineComponent(
     * Query handler for retrieving all containers of a specified type.
     *
     * @param containersType the type of containers to retrieve
-    * @return Future[ [[core3.database.containers.ContainerSet]] ] - the requested data
+    * @return Future[ Vector[Container] ] - the requested data
     */
-  private def handle_getAllContainers(containersType: ContainerType): Future[ContainerSet] = {
+  private def handle_getAllContainers(containersType: ContainerType): Future[Vector[Container]] = {
     db.queryDatabase(containersType)
   }
 
@@ -138,12 +142,24 @@ class WorkflowEngineComponent(
     requestID: RequestID
   ): Future[Unit] = {
     def createLog(): Future[Unit] = {
+      val removeParams = (
+        workflow.withSensitiveParams
+          || (workflow.readOnly && (readOnlyLogsContent == TransactionLogContent.Empty || readOnlyLogsContent == TransactionLogContent.WithDataOnly))
+          || (!workflow.readOnly && (writeLogsContent == TransactionLogContent.Empty || writeLogsContent == TransactionLogContent.WithDataOnly))
+        )
+
+      val removeData = (
+        workflow.withSensitiveData
+          || (workflow.readOnly && (readOnlyLogsContent == TransactionLogContent.Empty || readOnlyLogsContent == TransactionLogContent.WithParamsOnly))
+          || (!workflow.readOnly && (writeLogsContent == TransactionLogContent.Empty || writeLogsContent == TransactionLogContent.WithParamsOnly))
+        )
+
       val transactionLog = core.TransactionLog(
         workflow.name,
         requestID,
         workflow.readOnly,
-        if (workflow.withSensitiveParams) Json.obj("redacted" -> true) else params,
-        if (workflow.withSensitiveData) Json.obj("redacted" -> true) else data,
+        if (removeParams) Json.obj("removed" -> true) else params,
+        if (removeData) Json.obj("removed" -> true) else data,
         userID,
         result,
         state
@@ -379,18 +395,22 @@ object WorkflowEngineComponent extends ComponentCompanion {
   private case class WorkflowContainer(workflow: WorkflowBase, var enabled: Boolean)
 
   def props(
-    workflowList: Seq[WorkflowBase],
+    workflowList: Vector[WorkflowBase],
     db: DatabaseAbstractionLayer,
-    storeLogs: StoreTransactionLogs
+    storeLogs: StoreTransactionLogs,
+    readOnlyLogsContent: TransactionLogContent,
+    writeLogsContent: TransactionLogContent
   )(implicit ec: ExecutionContext): Props =
     Props(
       classOf[WorkflowEngineComponent],
       workflowList,
       db,
       storeLogs,
+      readOnlyLogsContent,
+      writeLogsContent,
       ec)
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
   }
 }

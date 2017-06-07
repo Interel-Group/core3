@@ -16,7 +16,8 @@
 package core3.http.controllers.local
 
 import com.typesafe.config.Config
-import core3.database.containers.core.{LocalUser, UserType}
+import core3.database.containers.core.LocalUser
+import core3.database.containers.core.LocalUser.UserType
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.http.controllers.ServiceControllerBase
 import core3.http.handlers
@@ -99,7 +100,7 @@ class ServiceController(cache: CacheApi, authConfig: Config, db: DatabaseAbstrac
                 case None =>
                   val userQuery = db.queryDatabase("LocalUser", "getByUserID", Map("userID" -> delegatedUserID)).map {
                     result =>
-                      result.containers.headOption match {
+                      result.headOption match {
                         case Some(user) => user.asInstanceOf[LocalUser]
                         case None => throw new RuntimeException(s"Failed to retrieve user with id [$delegatedUserID]")
                       }
@@ -145,7 +146,7 @@ class ServiceController(cache: CacheApi, authConfig: Config, db: DatabaseAbstrac
 
                       val userQuery = db.queryDatabase("LocalUser", "getByUserID", Map("userID" -> delegatedUserID)).map {
                         result =>
-                          result.containers.headOption match {
+                          result.headOption match {
                             case Some(user) => user.asInstanceOf[LocalUser]
                             case None => throw new RuntimeException(s"Failed to retrieve user with id [$delegatedUserID]")
                           }

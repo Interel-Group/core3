@@ -40,7 +40,7 @@ class CoreSpec extends AsyncUnitSpec with CoreBehaviours {
 
   implicit val timeout = Timeout(15.seconds)
   val mariaDAL: DatabaseAbstractionLayer = fixtures.Database.createMariaDBInstance()
-  val couchDAL: DatabaseAbstractionLayer = fixtures.Database.createCouchDBInstance(cacheOnly = false)
+  val couchDAL: DatabaseAbstractionLayer = fixtures.Database.createCouchDBInstance()
   val memoryDAL: DatabaseAbstractionLayer = fixtures.Database.createMemoryOnlyDBInstance()
   val redisDAL: DatabaseAbstractionLayer = fixtures.Database.createRedisInstance()
   val elasticSearchDAL: DatabaseAbstractionLayer = fixtures.Database.createElasticSearchInstance()
@@ -98,10 +98,10 @@ class CoreSpec extends AsyncUnitSpec with CoreBehaviours {
         couchDBQueryResult <- couchDAL.queryDatabase("TransactionLog")
         memoryDBQueryResult <- memoryDAL.queryDatabase("TransactionLog")
         _ <- Future {
-          mariaDBQueryResult.containers should contain(testLog)
-          mariaDBQueryResult.containers should have length 1
-          couchDBQueryResult.containers should have length 0
-          memoryDBQueryResult.containers should have length 0
+          mariaDBQueryResult should contain(testLog)
+          mariaDBQueryResult should have length 1
+          couchDBQueryResult should have length 0
+          memoryDBQueryResult should have length 0
         }
         syncResult <- (coreDAL.getRef ? SynchronizeDatabases(Some("TransactionLog"))).mapTo[Boolean]
         mariaDBQueryResult <- mariaDAL.queryDatabase("TransactionLog")
@@ -109,12 +109,12 @@ class CoreSpec extends AsyncUnitSpec with CoreBehaviours {
         memoryDBQueryResult <- memoryDAL.queryDatabase("TransactionLog")
       } yield {
         syncResult should equal(true)
-        mariaDBQueryResult.containers should contain(testLog)
-        mariaDBQueryResult.containers should have length 1
-        couchDBQueryResult.containers should contain(testLog)
-        couchDBQueryResult.containers should have length 1
-        memoryDBQueryResult.containers should have length 1
-        memoryDBQueryResult.containers should contain(testLog)
+        mariaDBQueryResult should contain(testLog)
+        mariaDBQueryResult should have length 1
+        couchDBQueryResult should contain(testLog)
+        couchDBQueryResult should have length 1
+        memoryDBQueryResult should have length 1
+        memoryDBQueryResult should contain(testLog)
       }
   }
 
@@ -225,8 +225,7 @@ class CoreSpec extends AsyncUnitSpec with CoreBehaviours {
       for {
         logs <- coreDAL.queryDatabase("TransactionLog")
       } yield {
-        logs.objectsType should be("TransactionLog")
-        logs.containers should have size 0
+        logs should have size 0
       }
   }
 
@@ -239,13 +238,12 @@ class CoreSpec extends AsyncUnitSpec with CoreBehaviours {
         _ <- waitUntilFuture(what = "preloading completes", waitTimeMs = 1500, waitAttempts = 15) {
           coreDAL.queryDatabase("TransactionLog").map {
             result =>
-              result.containers.size == 4
+              result.size == 4
           }
         }
         logs <- coreDAL.queryDatabase("TransactionLog")
       } yield {
-        logs.objectsType should be("TransactionLog")
-        logs.containers should have size 4
+        logs should have size 4
       }
   }
 }

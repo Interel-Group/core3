@@ -15,7 +15,7 @@
   */
 package core3.workflows.definitions
 
-import core3.database.containers.{JSONConverter, JsonDataFormat, core}
+import core3.database.containers.{JSONConverter, core}
 import core3.database.{ObjectID, RevisionID, RevisionSequenceNumber}
 import core3.security.UserTokenBase
 import core3.workflows._
@@ -29,7 +29,7 @@ object SystemUpdateLocalUserPermissions extends WorkflowBase {
     userUUID: ObjectID,
     revision: RevisionID,
     revisionNumber: RevisionSequenceNumber,
-    permissions: Seq[String]
+    permissions: Vector[String]
   ) extends WorkflowParameters {
     override def asJson: JsValue = Json.obj(
       "userUUID" -> userUUID,
@@ -41,7 +41,7 @@ object SystemUpdateLocalUserPermissions extends WorkflowBase {
 
   case class SystemUpdateLocalUserPermissionsInputData(user: core.LocalUser) extends InputData {
     override def asJson: JsValue = Json.obj(
-      "user" -> JSONConverter.toJsonData(user, JsonDataFormat.Full)
+      "user" -> JSONConverter.toJsonData(user)
     )
   }
 
@@ -59,7 +59,7 @@ object SystemUpdateLocalUserPermissions extends WorkflowBase {
         (rawParams \ "userUUID").as[ObjectID],
         (rawParams \ "revision").as[RevisionID],
         (rawParams \ "revisionNumber").as[RevisionSequenceNumber],
-        (rawParams \ "permissions").as[Seq[String]]
+        (rawParams \ "permissions").as[Vector[String]]
       )
     }
   }

@@ -15,7 +15,7 @@
   */
 package core3.workflows.definitions
 
-import core3.database.containers.{JSONConverter, JsonDataFormat, core}
+import core3.database.containers.{JSONConverter, core}
 import core3.database.{ObjectID, RevisionID, RevisionSequenceNumber}
 import core3.security.UserTokenBase
 import core3.workflows._
@@ -43,7 +43,7 @@ object SystemUpdateGroup extends WorkflowBase {
 
   case class SystemUpdateGroupInputData(group: core.Group) extends InputData {
     override def asJson: JsValue = Json.obj(
-      "group" -> JSONConverter.toJsonData(group, JsonDataFormat.Full)
+      "group" -> JSONConverter.toJsonData(group)
     )
   }
 
@@ -58,7 +58,7 @@ object SystemUpdateGroup extends WorkflowBase {
         (rawParams \ "revision").as[RevisionID],
         (rawParams \ "revisionNumber").as[RevisionSequenceNumber],
         (rawParams \ "name").asOpt[String],
-        (rawParams \ "items").asOpt[JsArray] map (_.value.map(_.as[ObjectID]).to[Vector])
+        (rawParams \ "items").asOpt[Vector[ObjectID]]
       )
     }
   }

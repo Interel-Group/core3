@@ -82,7 +82,7 @@ class WorkflowPropSpec_SystemDeleteGroup extends PropertySpec {
 
           result.wasSuccessful should be(true)
 
-          val groups = fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group])).await
+          val groups = fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group])).await
           groups should not contain group
           groups.find(_.id == group.id) should be(None)
       }

@@ -29,6 +29,7 @@ import slick.jdbc.MySQLProfile.api._
 import slick.jdbc.meta.MTable
 
 import scala.concurrent._
+import scala.util.control.NonFatal
 
 /**
   * A Database Abstraction Layer for accessing a MariaDB database.
@@ -95,26 +96,35 @@ class MariaDB(
     */
   private def getDatabaseName(objectType: ContainerType): String = {
     assert(containerCompanions.contains(objectType), s"core3.database.dals.sql.MariaDB::getDatabaseName > Object type [$objectType] is not supported.")
-    containerCompanions(objectType).getDatabaseName(DataType.Slick)
+    containerCompanions(objectType).getDatabaseName.replaceAll("[^A-Za-z0-9]", "_")
   }
 
   override protected def handle_VerifyDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     db.run(MTable.getTables).map {
       result =>
-        result.exists(current => {
-          current.name.name.toLowerCase == getDatabaseName(objectsType).toLowerCase
-        })
+        result.exists {
+          current =>
+            current.name.name.toLowerCase == getDatabaseName(objectsType).toLowerCase
+        }
     }
   }
 
   override protected def handle_BuildDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
-    assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::buildDatabaseStructure > Object type [$objectsType] is not supported.")
-    containerCompanions(objectsType).runCreateSchema(db)
+    try {
+      assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::buildDatabaseStructure > Object type [$objectsType] is not supported.")
+      db.run(containerCompanions(objectsType).createSchemaAction()).map(_ => true)
+    } catch {
+      case NonFatal(e) => Future.failed(e)
+    }
   }
 
   override protected def handle_ClearDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
-    assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_ClearDatabaseStructure > Object type [$objectsType] is not supported.")
-    containerCompanions(objectsType).runDropSchema(db)
+    try {
+      assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_ClearDatabaseStructure > Object type [$objectsType] is not supported.")
+      db.run(containerCompanions(objectsType).dropSchemaAction()).map(_ => true)
+    } catch {
+      case NonFatal(e) => Future.failed(e)
+    }
   }
 
   override protected def handle_ExecuteAction(action: String, params: Option[Map[String, Option[String]]]): Future[ActionResult] = {
@@ -128,7 +138,7 @@ class MariaDB(
             message = None,
             data = Some(
               Json.obj(
-                "layerType" -> handle_GetLayerType.toString,
+                "layerType" -> handle_GetLayerType,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,
@@ -146,59 +156,76 @@ class MariaDB(
     }
   }
 
-  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet] = {
-    assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_GetGenericQueryResult > Object type [$objectsType] is not supported.")
+  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
+    try {
+      assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_GetGenericQueryResult > Object type [$objectsType] is not supported.")
 
-    count_GenericQuery += 1
+      count_GenericQuery += 1
 
-    val table = getDatabaseName(objectsType)
-
-    assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_GetGenericQueryResult > Object type [$objectsType] is not supported.")
-    containerCompanions(objectsType).runGenericQuery(sql"""SELECT * FROM #$table""", db).map {
-      result => ContainerSet(objectsType, result)
+      db.run(containerCompanions(objectsType).genericQueryAction).map(_.toVector)
+    } catch {
+      case NonFatal(e) => Future.failed(e)
     }
   }
 
-  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] = {
-    assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_GetCustomQueryResult > Object type [$objectsType] is not supported.")
+  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
+    try {
+      assert(containerCompanions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_GetCustomQueryResult > Object type [$objectsType] is not supported.")
 
-    count_CustomQuery += 1
+      count_CustomQuery += 1
 
-    containerCompanions(objectsType).runCustomQuery(customQueryName, queryParams, db).map {
-      result => ContainerSet(objectsType, result)
+      db.run(containerCompanions(objectsType).customQueryAction(customQueryName, queryParams)).map(_.toVector)
+    } catch {
+      case NonFatal(e) => Future.failed(e)
     }
   }
 
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
-    assert(containerCompanions.contains(objectType), s"core3.database.dals.sql.MariaDB::handle_GetObject > Object type [$objectType] is not supported.")
+    try {
+      assert(containerCompanions.contains(objectType), s"core3.database.dals.sql.MariaDB::handle_GetObject > Object type [$objectType] is not supported.")
 
-    count_Get += 1
+      count_Get += 1
 
-    containerCompanions(objectType).runGet(objectID, db)
+      db.run(containerCompanions(objectType).getAction(objectID)).map(_.head)
+    } catch {
+      case NonFatal(e) => Future.failed(e)
+    }
   }
 
   override protected def handle_CreateObject(container: Container): Future[Boolean] = {
-    assert(containerCompanions.contains(container.objectType), s"core3.database.dals.sql.MariaDB::handle_CreateObject > Object type [${container.objectType}] is not supported.")
+    try {
+      assert(containerCompanions.contains(container.objectType), s"core3.database.dals.sql.MariaDB::handle_CreateObject > Object type [${container.objectType}] is not supported.")
 
-    count_Create += 1
+      count_Create += 1
 
-    containerCompanions(container.objectType).runCreate(container, db)
+      db.run(containerCompanions(container.objectType).createAction(container)).map(_ == 1)
+    } catch {
+      case NonFatal(e) => Future.failed(e)
+    }
   }
 
   override protected def handle_UpdateObject(container: MutableContainer): Future[Boolean] = {
-    assert(containerCompanions.contains(container.objectType), s"core3.database.dals.sql.MariaDB::handle_UpdateObject > Object type [${container.objectType}] is not supported.")
+    try {
+      assert(containerCompanions.contains(container.objectType), s"core3.database.dals.sql.MariaDB::handle_UpdateObject > Object type [${container.objectType}] is not supported.")
 
-    count_Update += 1
+      count_Update += 1
 
-    containerCompanions(container.objectType).runUpdate(container, db)
+      db.run(containerCompanions(container.objectType).updateAction(container)).map(_ == 1)
+    } catch {
+      case NonFatal(e) => Future.failed(e)
+    }
   }
 
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
-    assert(containerCompanions.contains(objectType), s"core3.database.dals.sql.MariaDB::handle_DeleteObject > Object type [$objectType] is not supported.")
+    try {
+      assert(containerCompanions.contains(objectType), s"core3.database.dals.sql.MariaDB::handle_DeleteObject > Object type [$objectType] is not supported.")
 
-    count_Delete += 1
+      count_Delete += 1
 
-    containerCompanions(objectType).runDelete(objectID, db)
+      db.run(containerCompanions(objectType).deleteAction(objectID)).map(_ == 1)
+    } catch {
+      case NonFatal(e) => Future.failed(e)
+    }
   }
 }
 
@@ -239,7 +266,7 @@ object MariaDB extends ComponentCompanion {
     timeout
   )
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
   }
 }

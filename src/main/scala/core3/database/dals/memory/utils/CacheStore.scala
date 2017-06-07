@@ -196,11 +196,11 @@ class CacheStore(
       result pipeTo sender
 
     case CacheStore.GenericQuery(objectsType) =>
-      val result: Future[ContainerSet] = handle_GenericQuery(objectsType)
+      val result: Future[Vector[Container]] = handle_GenericQuery(objectsType)
       result pipeTo sender
 
     case CacheStore.CustomQuery(objectsType, customQueryName, queryParams) =>
-      val result: Future[ContainerSet] = handle_CustomQuery(objectsType, customQueryName, queryParams)
+      val result: Future[Vector[Container]] = handle_CustomQuery(objectsType, customQueryName, queryParams)
       result pipeTo sender
   }
 
@@ -216,7 +216,7 @@ class CacheStore(
 
     for {
       missingContainers <- if (cacheState.evicted.nonEmpty) {
-        source.queryDatabase(objectsType).map(_.containers.filter(c => cacheState.evicted.contains(c.id)))
+        source.queryDatabase(objectsType).map(_.filter(c => cacheState.evicted.contains(c.id)))
       } else {
         Future.successful(Vector.empty)
       }
@@ -327,11 +327,11 @@ class CacheStore(
   private def handle_Load(objectsTypeOpt: Option[ContainerType]): Unit = {
     objectsTypeOpt match {
       case Some(objectType) => source.queryDatabase(objectType).map {
-        containerSet =>
-          if (containerSet.containers.nonEmpty) {
+        containers =>
+          if (containers.nonEmpty) {
             auditLogger.info(s"core3.database.dals.memory.utils.CacheStore::handle_Load > " +
-              s"Loading [${containerSet.containers.size}] [$objectType] containers into cache.")
-            self ! CacheStore.BulkUpdateState(containerSet.objectsType, containerSet.containers)
+              s"Loading [${containers.size}] [$objectType] containers into cache.")
+            self ! CacheStore.BulkUpdateState(objectType, containers)
           } else {
             auditLogger.info(s"core3.database.dals.memory.utils.CacheStore::handle_Load > No [$objectType] containers found for loading.")
           }
@@ -405,30 +405,22 @@ class CacheStore(
     }
   }
 
-  private def handle_GenericQuery(objectsType: ContainerType): Future[ContainerSet] = {
-    for {
-      containers <- (self ? CacheStore.GetAllContainers(objectsType)).mapTo[Vector[Container]]
-    } yield {
-      ContainerSet(objectsType, containers)
-    }
+  private def handle_GenericQuery(objectsType: ContainerType): Future[Vector[Container]] = {
+    (self ? CacheStore.GetAllContainers(objectsType)).mapTo[Vector[Container]]
   }
 
   private def handle_CustomQuery(
     objectsType: ContainerType,
     customQueryName: String,
     queryParams: Map[String, String]
-  ): Future[ContainerSet] = {
+  ): Future[Vector[Container]] = {
     val companion = containerCompanions(objectsType)
-    for {
-      containers <- (self ? CacheStore.GetAllContainers(objectsType)).mapTo[Vector[Container]].map {
-        containers =>
-          containers.filter {
-            current =>
-              companion.matchCustomQuery(customQueryName, queryParams, current)
-          }
-      }
-    } yield {
-      ContainerSet(objectsType, containers)
+    (self ? CacheStore.GetAllContainers(objectsType)).mapTo[Vector[Container]].map {
+      containers =>
+        containers.filter {
+          current =>
+            companion.matchCustomQuery(customQueryName, queryParams, current)
+        }
     }
   }
 }

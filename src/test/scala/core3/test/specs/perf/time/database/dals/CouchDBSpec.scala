@@ -59,8 +59,7 @@ trait CouchDBSpec extends PerformanceTimeSpec {
             0 until count foreach {
               _ =>
                 val result = CouchDBSpec.db.queryDatabase("TransactionLog").await
-                assert(result.objectsType == "TransactionLog")
-                assert(result.containers.size == maxContainers)
+                assert(result.size == maxContainers)
             }
         }
     }
@@ -68,7 +67,7 @@ trait CouchDBSpec extends PerformanceTimeSpec {
 }
 
 object CouchDBSpec {
-  val db: DatabaseAbstractionLayer = core3.test.fixtures.Database.createCouchDBInstance(cacheOnly = false)
+  val db: DatabaseAbstractionLayer = core3.test.fixtures.Database.createCouchDBInstance()
   val core: DatabaseAbstractionLayer = core3.test.fixtures.Database.createCoreInstance(
     Some(
       Map(

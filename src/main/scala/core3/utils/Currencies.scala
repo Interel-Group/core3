@@ -18,7 +18,7 @@ package core3.utils
 import java.text.DecimalFormat
 import java.util.Currency
 
-import play.api.libs.json.{JsError, JsSuccess, Reads}
+import play.api.libs.json._
 
 //enables implicit conversions
 import scala.language.implicitConversions
@@ -46,6 +46,11 @@ object FiguresFormat {
   * Object for currency-related functions.
   */
 object Currencies {
+  implicit val currencyWrites: Writes[Currency] = Writes {
+    currency =>
+      JsString(currency.toString)
+  }
+
   implicit val currencyReads: Reads[Currency] = Reads {
     json =>
       json.validate[String] match {

@@ -16,7 +16,7 @@
 package core3.workflows.definitions
 
 import core3.database.containers.core
-import core3.database.containers.core.UserType
+import core3.database.containers.core.LocalUser.UserType
 import core3.security.UserTokenBase
 import core3.workflows._
 import play.api.libs.json.{JsValue, Json}
@@ -29,7 +29,7 @@ object SystemCreateLocalUser extends WorkflowBase {
     userID: String,
     hashedPassword: String,
     passwordSalt: String,
-    permissions: Seq[String],
+    permissions: Vector[String],
     userType: UserType,
     metadata: JsValue
   ) extends WorkflowParameters {
@@ -57,8 +57,8 @@ object SystemCreateLocalUser extends WorkflowBase {
         (rawParams \ "userID").as[String],
         (rawParams \ "hashedPassword").as[String],
         (rawParams \ "passwordSalt").as[String],
-        (rawParams \ "permissions").as[Seq[String]],
-        (rawParams \ "userType").as[UserType](core.LocalUser.userTypeReads),
+        (rawParams \ "permissions").as[Vector[String]],
+        (rawParams \ "userType").as[UserType],
         (rawParams \ "metadata").as[JsValue]
       )
     }
@@ -69,10 +69,10 @@ object SystemCreateLocalUser extends WorkflowBase {
       case actualParams: SystemCreateLocalUserParameters =>
         queryHandlers.getContainers("LocalUser", "getByUserID", Map("userID" -> actualParams.userID)).map {
           set =>
-            if (set.containers.isEmpty) {
+            if (set.isEmpty) {
               NoInputData()
             } else {
-              throw new RuntimeException(s"core3.workflows.definitions.loadData > Cannot create user; [${set.containers.size}] user(s) with ID [${actualParams.userID}] found.")
+              throw new RuntimeException(s"core3.workflows.definitions.loadData > Cannot create user; [${set.size}] user(s) with ID [${actualParams.userID}] found.")
             }
         }
     }

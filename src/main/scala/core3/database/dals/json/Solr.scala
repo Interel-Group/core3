@@ -117,7 +117,7 @@ class Solr(
     */
   private def getCollectionName(objectType: ContainerType): String = {
     assert(containerCompanions.contains(objectType))
-    containerCompanions(objectType).getDatabaseName(DataType.Search)
+    containerCompanions(objectType).getDatabaseName
   }
 
   /**
@@ -128,7 +128,15 @@ class Solr(
     */
   private def getJSONDataFromContainer(container: Container): JsValue = {
     assert(containerCompanions.contains(container.objectType))
-    containerCompanions(container.objectType).toJsonData(container, JsonDataFormat.Search)
+    val objectsCompanion = containerCompanions(container.objectType)
+    val searchFields = objectsCompanion.getSearchFields.keys.toSeq
+    val filteredFields = objectsCompanion.toJsonData(container).as[JsObject].fields.filter {
+      case (k, _) =>
+        searchFields.contains(k)
+
+    }
+
+    JsObject(filteredFields)
   }
 
   /**
@@ -179,8 +187,8 @@ class Solr(
             getSearchFields(objectsType).map {
               case (fieldName, fieldType) =>
                 Map(
-                  "name" -> JsString(fieldName),
-                  "type" -> JsString(fieldType)
+                  "name" -> fieldName,
+                  "type" -> fieldType
                 )
             }
         )
@@ -222,7 +230,7 @@ class Solr(
             message = None,
             data = Some(
               Json.obj(
-                "layerType" -> handle_GetLayerType.toString,
+                "layerType" -> handle_GetLayerType,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,
@@ -240,11 +248,11 @@ class Solr(
     }
   }
 
-  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet] = {
+  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     Future.failed(new UnsupportedOperationException(s"core3.database.dals.json.SolrLayer::handle_GetGenericQueryResult > Cannot query Solr DAL."))
   }
 
-  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] = {
+  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     Future.failed(new UnsupportedOperationException(s"core3.database.dals.json.SolrLayer::handle_GetCustomQueryResult > Cannot query Solr DAL."))
   }
 
@@ -255,13 +263,13 @@ class Solr(
   override protected def handle_CreateObject(container: Container): Future[Boolean] = {
     count_Create += 1
 
-    val containerData = getJSONDataFromContainer(container)
-
-    val jsonData = JsObject(Map[String, JsValue](
-      "add" -> JsObject(Map[String, JsValue](
-        "commitWithin" -> JsNumber(commitWithin),
-        "overwrite" -> JsBoolean(false),
-        "doc" -> containerData))))
+    val jsonData = Json.obj(
+      "add" -> Json.obj(
+        "commitWithin" -> commitWithin,
+        "overwrite" -> false,
+        "doc" -> getJSONDataFromContainer(container)
+      )
+    )
 
     for {
       response <- ws.url(s"$baseURL/solr/${getCollectionName(container.objectType)}/update/json")
@@ -277,13 +285,13 @@ class Solr(
   override protected def handle_UpdateObject(container: MutableContainer): Future[Boolean] = {
     count_Update += 1
 
-    val containerData = getJSONDataFromContainer(container)
-
-    val jsonData = JsObject(Map[String, JsValue](
-      "add" -> JsObject(Map[String, JsValue](
-        "commitWithin" -> JsNumber(commitWithin),
-        "overwrite" -> JsBoolean(true),
-        "doc" -> containerData))))
+    val jsonData = Json.obj(
+      "add" -> Json.obj(
+        "commitWithin" -> commitWithin,
+        "overwrite" -> true,
+        "doc" -> getJSONDataFromContainer(container)
+      )
+    )
 
     for {
       response <- ws.url(s"$baseURL/solr/${getCollectionName(container.objectType)}/update/json")
@@ -299,9 +307,7 @@ class Solr(
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
     count_Delete += 1
 
-    val jsonData = JsObject(Map[String, JsValue](
-      "delete" -> JsObject(Map[String, JsValue](
-        "id" -> JsString(objectID.toString)))))
+    val jsonData = Json.obj("delete" -> Json.obj("id" -> objectID))
 
     for {
       response <- ws.url(s"$baseURL/solr/${getCollectionName(objectType)}/update/json")
@@ -368,7 +374,7 @@ object Solr extends ComponentCompanion {
     timeout
   )
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))
   }
 }

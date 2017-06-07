@@ -22,11 +22,6 @@ import core3.utils.Time._
 import core3.utils._
 import core3.workflows._
 import play.api.libs.json._
-import slick.jdbc.MySQLProfile.api._
-import slick.jdbc.MySQLProfile.backend.DatabaseDef
-import slick.jdbc.SQLActionBuilder
-
-import scala.concurrent.{ExecutionContext, Future}
 
 case class TransactionLog(
   workflowName: String,
@@ -43,31 +38,27 @@ case class TransactionLog(
   override val objectType: ContainerType = "TransactionLog"
 }
 
-object TransactionLog
-  extends JSONContainerCompanion
-    with SlickContainerCompanionImpl[(
-    String, String, String, Boolean, String, String, String, Boolean, String, java.sql.Timestamp
-    )] {
-  private type ContainerTupleDef = (
-    String, String, String, Boolean, String, String, String, Boolean, String, java.sql.Timestamp
-    )
+object TransactionLog extends JsonContainerCompanion with SlickContainerCompanion {
+
+  import slick.jdbc.MySQLProfile.api._
+  import core3.database.dals.sql.conversions.ForMySQLProfile._
+  import shapeless._
+  import slickless._
 
   //
-  //SlickContainerCompanionImpl Definitions
+  //SlickContainerCompanion Definitions
   //
   private class TableDef(tag: Tag)
-    extends Table[ContainerTupleDef](tag, "TRANSACTION_LOGS") {
-    def id = column[String]("ID", O.PrimaryKey, O.Length(36))
-
+    extends Table[TransactionLog](tag, "core_transaction_logs") {
     def workflowName = column[String]("WORKFLOW_NAME")
 
-    def requestID = column[String]("REQUEST_ID", O.Length(36))
+    def requestID = column[RequestID]("REQUEST_ID")
 
     def readOnlyWorkflow = column[Boolean]("READ_ONLY_WORKFLOW")
 
-    def parameters = column[String]("PARAMETERS")
+    def parameters = column[JsValue]("PARAMETERS")
 
-    def data = column[String]("DATA")
+    def data = column[JsValue]("DATA")
 
     def initiatingUser = column[String]("INITIATING_USER")
 
@@ -75,138 +66,57 @@ object TransactionLog
 
     def workflowState = column[String]("WORKFLOW_STATE")
 
-    def timestamp = column[java.sql.Timestamp]("TIMESTAMP", O.SqlType("DATETIME(3)"))
+    def timestamp = column[Timestamp]("TIMESTAMP", O.SqlType("DATETIME(3)"))
 
-    def * = (id, workflowName, requestID, readOnlyWorkflow, parameters, data, initiatingUser, workflowResult, workflowState, timestamp)
+    def id = column[ObjectID]("ID", O.PrimaryKey)
+
+    def * = (workflowName :: requestID :: readOnlyWorkflow :: parameters :: data :: initiatingUser :: workflowResult :: workflowState :: timestamp :: id :: HNil).mappedWith(Generic[TransactionLog])
   }
 
   private val query = TableQuery[TableDef]
-  private val compiledGetByID = Compiled((objectID: Rep[String]) => query.filter(_.id === objectID))
-  private val compiledGetBetweenTimestamps = Compiled((start: Rep[java.sql.Timestamp], end: Rep[java.sql.Timestamp]) => query.filter(_.timestamp between(start, end)))
+  private val compiledGetByID = Compiled((objectID: Rep[ObjectID]) => query.filter(_.id === objectID))
+  private val compiledGetBetweenTimestamps = Compiled((start: Rep[Timestamp], end: Rep[Timestamp]) => query.filter(_.timestamp between(start, end)))
 
-  protected def convertToTuple(container: Container): ContainerTupleDef = {
-    val c = container.asInstanceOf[TransactionLog]
-    val parameters = c.parameters.toString()
-    val data = c.data.toString()
-    (c.id.toString,
-      c.workflowName,
-      c.requestID.toString,
-      c.readOnlyWorkflow,
-      parameters,
-      data,
-      c.initiatingUser,
-      c.workflowResult,
-      c.workflowState,
-      new java.sql.Timestamp(c.timestamp.getMillis))
-  }
+  override def createSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.create
+  override def dropSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.drop
+  override def genericQueryAction: DBIOAction[Seq[Container], NoStream, Effect.Read] = query.result
+  override def getAction(objectID: ObjectID): DBIOAction[Seq[Container], NoStream, Effect.Read] = compiledGetByID(objectID).result
+  override def createAction(container: Container): DBIOAction[Int, NoStream, Effect.Write] = query += container.asInstanceOf[TransactionLog]
 
-  protected def convertFromTuple(tuple: ContainerTupleDef): Container = {
-    val id = tuple._1
-    val workflowName = tuple._2
-    val requestID = tuple._3
-    val readOnlyWorkflow = tuple._4
-    val parameters = tuple._5
-    val data = tuple._6
-    val initiatingUser = tuple._7
-    val workflowResult = tuple._8
-    val workflowState = tuple._9
-    val timestamp = tuple._10
+  override def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write] =
+    throw new IllegalStateException("core3.database.containers.core.TransactionLog::runUpdate > Cannot update 'TransactionLog' data.")
 
-    new TransactionLog(
-      workflowName,
-      getRequestIDFromString(requestID),
-      readOnlyWorkflow,
-      Json.parse(parameters),
-      Json.parse(data),
-      initiatingUser,
-      workflowResult,
-      workflowState,
-      new Timestamp(timestamp),
-      database.getObjectIDFromString(id)
-    )
-  }
+  override def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write] =
+    throw new IllegalStateException("core3.database.containers.core.TransactionLog::runUpdate > Cannot delete 'TransactionLog' data.")
 
-  def runCreateSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query.schema.create)
-    } yield {
-      true
-    }
-  }
-
-  def runDropSchema(db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query.schema.drop)
-    } yield {
-      true
-    }
-  }
-
-  def runGenericQuery(query: SQLActionBuilder, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
-    val action = query.as[ContainerTupleDef]
-    db.run(action).map {
-      result =>
-        result.map(convertFromTuple)
-    }
-  }
-
-  def runGet(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Container] = {
-    val action = compiledGetByID(objectID.toString).result
-    db.run(action).map {
-      result =>
-        convertFromTuple(result.head)
-    }
-  }
-
-  def runCreate(container: Container, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      _ <- db.run(query += convertToTuple(container))
-    } yield {
-      true
-    }
-  }
-
-  def runUpdate(container: MutableContainer, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    Future.failed(new IllegalArgumentException("core3.database.containers.core.TransactionLog::runUpdate > Cannot update 'TransactionLog' data."))
-  }
-
-  def runDelete(objectID: ObjectID, db: DatabaseDef)(implicit ec: ExecutionContext): Future[Boolean] = {
-    Future.failed(new IllegalArgumentException("core3.database.containers.core.TransactionLog::runDelete > Cannot delete 'TransactionLog' data."))
-  }
-
-  override def runCustomQuery(queryName: String, queryParams: Map[String, String], db: DatabaseDef)(implicit ec: ExecutionContext): Future[Vector[Container]] = {
-    val action = queryName match {
+  override def customQueryAction(queryName: String, queryParams: Map[String, String]): DBIOAction[Seq[Container], NoStream, Effect.Read] = {
+    queryName match {
       case "getBetweenTimestamps" =>
         compiledGetBetweenTimestamps((
-          new java.sql.Timestamp(queryParams("start").toTimestamp(TimestampFormat.DefaultTimestamp).getMillis),
-          new java.sql.Timestamp(queryParams("end").toTimestamp(TimestampFormat.DefaultTimestamp).getMillis)
+          queryParams("start").toTimestamp(TimestampFormat.DefaultTimestamp),
+          queryParams("end").toTimestamp(TimestampFormat.DefaultTimestamp)
         )).result
 
       case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::runCustomQuery > Query [$queryName] is not supported.")
     }
-
-    db.run(action).map {
-      result =>
-        result.map(convertFromTuple).toVector
-    }
   }
 
   //
-  //JSONContainerCompanion Definitions
+  //JsonContainerCompanion Definitions
   //
   private val writes = Writes[TransactionLog] {
     obj =>
       Json.obj(
-        "workflowName" -> JsString(obj.workflowName),
-        "requestID" -> JsString(obj.requestID.toString),
-        "readOnlyWorkflow" -> JsBoolean(obj.readOnlyWorkflow),
+        "workflowName" -> obj.workflowName,
+        "requestID" -> obj.requestID,
+        "readOnlyWorkflow" -> obj.readOnlyWorkflow,
         "parameters" -> obj.parameters,
         "data" -> obj.data,
-        "initiatingUser" -> JsString(obj.initiatingUser),
-        "workflowResult" -> JsBoolean(obj.workflowResult),
-        "workflowState" -> JsString(obj.workflowState),
-        "timestamp" -> JsString(obj.timestamp.toString),
-        "id" -> JsString(obj.id.toString)
+        "initiatingUser" -> obj.initiatingUser,
+        "workflowResult" -> obj.workflowResult,
+        "workflowState" -> obj.workflowState,
+        "timestamp" -> obj.timestamp,
+        "id" -> obj.id
       )
   }
 
@@ -228,28 +138,18 @@ object TransactionLog
       )
   }
 
-  def toJsonData(container: Container, format: JsonDataFormat): JsValue = {
-    format match {
-      case JsonDataFormat.Full => Json.toJson(container.asInstanceOf[TransactionLog])(writes)
-      case JsonDataFormat.Partial => Json.toJson(container.asInstanceOf[TransactionLog])(writes)
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::toJsonData > JSON format [$format] not supported.")
-    }
+  override def toJsonData(container: Container): JsValue = {
+    Json.toJson(container.asInstanceOf[TransactionLog])(writes)
   }
 
-  def fromJsonData(data: JsValue): Container = {
+  override def fromJsonData(data: JsValue): Container = {
     data.as[TransactionLog](reads)
   }
 
   //
   //BasicContainerCompanion Definitions
   //
-  def getDatabaseName(dataType: DataType): String = {
-    dataType match {
-      case DataType.JSON => "core-transaction-logs"
-      case DataType.Slick => "TRANSACTION_LOGS"
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::getDatabaseName > Data type [$dataType] not supported.")
-    }
-  }
+  override def getDatabaseName: String = "core-transaction-logs"
 
   override def matchCustomQuery(queryName: String, queryParams: Map[String, String], container: Container): Boolean = {
     queryName match {
@@ -257,7 +157,7 @@ object TransactionLog
         val log = container.asInstanceOf[TransactionLog]
         queryParams("start").toTimestamp(TimestampFormat.DefaultTimestamp).isBefore(log.timestamp) && queryParams("end").toTimestamp(TimestampFormat.DefaultTimestamp).isAfter(log.timestamp)
 
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Log::matchCustomQuery > Query [$queryName] is not supported.")
+      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::matchCustomQuery > Query [$queryName] is not supported.")
     }
   }
 

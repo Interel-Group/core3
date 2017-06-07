@@ -266,8 +266,8 @@ class Core(DALs: Map[ContainerType, Vector[ActorRef]])(implicit ec: ExecutionCon
           (for {
             _ <- (currentSlaveDAL ? ClearDatabaseStructure(objectsType)).recover { case NonFatal(e) => e.printStackTrace(); true }
             _ <- currentSlaveDAL ? BuildDatabaseStructure(objectsType)
-            masterContainers <- (master ? GetGenericQueryResult(objectsType)).mapTo[ContainerSet]
-            syncResult <- Future.sequence(masterContainers.containers.map(c => (currentSlaveDAL ? CreateObject(c)).mapTo[Boolean])).map(_.forall(c => c))
+            masterContainers <- (master ? GetGenericQueryResult(objectsType)).mapTo[Vector[Container]]
+            syncResult <- Future.sequence(masterContainers.map(c => (currentSlaveDAL ? CreateObject(c)).mapTo[Boolean])).map(_.forall(c => c))
           } yield {
             syncResult
           }).recover {
@@ -302,11 +302,11 @@ class Core(DALs: Map[ContainerType, Vector[ActorRef]])(implicit ec: ExecutionCon
             message = None,
             data = Some(
               Json.obj(
-                "layerType" -> handle_GetLayerType.toString,
+                "layerType" -> handle_GetLayerType,
                 "id" -> handle_GetDatabaseIdentifier,
                 "dals" -> Json.obj(
                   "config" -> configuredDALs.map {
-                    case (k, v) => k -> JsArray(v.map(c => JsString(c.toString)))
+                    case (k, v) => k -> v.map(c => c.toString)
                   },
                   "stats" -> results.map(result => result.data.orElse(result.message.map(JsString)).getOrElse(JsBoolean(result.wasSuccessful)))
                 ),
@@ -375,16 +375,16 @@ class Core(DALs: Map[ContainerType, Vector[ActorRef]])(implicit ec: ExecutionCon
     }
   }
 
-  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[ContainerSet] = {
+  override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     checkDALsOrThrow(objectsType, "handle_GetGenericQueryResult")
 
     count_GenericQuery += 1
 
-    val result = (configuredDALs(objectsType).head ? GetGenericQueryResult(objectsType)).mapTo[ContainerSet]
+    val result = (configuredDALs(objectsType).head ? GetGenericQueryResult(objectsType)).mapTo[Vector[Container]]
 
     result.onComplete {
       case Success(r) =>
-        auditLogger.info(s"core3.database.dals.Core::handle_GetGenericQueryResult($objectsType) > Database query completed successfully and found [${r.containers.size}] container(s).")
+        auditLogger.info(s"core3.database.dals.Core::handle_GetGenericQueryResult($objectsType) > Database query completed successfully and found [${r.size}] container(s).")
       case Failure(e) =>
         auditLogger.error(s"core3.database.dals.Core::handle_GetGenericQueryResult($objectsType) > Database query failed with exception [${e.getMessage}].")
     }
@@ -392,16 +392,16 @@ class Core(DALs: Map[ContainerType, Vector[ActorRef]])(implicit ec: ExecutionCon
     result
   }
 
-  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[ContainerSet] = {
+  override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     checkDALsOrThrow(objectsType, "handle_GetCustomQueryResult")
 
     count_CustomQuery += 1
 
-    val result = (configuredDALs(objectsType).head ? GetCustomQueryResult(objectsType, customQueryName, queryParams)).mapTo[ContainerSet]
+    val result = (configuredDALs(objectsType).head ? GetCustomQueryResult(objectsType, customQueryName, queryParams)).mapTo[Vector[Container]]
 
     result.onComplete {
       case Success(r) =>
-        auditLogger.info(s"core3.database.dals.Core::handle_GetCustomQueryResult($objectsType) > Database query [$customQueryName] completed successfully and found [${r.containers.size}] container(s).")
+        auditLogger.info(s"core3.database.dals.Core::handle_GetCustomQueryResult($objectsType) > Database query [$customQueryName] completed successfully and found [${r.size}] container(s).")
       case Failure(e) =>
         auditLogger.error(s"core3.database.dals.Core::handle_GetCustomQueryResult($objectsType) > Database query [$customQueryName] failed with exception [${e.getMessage}].")
     }
@@ -581,8 +581,8 @@ object Core extends ComponentCompanion {
     timeout
   )
 
-  override def getActionDescriptors: Seq[ActionDescriptor] = {
-    Seq(
+  override def getActionDescriptors: Vector[ActionDescriptor] = {
+    Vector(
       ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None),
       ActionDescriptor("sync", "Synchronizes data between DALs", arguments = Some(Map("objectsType" -> "(required) [all|<container type>]"))),
       ActionDescriptor("build", "Builds one or more of the configured databases", arguments = Some(Map("objectsType" -> "(required) [all|<container type>]"))),

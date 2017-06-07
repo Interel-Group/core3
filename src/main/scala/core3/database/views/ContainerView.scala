@@ -17,7 +17,6 @@ package core3.database.views
 
 import core3.database.containers.Container
 import core3.database.{ContainerType, ContainerViewType, ObjectID}
-import play.api.libs.json.JsValue
 
 import scala.collection.mutable
 
@@ -86,25 +85,4 @@ trait ContainerView {
       case (field, currentData) => loadFieldData(field, currentData)
     }
   }
-}
-
-/**
-  * Implementation & usage trait for container views supporting JSON data handling.
-  */
-trait JSONContainerViewCompanion {
-  /**
-    * Converts the supplied view to a JSON value.
-    *
-    * @param container the view to be converted
-    * @return the view as a JSON value
-    */
-  def toJsonData(container: ContainerView): JsValue
-
-  /**
-    * Converts the supplied JSON value to a view.
-    *
-    * @param data the JSON value to be converted
-    * @return the converted view
-    */
-  def fromJsonData(data: JsValue): ContainerView
 }

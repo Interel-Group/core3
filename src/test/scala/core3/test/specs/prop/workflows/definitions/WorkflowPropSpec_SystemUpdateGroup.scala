@@ -88,7 +88,7 @@ class WorkflowPropSpec_SystemUpdateGroup extends PropertySpec {
 
           result.wasSuccessful should be(true)
 
-          val groups = fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group])).await
+          val groups = fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group])).await
           groups should not be empty
 
           val updatedGroup = groups.find(_.id == group.id)

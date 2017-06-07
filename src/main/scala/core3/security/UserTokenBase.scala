@@ -19,7 +19,7 @@ package core3.security
   * Base trait for implementing user containers.
   */
 trait UserTokenBase {
-  def permissions: Seq[String]
+  def permissions: Vector[String]
 
   def userID: String
 }

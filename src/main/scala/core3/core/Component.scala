@@ -54,7 +54,7 @@ trait ComponentCompanion {
     *
     * @return the defined descriptors
     */
-  def getActionDescriptors: Seq[Component.ActionDescriptor]
+  def getActionDescriptors: Vector[Component.ActionDescriptor]
 }
 
 object Component {

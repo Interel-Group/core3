@@ -18,7 +18,7 @@ package core3.test.specs.unit.workflows.definitions
 import akka.actor.ActorRef
 import akka.pattern.ask
 import core3.database.containers.core
-import core3.database.containers.core.UserType
+import core3.database.containers.core.LocalUser.UserType
 import core3.database.dals.Core.{BuildAllDatabases, ClearAllDatabases, VerifyAllDatabases}
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.security.Auth0UserToken
@@ -84,7 +84,7 @@ class WorkflowUnitSpec_SystemUpdateLocalUserPassword extends AsyncUnitSpec {
           ),
           fixture.authorizedUser
         )).mapTo[WorkflowResult]
-        originalUsers <- fixture.db.queryDatabase("LocalUser").map(_.containers.map(_.asInstanceOf[core.LocalUser]))
+        originalUsers <- fixture.db.queryDatabase("LocalUser").map(_.map(_.asInstanceOf[core.LocalUser]))
         updateResult <- (fixture.engine ? ExecuteWorkflow(
           SystemUpdateLocalUserPassword.name,
           rawParams = Json.obj(
@@ -96,7 +96,7 @@ class WorkflowUnitSpec_SystemUpdateLocalUserPassword extends AsyncUnitSpec {
           ),
           fixture.authorizedUser
         )).mapTo[WorkflowResult]
-        updatedUsers <- fixture.db.queryDatabase("LocalUser").map(_.containers.map(_.asInstanceOf[core.LocalUser]))
+        updatedUsers <- fixture.db.queryDatabase("LocalUser").map(_.map(_.asInstanceOf[core.LocalUser]))
       } yield {
         createResult.wasSuccessful should be(true)
         originalUsers should have size 1

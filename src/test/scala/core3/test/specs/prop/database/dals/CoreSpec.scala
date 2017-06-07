@@ -44,9 +44,8 @@ class CoreSpec extends PropertySpec {
           fixture.dbCore.createObject(newLog).await should equal(true)
           val queryResult = fixture.dbCore.queryDatabase("TransactionLog").await
 
-          queryResult.objectsType should equal("TransactionLog")
-          queryResult.containers.size should be > 0
-          queryResult.containers should contain(newLog)
+          queryResult.size should be > 0
+          queryResult should contain(newLog)
       }
   }
 
@@ -57,24 +56,21 @@ class CoreSpec extends PropertySpec {
           fixture.dbCore.createObject(newGroup).await should equal(true)
           val queryResult = fixture.dbCore.queryDatabase("Group").await
 
-          queryResult.objectsType should equal("Group")
-          queryResult.containers.size should be > 0
-          queryResult.containers should contain(newGroup)
+          queryResult.size should be > 0
+          queryResult should contain(newGroup)
 
           val updatedGroup = newGroup.copy(name = updatedName)
           fixture.dbCore.updateObject(updatedGroup).await should equal(true)
           val updatedQueryResult = fixture.dbCore.queryDatabase("Group").await
 
-          updatedQueryResult.objectsType should equal("Group")
-          updatedQueryResult.containers.size should be > 0
-          updatedQueryResult.containers should not contain newGroup
-          updatedQueryResult.containers should contain(updatedGroup)
+          updatedQueryResult.size should be > 0
+          updatedQueryResult should not contain newGroup
+          updatedQueryResult should contain(updatedGroup)
 
           fixture.dbCore.deleteObject("Group", newGroup.id).await should equal(true)
           val remainingQueryResult = fixture.dbCore.queryDatabase("Group").await
-          remainingQueryResult.objectsType should equal("Group")
-          remainingQueryResult.containers should not contain newGroup
-          remainingQueryResult.containers should not contain updatedGroup
+          remainingQueryResult should not contain newGroup
+          remainingQueryResult should not contain updatedGroup
       }
   }
 
@@ -85,24 +81,21 @@ class CoreSpec extends PropertySpec {
           fixture.dbCore.createObject(newLocalUser).await should equal(true)
           val queryResult = fixture.dbCore.queryDatabase("LocalUser").await
 
-          queryResult.objectsType should equal("LocalUser")
-          queryResult.containers.size should be > 0
-          queryResult.containers should contain(newLocalUser)
+          queryResult.size should be > 0
+          queryResult should contain(newLocalUser)
 
           val updatedLocalUser = newLocalUser.copy(hashedPassword = updatedPassword)
           fixture.dbCore.updateObject(updatedLocalUser).await should equal(true)
           val updatedQueryResult = fixture.dbCore.queryDatabase("LocalUser").await
 
-          updatedQueryResult.objectsType should equal("LocalUser")
-          updatedQueryResult.containers.size should be > 0
-          updatedQueryResult.containers should not contain newLocalUser
-          updatedQueryResult.containers should contain(updatedLocalUser)
+          updatedQueryResult.size should be > 0
+          updatedQueryResult should not contain newLocalUser
+          updatedQueryResult should contain(updatedLocalUser)
 
           fixture.dbCore.deleteObject("LocalUser", newLocalUser.id).await should equal(true)
           val remainingQueryResult = fixture.dbCore.queryDatabase("LocalUser").await
-          remainingQueryResult.objectsType should equal("LocalUser")
-          remainingQueryResult.containers should not contain newLocalUser
-          remainingQueryResult.containers should not contain updatedLocalUser
+          remainingQueryResult should not contain newLocalUser
+          remainingQueryResult should not contain updatedLocalUser
       }
   }
 }

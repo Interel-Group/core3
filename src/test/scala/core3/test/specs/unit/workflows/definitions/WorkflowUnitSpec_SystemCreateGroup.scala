@@ -77,7 +77,7 @@ class WorkflowUnitSpec_SystemCreateGroup extends AsyncUnitSpec {
           ),
           fixture.authorizedUser
         )).mapTo[WorkflowResult]
-        groups <- fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+        groups <- fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group]))
       } yield {
         result.wasSuccessful should be(true)
         groups should have size 1

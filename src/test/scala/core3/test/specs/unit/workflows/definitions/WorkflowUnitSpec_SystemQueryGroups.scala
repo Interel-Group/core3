@@ -65,7 +65,7 @@ class WorkflowUnitSpec_SystemQueryGroups extends AsyncUnitSpec {
       for {
         addGroups <- (fixture.engine ? ExecuteWorkflow(AddGroups.name, rawParams = Json.obj(), fixture.authorizedUser)).mapTo[WorkflowResult]
         result <- (fixture.engine ? ExecuteWorkflow(SystemQueryGroups.name, rawParams = Json.obj(), fixture.authorizedUser)).mapTo[WorkflowResult]
-        dbGroups <- fixture.db.queryDatabase("Group").map(_.containers.map(_.asInstanceOf[core.Group]))
+        dbGroups <- fixture.db.queryDatabase("Group").map(_.map(_.asInstanceOf[core.Group]))
       } yield {
         addGroups.wasSuccessful should be(true)
         result.wasSuccessful should be(true)

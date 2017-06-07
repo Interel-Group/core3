@@ -33,9 +33,9 @@ class CommandParser(appVendor: String, appName: String, appVersion: String) {
 
   import CommandParser._
 
-  private var componentAutoCompleteData = Map[String, Seq[ActionDescriptor]](
-    "help" -> Seq.empty,
-    "system" -> Seq(
+  private var componentAutoCompleteData = Map[String, Vector[ActionDescriptor]](
+    "help" -> Vector.empty,
+    "system" -> Vector(
       ActionDescriptor(name = "get", description = "", arguments = Some(systemGetArgs.map(_ -> "").toMap)),
       ActionDescriptor(name = "reload", description = "", arguments = Some(systemReloadArgs.map(_ -> "").toMap)),
       ActionDescriptor(name = "enable", description = "", arguments = Some(systemModeArgs.map(_ -> "").toMap)),
@@ -190,7 +190,7 @@ class CommandParser(appVendor: String, appName: String, appVersion: String) {
     * @param config the pre-build config to use
     * @return the parsed command configuration
     */
-  def parse(input: Seq[String], config: CommandConfig): Option[CommandConfig] = {
+  def parse(input: Vector[String], config: CommandConfig): Option[CommandConfig] = {
     parser.parse(input, config)
   }
 
@@ -219,17 +219,17 @@ class CommandParser(appVendor: String, appName: String, appVersion: String) {
     *
     * @return the requested data
     */
-  def getComponentAutoCompleteData: Map[String, Seq[ActionDescriptor]] = componentAutoCompleteData
+  def getComponentAutoCompleteData: Map[String, Vector[ActionDescriptor]] = componentAutoCompleteData
 }
 
 object CommandParser {
-  private val systemGetArgs: Seq[String] = Seq("modes", "components", "static_config", "dynamic_config")
-  private val systemReloadArgs: Seq[String] = Seq("dynamic_config")
-  private val systemModeArgs: Seq[String] = Seq("maintenance", "metrics", "trace")
+  private val systemGetArgs: Vector[String] = Vector("modes", "components", "static_config", "dynamic_config")
+  private val systemReloadArgs: Vector[String] = Vector("dynamic_config")
+  private val systemModeArgs: Vector[String] = Vector("maintenance", "metrics", "trace")
 
   def apply(appVendor: String, appName: String, appVersion: String): CommandParser = new CommandParser(appVendor, appName, appVersion)
 
-  def apply(appVendor: String, appName: String, appVersion: String, components: Seq[ComponentDescriptor]): CommandParser = {
+  def apply(appVendor: String, appName: String, appVersion: String, components: Vector[ComponentDescriptor]): CommandParser = {
     val parser = new CommandParser(appVendor, appName, appVersion)
     components.foreach(parser.withComponent)
     parser
