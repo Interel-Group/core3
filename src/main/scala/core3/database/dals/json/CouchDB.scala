@@ -165,8 +165,13 @@ class CouchDB(
         .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .get()
       _ <- checkResponse(response, 200, "getRevisionID")
+      response <- Future.successful(response.json)
     } yield {
-      (response.json \ "_rev").get.as[String]
+      if((response \ "revision").asOpt[String].nonEmpty && (response \ "revisionNumber").asOpt[Int].nonEmpty) {
+        (response \ "_rev").get.as[String]
+      } else {
+        throw new IllegalStateException(s"core3.database.dals.json.CouchDB::getRevisionID > Objects of type [$objectType] cannot be updated or deleted.")
+      }
     }
   }
 
@@ -267,6 +272,7 @@ class CouchDB(
             data = Some(
               Json.obj(
                 "layerType" -> handle_GetLayerType,
+                "supportedContainers" -> handle_GetSupportedContainers,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,

@@ -190,6 +190,7 @@ class DistributedCache(
             data = Some(
               Json.obj(
                 "layerType" -> handle_GetLayerType.toString,
+                "supportedContainers" -> handle_GetSupportedContainers,
                 "id" -> handle_GetDatabaseIdentifier,
                 "cluster" -> Json.obj(
                   "address" -> clusterAddress.toString,

@@ -279,6 +279,7 @@ class ElasticSearch(
             data = Some(
               Json.obj(
                 "layerType" -> handle_GetLayerType,
+                "supportedContainers" -> handle_GetSupportedContainers,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,
@@ -459,12 +460,18 @@ class ElasticSearch(
 
     count_Delete += 1
 
-    val indexName = containerCompanions(objectType).getDatabaseName
+    val objectsCompanion =  containerCompanions(objectType)
 
     for {
+      container <- handle_GetObject(objectType, objectID)
+      _ <- Future {
+        if(!container.isInstanceOf[MutableContainer]) {
+          throw new IllegalStateException(s"core3.database.dals.json.ElasticSearch::handle_DeleteObject > Objects of type [$objectType] cannot be deleted.")
+        }
+      }
       response <- client.execute {
         delete(objectID.toString)
-          .from(indexName / docType)
+          .from(objectsCompanion.getDatabaseName / docType)
           .refresh(refreshPolicy)
       }
     } yield {

@@ -51,32 +51,38 @@ class CoreSpec extends AsyncUnitSpec with CoreBehaviours {
 
   val mariaDBMasterMap = Map(
     "TransactionLog" -> Vector(mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef, redisDAL.getRef),
-    "Group" -> Vector(mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef, redisDAL.getRef)
+    "Group" -> Vector(mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef, redisDAL.getRef),
+    "LocalUser" -> Vector(mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef, redisDAL.getRef)
   )
 
   val couchDBMasterMap = Map(
     "TransactionLog" -> Vector(couchDAL.getRef, memoryDAL.getRef, mariaDAL.getRef, redisDAL.getRef),
-    "Group" -> Vector(couchDAL.getRef, memoryDAL.getRef, mariaDAL.getRef, redisDAL.getRef)
+    "Group" -> Vector(couchDAL.getRef, memoryDAL.getRef, mariaDAL.getRef, redisDAL.getRef),
+    "LocalUser" -> Vector(couchDAL.getRef, memoryDAL.getRef, mariaDAL.getRef, redisDAL.getRef)
   )
 
   val memoryDBMasterMap = Map(
     "TransactionLog" -> Vector(memoryDAL.getRef, mariaDAL.getRef, couchDAL.getRef, redisDAL.getRef),
-    "Group" -> Vector(memoryDAL.getRef, mariaDAL.getRef, couchDAL.getRef, redisDAL.getRef)
+    "Group" -> Vector(memoryDAL.getRef, mariaDAL.getRef, couchDAL.getRef, redisDAL.getRef),
+    "LocalUser" -> Vector(memoryDAL.getRef, mariaDAL.getRef, couchDAL.getRef, redisDAL.getRef)
   )
 
   val redisMasterMap = Map(
     "TransactionLog" -> Vector(redisDAL.getRef, mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef),
-    "Group" -> Vector(redisDAL.getRef, mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef)
+    "Group" -> Vector(redisDAL.getRef, mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef),
+    "LocalUser" -> Vector(redisDAL.getRef, mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef)
   )
 
   val elasticMasterMap = Map(
     "TransactionLog" -> Vector(elasticStoreDAL.getRef, redisDAL.getRef, mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef),
-    "Group" -> Vector(elasticStoreDAL.getRef, redisDAL.getRef, mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef)
+    "Group" -> Vector(elasticStoreDAL.getRef, redisDAL.getRef, mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef),
+    "LocalUser" -> Vector(elasticStoreDAL.getRef, redisDAL.getRef, mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef)
   )
 
   val distributedCacheMasterMap = Map(
     "TransactionLog" -> Vector(distributedCacheDAL.getRef, redisDAL.getRef, memoryDAL.getRef, couchDAL.getRef),
-    "Group" -> Vector(distributedCacheDAL.getRef, redisDAL.getRef, memoryDAL.getRef, couchDAL.getRef)
+    "Group" -> Vector(distributedCacheDAL.getRef, redisDAL.getRef, memoryDAL.getRef, couchDAL.getRef),
+    "LocalUser" -> Vector(distributedCacheDAL.getRef, redisDAL.getRef, memoryDAL.getRef, couchDAL.getRef)
   )
 
   "A Core with a MariaDB master database" should behave like

@@ -22,6 +22,7 @@ import core3.core.Component._
 import core3.database.dals.LayerType
 import core3.test.fixtures
 import core3.test.specs.unit.AsyncUnitSpec
+import play.api.libs.json._
 
 import scala.concurrent.duration._
 
@@ -47,6 +48,27 @@ class ComponentSpec extends AsyncUnitSpec {
         result.data should not be None
         result.message should be(None)
         (result.data.get \ "layerType").as[LayerType] should be(LayerType.MemoryOnlyDB)
+      }
+  }
+
+  it should "successfully convert results to and from JSON strings" in {
+    fixture =>
+      for {
+        result <- (fixture.component ? ExecuteAction("stats")).mapTo[ActionResult]
+      } yield {
+        result.wasSuccessful should be(true)
+        result.data should not be None
+        result.message should be(None)
+        (result.data.get \ "layerType").as[LayerType] should be(LayerType.MemoryOnlyDB)
+
+        val jsonResult = Json.toJson(result)(writesActionResult)
+        (jsonResult \ "wasSuccessful").as[Boolean] should be(true)
+        (jsonResult \ "data").asOpt[JsValue] should not be None
+        (jsonResult \ "message").asOpt[String] should be(None)
+        (jsonResult \ "data" \ "layerType").as[LayerType] should be(LayerType.MemoryOnlyDB)
+
+        val parsedResult = Json.parse(jsonResult.toString).as[ActionResult](readsActionResult)
+        parsedResult should be(result)
       }
   }
 }

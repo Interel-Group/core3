@@ -22,10 +22,6 @@ package object database {
   type ContainerType = String
   type ContainerViewType = String
 
-  val InvalidObjectID: ObjectID = java.util.UUID.fromString("00000000-0000-0000-0000-000000000000")
-  val InvalidRevisionID = InvalidObjectID
-  val InvalidRevisionSequenceNumber = 0
-
   /**
     * Generates a new random object ID.
     *
@@ -39,22 +35,6 @@ package object database {
     * @return the generated ID
     */
   def getNewRevisionID: RevisionID = java.util.UUID.randomUUID()
-
-  /**
-    * Converts the supplied string to an object ID.
-    *
-    * @param value the string to be converted
-    * @return the resulting ID
-    */
-  def getObjectIDFromString(value: String): ObjectID = java.util.UUID.fromString(value)
-
-  /**
-    * Converts the supplied string to an object revision ID.
-    *
-    * @param value the string to be converted
-    * @return the resulting ID
-    */
-  def getRevisionIDFromString(value: String): RevisionID = java.util.UUID.fromString(value)
 
   /**
     * Generates an initial object revision number.
@@ -72,12 +52,4 @@ package object database {
     * @return the generated revision number
     */
   def getNewRevisionSequenceNumber(currentNumber: RevisionSequenceNumber): RevisionSequenceNumber = currentNumber + 1
-
-  /**
-    * Converts the supplied string to an object revision number.
-    *
-    * @param value the string to be converted
-    * @return the resulting revision number
-    */
-  def getRevisionSequenceNumberFromString(value: String): RevisionSequenceNumber = value.toInt
 }

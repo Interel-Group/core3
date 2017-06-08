@@ -139,6 +139,7 @@ class MariaDB(
             data = Some(
               Json.obj(
                 "layerType" -> handle_GetLayerType,
+                "supportedContainers" -> handle_GetSupportedContainers,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,

@@ -246,26 +246,17 @@ object Time {
 
   implicit val timestampReads: Reads[Timestamp] = Reads {
     json =>
-      json.validate[String] match {
-        case JsSuccess(value, _) => JsSuccess(value.toTimestamp(TimestampFormat.DefaultTimestamp))
-        case JsError(e) => JsError(e)
-      }
+      json.validate[String].map(_.toTimestamp(TimestampFormat.DefaultTimestamp))
   }
 
   implicit val dateReads: Reads[Date] = Reads {
     json =>
-      json.validate[String] match {
-        case JsSuccess(value, _) => JsSuccess(value.toDate(DateFormat.DefaultDate))
-        case JsError(e) => JsError(e)
-      }
+      json.validate[String].map(_.toDate(DateFormat.DefaultDate))
   }
 
   implicit val timeReads: Reads[Time] = Reads {
     json =>
-      json.validate[String] match {
-        case JsSuccess(value, _) => JsSuccess(value.toTime(TimeFormat.DefaultTime))
-        case JsError(e) => JsError(e)
-      }
+      json.validate[String].map(_.toTime(TimeFormat.DefaultTime))
   }
 
   implicit val timestampWrites: Writes[Timestamp] = Writes {

@@ -200,6 +200,7 @@ class Redis(
             data = Some(
               Json.obj(
                 "layerType" -> handle_GetLayerType,
+                "supportedContainers" -> handle_GetSupportedContainers,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,
@@ -317,9 +318,15 @@ class Redis(
     count_Delete += 1
 
     for {
-      result <- client.del(getKey(objectType, objectID))
+      container <- handle_GetObject(objectType, objectID)
+      _ <- Future {
+        if(!container.isInstanceOf[MutableContainer]) {
+          throw new IllegalStateException(s"core3.database.dals.json.Redis::handle_DeleteObject > Objects of type [$objectType] cannot be deleted.")
+        }
+      }
+      deleteResult <- client.del(getKey(objectType, objectID))
     } yield {
-      result == 1
+      deleteResult == 1
     }
   }
 }

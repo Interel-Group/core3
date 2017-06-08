@@ -19,7 +19,7 @@ import akka.actor.Props
 import akka.util.Timeout
 import core3.core.Component.{ActionDescriptor, ActionResult}
 import core3.core.ComponentCompanion
-import core3.database.containers.{Container, MutableContainer}
+import core3.database.containers.{BasicContainerCompanion, Container, MutableContainer}
 import core3.database.dals.{DatabaseAbstractionLayerComponent, LayerType}
 import core3.database.{ContainerType, ObjectID}
 import play.api.libs.json.Json
@@ -31,7 +31,11 @@ import scala.util.control.NonFatal
 /**
   * A Database Abstraction Layer that directly implements a simple in-memory database.
   *
-  * Warning: The database offers NO persistence and all data is lost as soon the instance is destroyed.
+  * Warnings:
+  * <ul>
+  *   <li>It is meant to be used primarily for testing and cannot be relied on for production use.</li>
+  *   <li>The database offers NO persistence and all data is lost as soon the instance is destroyed.</li>
+  * </ul>
   *
   * @param supportedContainers a list of supported containers
   */
@@ -99,6 +103,7 @@ class MemoryOnlyDB(private val supportedContainers: Vector[String])
             data = Some(
               Json.obj(
                 "layerType" -> handle_GetLayerType,
+                "supportedContainers" -> handle_GetSupportedContainers,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,
@@ -127,7 +132,25 @@ class MemoryOnlyDB(private val supportedContainers: Vector[String])
   }
 
   override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
-    Future.failed[Vector[Container]](new UnsupportedOperationException(s"core3.database.dals.memory.MemoryOnlyDB::handle_GetCustomQueryResult > [$instanceID] Custom queries are not supported."))
+    try {
+      val containers = store(objectsType).values.toVector
+
+      if(containers.nonEmpty) {
+        val cls = Class.forName(containers.head.getClass.getName + "$")
+        val companion = cls.getField("MODULE$").get(cls)
+
+        Future.successful(
+          containers.filter {
+            container =>
+              companion.asInstanceOf[BasicContainerCompanion].matchCustomQuery(customQueryName, queryParams, container)
+          }
+        )
+      } else {
+        Future.successful(Vector.empty)
+      }
+    } catch {
+      case NonFatal(e) => Future.failed(e)
+    }
   }
 
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
@@ -149,8 +172,18 @@ class MemoryOnlyDB(private val supportedContainers: Vector[String])
 
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
     count_Delete += 1
-    store(objectType) -= objectID
-    Future.successful(true)
+
+    for {
+      container <- handle_GetObject(objectType, objectID)
+      _ <- Future {
+        if(!container.isInstanceOf[MutableContainer]) {
+          throw new IllegalStateException(s"core3.database.dals.memory.MemoryOnlyDB::handle_DeleteObject > Objects of type [$objectType] cannot be deleted.")
+        }
+      }
+    } yield {
+      store(objectType) -= objectID
+      true
+    }
   }
 }
 
