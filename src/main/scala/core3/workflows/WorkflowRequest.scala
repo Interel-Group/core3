@@ -28,27 +28,7 @@ case class WorkflowRequest(workflowName: String, rawParams: JsValue, returnOutpu
 }
 
 object WorkflowRequest {
-  def apply(jsonString: String): WorkflowRequest = Json.parse(jsonString).as[WorkflowRequest]
+  implicit val writesWorkflowRequest: Writes[WorkflowRequest] = Json.writes[WorkflowRequest]
 
-  def apply(json: JsValue): WorkflowRequest = json.as[WorkflowRequest]
-
-  implicit val writesWorkflowRequest: Writes[WorkflowRequest] = Writes[WorkflowRequest] {
-    obj =>
-      Json.obj(
-        "workflowName" -> obj.workflowName,
-        "rawParams" -> obj.rawParams,
-        "returnOutputData" -> obj.returnOutputData
-      )
-  }
-
-  implicit val readsWorkflowRequest: Reads[WorkflowRequest] = Reads[WorkflowRequest] {
-    json =>
-      JsSuccess(
-        WorkflowRequest(
-          (json \ "workflowName").as[String],
-          (json \ "rawParams").as[JsValue],
-          (json \ "returnOutputData").as[Boolean]
-        )
-      )
-  }
+  implicit val readsWorkflowRequest: Reads[WorkflowRequest] = Json.reads[WorkflowRequest]
 }
