@@ -13,22 +13,23 @@
   * See the License for the specific language governing permissions and
   * limitations under the License.
   */
-package core3.workflows
+package core3.test.specs.unit.config
 
-import play.api.libs.json._
+import core3.test.specs.unit.UnitSpec
+import core3.config.StaticConfig
 
-/**
-  * Container class for workflow requests.
-  *
-  * @param workflowName the requested workflow name
-  * @param rawParams    the parameters for the workflow
-  */
-case class WorkflowRequest(workflowName: String, rawParams: JsValue, returnOutputData: Boolean = false) {
-  def asJson: JsValue = Json.toJson(this)
-}
+class StaticConfigSpec extends UnitSpec {
 
-object WorkflowRequest {
-  implicit val writesWorkflowRequest: Writes[WorkflowRequest] = Json.writes[WorkflowRequest]
+  case class FixtureParam()
 
-  implicit val readsWorkflowRequest: Reads[WorkflowRequest] = Json.reads[WorkflowRequest]
+  def withFixture(test: OneArgTest) = withFixture(test.toNoArgTest(FixtureParam()))
+
+  "A StaticConfig object" should "successfully retrieve the configuration" in {
+    _ =>
+      val config = StaticConfig.get.getConfig("testing.config")
+
+      config.getInt("valueOne") should be(1)
+      config.getString("valueTwo") should be("two")
+      config.getBoolean("valueThree") should be(false)
+  }
 }

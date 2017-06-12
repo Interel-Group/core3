@@ -57,27 +57,6 @@ case class GenericResult(wasSuccessful: Boolean, message: Option[String] = None,
 }
 
 object GenericResult {
-  def apply(jsonString: String): GenericResult = Json.parse(jsonString).as[GenericResult]
-
-  def apply(json: JsValue): GenericResult = json.as[GenericResult]
-
-  implicit val writesWorkflowResult: Writes[GenericResult] = Writes[GenericResult] {
-    obj =>
-      Json.obj(
-        "wasSuccessful" -> obj.wasSuccessful,
-        "message" -> obj.message,
-        "data" -> obj.data
-      )
-  }
-
-  implicit val readsWorkflowResult: Reads[GenericResult] = Reads[GenericResult] {
-    json =>
-      JsSuccess(
-        GenericResult(
-          (json \ "wasSuccessful").as[Boolean],
-          (json \ "message").asOpt[String],
-          (json \ "data").asOpt[JsValue]
-        )
-      )
-  }
+  implicit val writesWorkflowResult: Writes[GenericResult] = Json.writes[GenericResult]
+  implicit val readsWorkflowResult: Reads[GenericResult] = Json.reads[GenericResult]
 }

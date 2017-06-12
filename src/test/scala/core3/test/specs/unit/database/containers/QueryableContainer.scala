@@ -82,10 +82,7 @@ object QueryableContainer extends JsonContainerCompanion with SlickContainerComp
 
     implicit val testEnumReads = Reads {
       json =>
-        json.validate[String] match {
-          case JsSuccess(value, _) => JsSuccess(TestEnum.fromString(value))
-          case JsError(e) => JsError(e)
-        }
+        json.validate[String].map(TestEnum.fromString)
     }
   }
 

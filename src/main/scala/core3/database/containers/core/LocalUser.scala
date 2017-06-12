@@ -68,10 +68,7 @@ object LocalUser extends JsonContainerCompanion with SlickContainerCompanion {
 
     implicit val userTypeReads = Reads {
       json =>
-        json.validate[String] match {
-          case JsSuccess(value, _) => JsSuccess(UserType.fromString(value))
-          case JsError(e) => JsError(e)
-        }
+        json.validate[String].map(UserType.fromString)
     }
 
     implicit val userTypeWrites: Writes[UserType] = Writes {

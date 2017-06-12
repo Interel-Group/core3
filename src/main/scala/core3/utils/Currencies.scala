@@ -53,10 +53,7 @@ object Currencies {
 
   implicit val currencyReads: Reads[Currency] = Reads {
     json =>
-      json.validate[String] match {
-        case JsSuccess(value, _) => JsSuccess(Currency.getInstance(value))
-        case JsError(e) => JsError(e)
-      }
+      json.validate[String].map(Currency.getInstance)
   }
 
   class ExtendedBigDecimal(val self: BigDecimal) {

@@ -59,12 +59,6 @@ class Core(DALs: Map[ContainerType, Vector[ActorRef]])(implicit ec: ExecutionCon
   private var count_Update: Long = 0
   private var count_Delete: Long = 0
 
-  private def checkDALsOrThrow(objectsType: ContainerType, caller: String) = {
-    if (!configuredDALs.contains(objectsType)) {
-      throw new IllegalArgumentException(s"core3.database.dals.Core::$caller > No DALs found for container type [$objectsType].")
-    }
-  }
-
   private def logOperation(future: Future[Boolean], caller: String): Unit = {
     future.onComplete {
       case Success(result) =>
@@ -186,63 +180,75 @@ class Core(DALs: Map[ContainerType, Vector[ActorRef]])(implicit ec: ExecutionCon
   }
 
   override protected def handle_VerifyDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
-    checkDALsOrThrow(objectsType, "handle_VerifyDatabaseStructure")
+    if (!configuredDALs.contains(objectsType)) {
+      Future.failed(
+        new IllegalArgumentException(s"core3.database.dals.Core::handle_VerifyDatabaseStructure > No DALs found for container type [$objectsType].")
+      )
+    } else {
+      val result = Future.sequence(
+        configuredDALs(objectsType).map {
+          currentDAL =>
+            (currentDAL ? VerifyDatabaseStructure(objectsType)).mapTo[Boolean].recover {
+              case e =>
+                auditLogger.error(s"core3.database.dals.Core::handle_VerifyDatabaseStructure > " +
+                  s"Exception [${e.getMessage}] encountered while verifying databases for [$objectsType] containers.", e)
+                false
+            }
+        }
+      ).map(_.forall(c => c))
 
-    val result = Future.sequence(
-      configuredDALs(objectsType).map {
-        currentDAL =>
-          (currentDAL ? VerifyDatabaseStructure(objectsType)).mapTo[Boolean].recover {
-            case e =>
-              auditLogger.error(s"core3.database.dals.Core::handle_VerifyDatabaseStructure > " +
-                s"Exception [${e.getMessage}] encountered while verifying databases for [$objectsType] containers.", e)
-              false
-          }
-      }
-    ).map(_.forall(c => c))
+      logOperation(result, s"handle_VerifyDatabaseStructure($objectsType)")
 
-    logOperation(result, s"handle_VerifyDatabaseStructure($objectsType)")
-
-    result
+      result
+    }
   }
 
   override protected def handle_BuildDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
-    checkDALsOrThrow(objectsType, "handle_BuildDatabaseStructure")
+    if (!configuredDALs.contains(objectsType)) {
+      Future.failed(
+        new IllegalArgumentException(s"core3.database.dals.Core::handle_BuildDatabaseStructure > No DALs found for container type [$objectsType].")
+      )
+    } else {
+      val result = Future.sequence(
+        configuredDALs(objectsType).map {
+          currentDAL =>
+            (currentDAL ? BuildDatabaseStructure(objectsType)).mapTo[Boolean].recover {
+              case e =>
+                auditLogger.error(s"core3.database.dals.Core::handle_BuildDatabaseStructure > " +
+                  s"Exception [${e.getMessage}] encountered while building databases for [$objectsType] containers.", e)
+                false
+            }
+        }
+      ).map(_.forall(c => c))
 
-    val result = Future.sequence(
-      configuredDALs(objectsType).map {
-        currentDAL =>
-          (currentDAL ? BuildDatabaseStructure(objectsType)).mapTo[Boolean].recover {
-            case e =>
-              auditLogger.error(s"core3.database.dals.Core::handle_BuildDatabaseStructure > " +
-                s"Exception [${e.getMessage}] encountered while building databases for [$objectsType] containers.", e)
-              false
-          }
-      }
-    ).map(_.forall(c => c))
+      logOperation(result, s"handle_BuildDatabaseStructure($objectsType)")
 
-    logOperation(result, s"handle_BuildDatabaseStructure($objectsType)")
-
-    result
+      result
+    }
   }
 
   override protected def handle_ClearDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
-    checkDALsOrThrow(objectsType, "handle_ClearDatabaseStructure")
+    if (!configuredDALs.contains(objectsType)) {
+      Future.failed(
+        new IllegalArgumentException(s"core3.database.dals.Core::handle_ClearDatabaseStructure > No DALs found for container type [$objectsType].")
+      )
+    } else {
+      val result = Future.sequence(
+        configuredDALs(objectsType).map {
+          currentDAL =>
+            (currentDAL ? ClearDatabaseStructure(objectsType)).mapTo[Boolean].recover {
+              case e =>
+                auditLogger.error(s"core3.database.dals.Core::handle_ClearDatabaseStructure > " +
+                  s"Exception [${e.getMessage}] encountered while clearing databases for [$objectsType] containers.", e)
+                false
+            }
+        }
+      ).map(_.forall(c => c))
 
-    val result = Future.sequence(
-      configuredDALs(objectsType).map {
-        currentDAL =>
-          (currentDAL ? ClearDatabaseStructure(objectsType)).mapTo[Boolean].recover {
-            case e =>
-              auditLogger.error(s"core3.database.dals.Core::handle_ClearDatabaseStructure > " +
-                s"Exception [${e.getMessage}] encountered while clearing databases for [$objectsType] containers.", e)
-              false
-          }
-      }
-    ).map(_.forall(c => c))
+      logOperation(result, s"handle_ClearDatabaseStructure($objectsType)")
 
-    logOperation(result, s"handle_ClearDatabaseStructure($objectsType)")
-
-    result
+      result
+    }
   }
 
   /**
@@ -303,6 +309,7 @@ class Core(DALs: Map[ContainerType, Vector[ActorRef]])(implicit ec: ExecutionCon
             data = Some(
               Json.obj(
                 "layerType" -> handle_GetLayerType,
+                "supportedContainers" -> handle_GetSupportedContainers,
                 "id" -> handle_GetDatabaseIdentifier,
                 "dals" -> Json.obj(
                   "config" -> configuredDALs.map {
@@ -376,153 +383,181 @@ class Core(DALs: Map[ContainerType, Vector[ActorRef]])(implicit ec: ExecutionCon
   }
 
   override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
-    checkDALsOrThrow(objectsType, "handle_GetGenericQueryResult")
+    if (!configuredDALs.contains(objectsType)) {
+      Future.failed(
+        new IllegalArgumentException(s"core3.database.dals.Core::handle_GetGenericQueryResult > No DALs found for container type [$objectsType].")
+      )
+    } else {
+      count_GenericQuery += 1
 
-    count_GenericQuery += 1
+      val result = (configuredDALs(objectsType).head ? GetGenericQueryResult(objectsType)).mapTo[Vector[Container]]
 
-    val result = (configuredDALs(objectsType).head ? GetGenericQueryResult(objectsType)).mapTo[Vector[Container]]
+      result.onComplete {
+        case Success(r) =>
+          auditLogger.info(s"core3.database.dals.Core::handle_GetGenericQueryResult($objectsType) > Database query completed successfully and found [${r.size}] container(s).")
+        case Failure(e) =>
+          auditLogger.error(s"core3.database.dals.Core::handle_GetGenericQueryResult($objectsType) > Database query failed with exception [${e.getMessage}].")
+      }
 
-    result.onComplete {
-      case Success(r) =>
-        auditLogger.info(s"core3.database.dals.Core::handle_GetGenericQueryResult($objectsType) > Database query completed successfully and found [${r.size}] container(s).")
-      case Failure(e) =>
-        auditLogger.error(s"core3.database.dals.Core::handle_GetGenericQueryResult($objectsType) > Database query failed with exception [${e.getMessage}].")
+      result
     }
-
-    result
   }
 
   override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
-    checkDALsOrThrow(objectsType, "handle_GetCustomQueryResult")
+    if (!configuredDALs.contains(objectsType)) {
+      Future.failed(
+        new IllegalArgumentException(s"core3.database.dals.Core::handle_GetCustomQueryResult > No DALs found for container type [$objectsType].")
+      )
+    } else {
+      count_CustomQuery += 1
 
-    count_CustomQuery += 1
+      val result = (configuredDALs(objectsType).head ? GetCustomQueryResult(objectsType, customQueryName, queryParams)).mapTo[Vector[Container]]
 
-    val result = (configuredDALs(objectsType).head ? GetCustomQueryResult(objectsType, customQueryName, queryParams)).mapTo[Vector[Container]]
+      result.onComplete {
+        case Success(r) =>
+          auditLogger.info(s"core3.database.dals.Core::handle_GetCustomQueryResult($objectsType) > Database query [$customQueryName] completed successfully and found [${r.size}] container(s).")
+        case Failure(e) =>
+          auditLogger.error(s"core3.database.dals.Core::handle_GetCustomQueryResult($objectsType) > Database query [$customQueryName] failed with exception [${e.getMessage}].")
+      }
 
-    result.onComplete {
-      case Success(r) =>
-        auditLogger.info(s"core3.database.dals.Core::handle_GetCustomQueryResult($objectsType) > Database query [$customQueryName] completed successfully and found [${r.size}] container(s).")
-      case Failure(e) =>
-        auditLogger.error(s"core3.database.dals.Core::handle_GetCustomQueryResult($objectsType) > Database query [$customQueryName] failed with exception [${e.getMessage}].")
+      result
     }
-
-    result
   }
 
   override protected def handle_LoadView(view: ContainerView): Future[Unit] = {
-    checkDALsOrThrow(view.coreObjectType, "handle_LoadView")
+    if (!configuredDALs.contains(view.coreObjectType)) {
+      Future.failed(
+        new IllegalArgumentException(s"core3.database.dals.Core::handle_LoadView > No DALs found for container type [${view.coreObjectType}].")
+      )
+    } else {
+      val result = (configuredDALs(view.coreObjectType).head ? LoadView(view)).mapTo[Unit]
 
-    val result = (configuredDALs(view.coreObjectType).head ? LoadView(view)).mapTo[Unit]
+      result.onComplete {
+        case Success(_) =>
+          auditLogger.info(s"core3.database.dals.Core::handle_LoadView > Database view load [${view.viewType}] for core object [${view.coreObjectType} / ${view.coreObjectID}]  completed successfully.")
+        case Failure(e) =>
+          auditLogger.error(s"core3.database.dals.Core::handle_LoadView > Database view load [${view.viewType}] for core object [${view.coreObjectType} / ${view.coreObjectID}] failed with exception [${e.getMessage}].")
+      }
 
-    result.onComplete {
-      case Success(_) =>
-        auditLogger.info(s"core3.database.dals.Core::handle_LoadView > Database view load [${view.viewType}] for core object [${view.coreObjectType} / ${view.coreObjectID}]  completed successfully.")
-      case Failure(e) =>
-        auditLogger.error(s"core3.database.dals.Core::handle_LoadView > Database view load [${view.viewType}] for core object [${view.coreObjectType} / ${view.coreObjectID}] failed with exception [${e.getMessage}].")
+      result
     }
-
-    result
   }
 
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
-    checkDALsOrThrow(objectType, "handle_GetObject")
+    if (!configuredDALs.contains(objectType)) {
+      Future.failed(
+        new IllegalArgumentException(s"core3.database.dals.Core::handle_GetObject > No DALs found for container type [$objectType].")
+      )
+    } else {
+      count_Get += 1
 
-    count_Get += 1
+      val result = (configuredDALs(objectType).head ? GetObject(objectType, objectID)).mapTo[Container]
 
-    val result = (configuredDALs(objectType).head ? GetObject(objectType, objectID)).mapTo[Container]
+      result.onComplete {
+        case Success(_) =>
+          auditLogger.info(s"core3.database.dals.Core::handle_GetObject($objectType) > Database query for object [$objectID] completed successfully.")
+        case Failure(e) =>
+          auditLogger.error(s"core3.database.dals.Core::handle_GetObject($objectType) > Database query for object [$objectID] failed with exception [${e.getMessage}].")
+      }
 
-    result.onComplete {
-      case Success(_) =>
-        auditLogger.info(s"core3.database.dals.Core::handle_GetObject($objectType) > Database query for object [$objectID] completed successfully.")
-      case Failure(e) =>
-        auditLogger.error(s"core3.database.dals.Core::handle_GetObject($objectType) > Database query for object [$objectID] failed with exception [${e.getMessage}].")
+      result
     }
-
-    result
   }
 
   override protected def handle_CreateObject(container: Container): Future[Boolean] = {
-    checkDALsOrThrow(container.objectType, "handle_CreateObject")
+    if (!configuredDALs.contains(container.objectType)) {
+      Future.failed(
+        new IllegalArgumentException(s"core3.database.dals.Core::handle_CreateObject > No DALs found for container type [${container.objectType}].")
+      )
+    } else {
+      count_Create += 1
 
-    count_Create += 1
+      val result = Future.sequence(
+        configuredDALs(container.objectType).map {
+          currentDAL =>
+            (currentDAL ? CreateObject(container)).mapTo[Boolean].recoverWith {
+              case e =>
+                for {
+                  dbIdentifier <- (currentDAL ? GetDatabaseIdentifier()).mapTo[String]
+                } yield {
+                  auditLogger.error(s"core3.database.dals.Core::handle_CreateObject(${container.objectType}) > "
+                    + s"Exception [${e.getMessage}] encountered while creating object [${container.id}] in database [$dbIdentifier].", e)
+                  false
+                }
+            }
+        }
+      ).map(_.forall(c => c))
 
-    val result = Future.sequence(
-      configuredDALs(container.objectType).map {
-        currentDAL =>
-          (currentDAL ? CreateObject(container)).mapTo[Boolean].recoverWith {
-            case e =>
-              for {
-                dbIdentifier <- (currentDAL ? GetDatabaseIdentifier()).mapTo[String]
-              } yield {
-                auditLogger.error(s"core3.database.dals.Core::handle_CreateObject(${container.objectType}) > "
-                  + s"Exception [${e.getMessage}] encountered while creating object [${container.id}] in database [$dbIdentifier].", e)
-                false
-              }
-          }
+      result.onComplete {
+        case Success(_) =>
+          auditLogger.info(s"core3.database.dals.Core::handle_CreateObject(${container.objectType}) > Object [${container.id}] creation completed successfully.")
+        case Failure(e) =>
+          auditLogger.error(s"core3.database.dals.Core::handle_CreateObject(${container.objectType}) > Object [${container.id}] creation failed with exception [${e.getMessage}].")
       }
-    ).map(_.forall(c => c))
 
-    result.onComplete {
-      case Success(_) =>
-        auditLogger.info(s"core3.database.dals.Core::handle_CreateObject(${container.objectType}) > Object [${container.id}] creation completed successfully.")
-      case Failure(e) =>
-        auditLogger.error(s"core3.database.dals.Core::handle_CreateObject(${container.objectType}) > Object [${container.id}] creation failed with exception [${e.getMessage}].")
+      result
     }
-
-    result
   }
 
   override protected def handle_UpdateObject(container: MutableContainer): Future[Boolean] = {
-    checkDALsOrThrow(container.objectType, "handle_UpdateObject")
+    if (!configuredDALs.contains(container.objectType)) {
+      Future.failed(
+        new IllegalArgumentException(s"core3.database.dals.Core::handle_UpdateObject > No DALs found for container type [${container.objectType}].")
+      )
+    } else {
+      count_Update += 1
 
-    count_Update += 1
+      val result = Future.sequence(
+        configuredDALs(container.objectType).map {
+          currentDAL =>
+            (currentDAL ? UpdateObject(container)).mapTo[Boolean].recoverWith {
+              case e =>
+                for {
+                  dbIdentifier <- (currentDAL ? GetDatabaseIdentifier()).mapTo[String]
+                } yield {
+                  auditLogger.error(s"core3.database.dals.Core::handle_UpdateObject(${container.objectType}) > " +
+                    s"Exception [${e.getMessage}] encountered while updating object [${container.id}] in database [$dbIdentifier].", e)
+                  false
+                }
+            }
+        }
+      ).map(_.forall(c => c))
 
-    val result = Future.sequence(
-      configuredDALs(container.objectType).map {
-        currentDAL =>
-          (currentDAL ? UpdateObject(container)).mapTo[Boolean].recoverWith {
-            case e =>
-              for {
-                dbIdentifier <- (currentDAL ? GetDatabaseIdentifier()).mapTo[String]
-              } yield {
-                auditLogger.error(s"core3.database.dals.Core::handle_UpdateObject(${container.objectType}) > " +
-                  s"Exception [${e.getMessage}] encountered while updating object [${container.id}] in database [$dbIdentifier].", e)
-                false
-              }
-          }
+      result.onComplete {
+        case Success(_) =>
+          auditLogger.info(s"core3.database.dals.Core::handle_UpdateObject(${container.objectType}) > Object [${container.id}] update completed successfully.")
+        case Failure(e) =>
+          auditLogger.error(s"core3.database.dals.Core::handle_UpdateObject(${container.objectType}) > Object [${container.id}] update failed with exception [${e.getMessage}].")
       }
-    ).map(_.forall(c => c))
 
-    result.onComplete {
-      case Success(_) =>
-        auditLogger.info(s"core3.database.dals.Core::handle_UpdateObject(${container.objectType}) > Object [${container.id}] update completed successfully.")
-      case Failure(e) =>
-        auditLogger.error(s"core3.database.dals.Core::handle_UpdateObject(${container.objectType}) > Object [${container.id}] update failed with exception [${e.getMessage}].")
+      result
     }
-
-    result
   }
 
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
-    checkDALsOrThrow(objectType, "handle_DeleteObject")
+    if (!configuredDALs.contains(objectType)) {
+      Future.failed(
+        new IllegalArgumentException(s"core3.database.dals.Core::handle_DeleteObject > No DALs found for container type [$objectType].")
+      )
+    } else {
+      count_Delete += 1
 
-    count_Delete += 1
-
-    Future.sequence(
-      configuredDALs(objectType).map {
-        currentDAL =>
-          (currentDAL ? DeleteObject(objectType, objectID)).mapTo[Boolean].recoverWith {
-            case e =>
-              for {
-                dbIdentifier <- (currentDAL ? GetDatabaseIdentifier()).mapTo[String]
-              } yield {
-                auditLogger.error(s"core3.database.dals.Core::handle_DeleteObject($objectType) > " +
-                  s"Exception [${e.getMessage}] encountered while deleting object [$objectID] in database [$dbIdentifier].", e)
-                false
-              }
-          }
-      }
-    ).map(_.forall(c => c))
+      Future.sequence(
+        configuredDALs(objectType).map {
+          currentDAL =>
+            (currentDAL ? DeleteObject(objectType, objectID)).mapTo[Boolean].recoverWith {
+              case e =>
+                for {
+                  dbIdentifier <- (currentDAL ? GetDatabaseIdentifier()).mapTo[String]
+                } yield {
+                  auditLogger.error(s"core3.database.dals.Core::handle_DeleteObject($objectType) > " +
+                    s"Exception [${e.getMessage}] encountered while deleting object [$objectID] in database [$dbIdentifier].", e)
+                  false
+                }
+            }
+        }
+      ).map(_.forall(c => c))
+    }
   }
 
   addReceiver {

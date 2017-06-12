@@ -144,31 +144,40 @@ class ServiceController(cache: CacheApi, authConfig: Config, db: DatabaseAbstrac
                       val clientToken = LocalAuthUserToken(client, sessionToken)
                       cache.set(s"${sessionToken}_data", clientToken, localTokenExpiration)
 
-                      val userQuery = db.queryDatabase("LocalUser", "getByUserID", Map("userID" -> delegatedUserID)).map {
-                        result =>
-                          result.headOption match {
-                            case Some(user) => user.asInstanceOf[LocalUser]
-                            case None => throw new RuntimeException(s"Failed to retrieve user with id [$delegatedUserID]")
-                          }
-                      }
+                      if(clientToken.permissions.contains(requiredScope))  {
+                        val userQuery = db.queryDatabase("LocalUser", "getByUserID", Map("userID" -> delegatedUserID)).map {
+                          result =>
+                            result.headOption match {
+                              case Some(user) => user.asInstanceOf[LocalUser]
+                              case None => throw new RuntimeException(s"Failed to retrieve user with id [$delegatedUserID]")
+                            }
+                        }
 
-                      userQuery.flatMap {
-                        user =>
-                          //authentication successful
-                          val userToken = LocalAuthUserToken(user, "none")
-                          cache.set(s"${delegatedUserID}_data", userToken, localTokenExpiration)
+                        userQuery.flatMap {
+                          user =>
+                            //authentication successful
+                            val userToken = LocalAuthUserToken(user, "none")
+                            cache.set(s"${delegatedUserID}_data", userToken, localTokenExpiration)
 
-                          auditLogger.info(s"core3.http.controllers.local.ServiceController::UserAwareAction > Action [${request.method}] @ [${request.uri}] " +
-                            s"requested from client [${client.userID}] @ [${request.remoteAddress}] on behalf of user [${user.userID}] was accepted.")
-                          okHandler(request, userToken).map {
-                            c => c.withHeaders(core3.http.HeaderNames.CLIENT_SESSION_TOKEN -> sessionToken)
-                          }
-                      }.recoverWith {
-                        case NonFatal(e) =>
-                          //user data is missing
-                          auditLogger.error(s"core3.http.controllers.local.ServiceController::UserAwareAction > Action [${request.method}] @ [${request.uri}] " +
-                            s"requested with missing user data from client [${client.userID}] @ [${request.remoteAddress}] on behalf of user [$delegatedUserID] failed with message [${e.getMessage}].")
-                          callUnauthorizedHandler()
+                            auditLogger.info(s"core3.http.controllers.local.ServiceController::UserAwareAction > Action [${request.method}] @ [${request.uri}] " +
+                              s"requested from client [${client.userID}] @ [${request.remoteAddress}] on behalf of user [${user.userID}] was accepted.")
+                            okHandler(request, userToken).map(_.withHeaders(core3.http.HeaderNames.CLIENT_SESSION_TOKEN -> sessionToken))
+                        }.recoverWith {
+                          case NonFatal(e) =>
+                            //user data is missing
+                            auditLogger.error(s"core3.http.controllers.local.ServiceController::UserAwareAction > Action [${request.method}] @ [${request.uri}] " +
+                              s"requested with missing user data from client [${client.userID}] @ [${request.remoteAddress}] on behalf of user [$delegatedUserID] failed with message [${e.getMessage}].")
+                            callUnauthorizedHandler()
+                        }
+                      } else {
+                        //client not allowed to request action
+                        auditLogger.error(s"core3.http.controllers.local.ServiceController::UserAwareAction > Action [${request.method}] @ [${request.uri}] " +
+                          s"requested from client [${clientToken.userID}] @ [${request.remoteAddress}] on behalf of user [unknown] was not allowed.")
+
+                        (forbiddenHandler match {
+                          case Some(handler) => handler(request)
+                          case None => handlers.JSON.forbidden(request)
+                        }).map(_.withHeaders(core3.http.HeaderNames.CLIENT_SESSION_TOKEN -> sessionToken))
                       }
                     } else {
                       throw new RuntimeException(s"User [${client.userID}] with unexpected type [${client.userType}] attempted login")
@@ -238,10 +247,20 @@ class ServiceController(cache: CacheApi, authConfig: Config, db: DatabaseAbstrac
                       val clientToken = LocalAuthUserToken(client, sessionToken)
                       cache.set(s"${sessionToken}_data", clientToken, localTokenExpiration)
 
-                      auditLogger.info(s"core3.http.controllers.local.ServiceController::ClientAwareAction > Action [${request.method}] @ [${request.uri}] " +
-                        s"requested from client [${client.userID}] @ [${request.remoteAddress}] on behalf of user [${client.userID}] was accepted.")
-                      okHandler(request, client.userID).map {
-                        c => c.withHeaders(core3.http.HeaderNames.CLIENT_SESSION_TOKEN -> sessionToken)
+                      if (clientToken.permissions.contains(requiredScope)) {
+                        //client allowed to request action
+                        auditLogger.info(s"core3.http.controllers.local.ServiceController::ClientAwareAction > Action [${request.method}] @ [${request.uri}] " +
+                          s"requested from client [${clientToken.userID}] @ [${request.remoteAddress}] was accepted.")
+                        okHandler(request, clientToken.userID).map(_.withHeaders(core3.http.HeaderNames.CLIENT_SESSION_TOKEN -> sessionToken))
+                      } else {
+                        //client not allowed to request action
+                        auditLogger.error(s"core3.http.controllers.local.ServiceController::ClientAwareAction > Action [${request.method}] @ [${request.uri}] " +
+                          s"requested from client [${clientToken.userID}] @ [${request.remoteAddress}] was not allowed.")
+
+                        (forbiddenHandler match {
+                          case Some(handler) => handler(request)
+                          case None => handlers.JSON.forbidden(request)
+                        }).map(_.withHeaders(core3.http.HeaderNames.CLIENT_SESSION_TOKEN -> sessionToken))
                       }
                     } else {
                       throw new RuntimeException(s"User [${client.userID}] with unexpected type [${client.userType}] attempted login")

@@ -51,6 +51,15 @@ class ComponentManager(private val actor: ActorRef)(implicit ec: ExecutionContex
   }
 
   /**
+    * Message for retrieving the list of configured components.
+    *
+    * @return the configured components
+    */
+  def getComponents: Future[ActionResult] = {
+    (actor ? GetComponents()).mapTo[ActionResult]
+  }
+
+  /**
     * Message for retrieving the current static configuration.
     *
     * @return the current static config as a JSON value
@@ -77,6 +86,15 @@ class ComponentManager(private val actor: ActorRef)(implicit ec: ExecutionContex
     */
   def reloadDynamicConfig(): Future[ActionResult] = {
     (actor ? ReloadDynamicConfig()).mapTo[ActionResult]
+  }
+
+  /**
+    * Message for retrieving the current system modes.
+    *
+    * @return the current state of the specified system mode
+    */
+  def getMode(mode: SystemMode): Future[Boolean] = {
+    (actor ? GetMode(mode)).mapTo[Boolean]
   }
 
   /**

@@ -231,6 +231,7 @@ class Solr(
             data = Some(
               Json.obj(
                 "layerType" -> handle_GetLayerType,
+                "supportedContainers" -> handle_GetSupportedContainers,
                 "id" -> handle_GetDatabaseIdentifier,
                 "counters" -> Json.obj(
                   "executeAction" -> count_ExecuteAction,
@@ -310,6 +311,12 @@ class Solr(
     val jsonData = Json.obj("delete" -> Json.obj("id" -> objectID))
 
     for {
+      container <- handle_GetObject(objectType, objectID)
+      _ <- Future {
+        if(!container.isInstanceOf[MutableContainer]) {
+          throw new IllegalStateException(s"core3.database.dals.json.Solr::handle_DeleteObject > Objects of type [$objectType] cannot be deleted.")
+        }
+      }
       response <- ws.url(s"$baseURL/solr/${getCollectionName(objectType)}/update/json")
         .withAuth(username, password, WSAuthScheme.BASIC)
         .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)

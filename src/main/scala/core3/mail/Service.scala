@@ -134,18 +134,7 @@ class Service(
       .subject(subject)
       .content(content)
 
-    count_Mailed += 1
-    val result = mailer(envelope)
-    result.onComplete {
-      case Success(_) =>
-        auditLogger.info(s"core3.database.dals.Core::send > Successfully sent email from [$from] to [${to.mkString(", ")}] with subject [$subject].")
-      case Failure(e) =>
-        count_Failed += 1
-        auditLogger.error(s"core3.database.dals.Core::send > Exception [${e.getMessage}] encountered while sending email " +
-          s"from [$from] to [$to] with subject [$subject].", e)
-    }
-
-    result
+    handle_send(envelope)
   }
 
   private def handle_send(envelope: Envelope): Future[Unit] = {

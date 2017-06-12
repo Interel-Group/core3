@@ -15,7 +15,7 @@
   */
 package core3.database
 
-import play.api.libs.json.{JsError, JsSuccess, Reads, Writes, JsString}
+import play.api.libs.json.{Reads, Writes, JsString}
 
 package object dals {
 
@@ -61,10 +61,7 @@ package object dals {
 
   implicit val layerTypeReads: Reads[LayerType] = Reads {
     json =>
-      json.validate[String] match {
-        case JsSuccess(value, _) => JsSuccess(LayerType.fromString(value))
-        case JsError(e) => JsError(e)
-      }
+      json.validate[String].map(LayerType.fromString)
   }
 
   implicit val layerTypeWrites: Writes[LayerType] = Writes {

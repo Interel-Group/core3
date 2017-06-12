@@ -257,7 +257,21 @@ class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
                         s"Override login via [${request.method}] @ [${request.uri}] " +
                         s"completed authentication for user [${userToken.userID}] @ [${request.remoteAddress}].")
 
-                      okHandler(request, userToken).map(_.withSession("idToken" -> idToken))
+                      if (userToken.permissions.contains(requiredGroup)) {
+                        //user action authorized
+                        auditLogger.info(s"core3.http.controllers.auth0.ClientController::AuthorizedAction > Access to [${request.method}] @ [${request.uri}] " +
+                          s"with group [$requiredGroup] authorized for user [${userToken.userID}] @ [${request.remoteAddress}].")
+                        okHandler(request, userToken).map(_.withSession("idToken" -> idToken))
+                      } else {
+                        //user action not authorized
+                        auditLogger.error(s"core3.http.controllers.auth0.ClientController::AuthorizedAction > Access to [${request.method}] @ [${request.uri}] " +
+                          s"with group [$requiredGroup] NOT authorized for user [${userToken.userID}] @ [${request.remoteAddress}].")
+
+                        forbiddenHandler match {
+                          case Some(handler) => handler(request)
+                          case None => Default.forbidden(request)
+                        }
+                      }
                   }
               }
 

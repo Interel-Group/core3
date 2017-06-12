@@ -120,7 +120,21 @@ class ClientController(cache: CacheApi, authConfig: Config, db: DatabaseAbstract
                         s"Override login via [${request.method}] @ [${request.uri}] " +
                         s"completed authentication for user [${newToken.userID}] @ [${request.remoteAddress}].")
 
-                      okHandler(request, newToken).map(_.withSession("sessionToken" -> sessionToken))
+                      if (newToken.permissions.contains(requiredGroup)) {
+                        //user action authorized
+                        auditLogger.info(s"core3.http.controllers.local.ClientController::AuthorizedAction > Access to [${request.method}] @ [${request.uri}] " +
+                          s"with group [$requiredGroup] authorized for user [${newToken.userID}] @ [${request.remoteAddress}].")
+                        okHandler(request, newToken).map(_.withSession("sessionToken" -> sessionToken))
+                      } else {
+                        //user action not authorized
+                        auditLogger.error(s"core3.http.controllers.local.ClientController::AuthorizedAction > Access to [${request.method}] @ [${request.uri}] " +
+                          s"with group [$requiredGroup] NOT authorized for user [${newToken.userID}] @ [${request.remoteAddress}].")
+
+                        forbiddenHandler match {
+                          case Some(handler) => handler(request)
+                          case None => Default.forbidden(request)
+                        }
+                      }
                     } else {
                       throw new RuntimeException(s"User [${user.userID}] with unexpected type [${user.userType}] attempted login")
                     }

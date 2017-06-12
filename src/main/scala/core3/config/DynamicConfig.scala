@@ -37,7 +37,7 @@ object DynamicConfig {
   /**
     * Reloads the config from the 'dynamic.conf' file.
     */
-  def reload() = {
+  def reload(): Unit = {
     config = ConfigFactory.load("dynamic").getConfig("server.dynamic")
   }
 }

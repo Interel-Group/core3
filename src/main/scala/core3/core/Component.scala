@@ -95,23 +95,6 @@ object Component {
     */
   case class ComponentDescriptor(name: String, description: String, companion: ComponentCompanion)
 
-  val writesActionResult: Writes[ActionResult] = Writes[ActionResult] {
-    obj =>
-      Json.obj(
-        "wasSuccessful" -> obj.wasSuccessful,
-        "message" -> obj.message,
-        "data" -> obj.data
-      )
-  }
-
-  val readsActionResult: Reads[ActionResult] = Reads[ActionResult] {
-    json =>
-      JsSuccess(
-        ActionResult(
-          (json \ "wasSuccessful").as[Boolean],
-          (json \ "message").asOpt[String],
-          (json \ "data").asOpt[JsValue]
-        )
-      )
-  }
+  implicit val writesActionResult: Writes[ActionResult] = Json.writes[ActionResult]
+  implicit val readsActionResult: Reads[ActionResult] = Json.reads[ActionResult]
 }

@@ -15,7 +15,6 @@
   */
 package core3.database.dals.sql.conversions
 
-import core3.database._
 import core3.utils._
 import play.api.libs.json.{JsValue, Json}
 import slick.jdbc.MySQLProfile.api._
@@ -53,6 +52,6 @@ object ForMySQLProfile {
 
   implicit val columnType_uuidVector = MappedColumnType.base[Vector[java.util.UUID], String](
     { seq => seq.map(_.toString).mkString(",") },
-    { str => if(str.nonEmpty) str.split(",").map(getObjectIDFromString).toVector else Vector.empty }
+    { str => if(str.nonEmpty) str.split(",").map(java.util.UUID.fromString).toVector else Vector.empty }
   )
 }
