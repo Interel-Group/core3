@@ -26,6 +26,11 @@ class RuntimeConfigSpec extends UnitSpec {
 
   "A RuntimeConfig object" should "successfully retrieve the configuration" in {
     _ =>
+      //resets the modes
+      RuntimeConfig.maintenance = false
+      RuntimeConfig.metrics = false
+      RuntimeConfig.trace = false
+
       RuntimeConfig.maintenanceModeEnabled should be(false)
       RuntimeConfig.metricsCollectionEnabled should be(false)
       RuntimeConfig.traceModeEnabled should be(false)

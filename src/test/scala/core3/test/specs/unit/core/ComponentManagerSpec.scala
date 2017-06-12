@@ -15,6 +15,7 @@
   */
 package core3.test.specs.unit.core
 
+import core3.config.RuntimeConfig
 import core3.core.{ComponentManager, ComponentManagerActor}
 import core3.test.fixtures
 import core3.test.fixtures.TestSystem
@@ -43,6 +44,11 @@ class ComponentManagerSpec extends AsyncUnitSpec {
 
   "A ComponentManager" should "successfully manage all configured components and the system" in {
     fixture =>
+      //resets the modes
+      RuntimeConfig.maintenance = false
+      RuntimeConfig.metrics = false
+      RuntimeConfig.trace = false
+
       for {
         actionResult <- fixture.manager.executeComponentAction("db", "stats")
         staticConfigResult <- fixture.manager.getStaticConfig
