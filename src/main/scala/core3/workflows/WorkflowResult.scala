@@ -71,29 +71,6 @@ case class WorkflowResult(wasSuccessful: Boolean, requestID: RequestID, message:
 }
 
 object WorkflowResult {
-  def apply(jsonString: String): WorkflowResult = Json.parse(jsonString).as[WorkflowResult]
-
-  def apply(json: JsValue): WorkflowResult = json.as[WorkflowResult]
-
-  implicit val writesWorkflowResult: Writes[WorkflowResult] = Writes[WorkflowResult] {
-    obj =>
-      Json.obj(
-        "wasSuccessful" -> obj.wasSuccessful,
-        "requestID" -> obj.requestID,
-        "message" -> obj.message,
-        "data" -> obj.data
-      )
-  }
-
-  implicit val readsWorkflowResult: Reads[WorkflowResult] = Reads[WorkflowResult] {
-    json =>
-      JsSuccess(
-        WorkflowResult(
-          (json \ "wasSuccessful").as[Boolean],
-          (json \ "requestID").as[RequestID],
-          (json \ "message").asOpt[String],
-          (json \ "data").asOpt[JsValue]
-        )
-      )
-  }
+  implicit val writesWorkflowResult: Writes[WorkflowResult] = Json.writes[WorkflowResult]
+  implicit val readsWorkflowResult: Reads[WorkflowResult] = Json.reads[WorkflowResult]
 }

@@ -29,6 +29,5 @@ case class WorkflowRequest(workflowName: String, rawParams: JsValue, returnOutpu
 
 object WorkflowRequest {
   implicit val writesWorkflowRequest: Writes[WorkflowRequest] = Json.writes[WorkflowRequest]
-
   implicit val readsWorkflowRequest: Reads[WorkflowRequest] = Json.reads[WorkflowRequest]
 }

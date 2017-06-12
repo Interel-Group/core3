@@ -50,7 +50,7 @@ class WorkflowEngineConnection(private val actor: ActorRef)(implicit ec: Executi
     */
   def post(user: UserTokenBase, request: WorkflowRequest): Future[WorkflowResult] = {
     (actor ? Post(Some(user), request.asJson.as[JsObject])).mapTo[(Int, JsValue)].map {
-      case (_, result) => WorkflowResult(result)
+      case (_, result) => result.as[WorkflowResult]
     }
   }
 
@@ -62,7 +62,7 @@ class WorkflowEngineConnection(private val actor: ActorRef)(implicit ec: Executi
     */
   def post(request: WorkflowRequest): Future[WorkflowResult] = {
     (actor ? Post(None, request.asJson.as[JsObject])).mapTo[(Int, JsValue)].map {
-      case (_, result) => WorkflowResult(result)
+      case (_, result) => result.as[WorkflowResult]
     }
   }
 }
