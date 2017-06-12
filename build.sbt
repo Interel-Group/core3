@@ -111,7 +111,8 @@ lazy val dependencies_test = Seq(
   "org.scalatest" %% "scalatest" % "3.0.0",
   "com.storm-enroute" %% "scalameter" % "0.7",
   "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion,
-  "org.jvnet.mock-javamail" % "mock-javamail" % "1.9"
+  "org.jvnet.mock-javamail" % "mock-javamail" % "1.9",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0"
 )
 
 lazy val overrides_netty = Set(
