@@ -24,7 +24,7 @@ import core3.database.containers.core
 import core3.database.dals._
 import core3.database.dals.json.{CouchDB, ElasticSearch, Redis, Solr}
 import core3.database.dals.memory.{DistributedCache, MemoryOnlyDB}
-import core3.database.dals.sql.MariaDB
+import core3.database.dals.jdbc.SlickDB
 import core3.test.fixtures.TestSystem._
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy
 import play.api.libs.ws.ahc.AhcWSClient
@@ -78,8 +78,9 @@ object Database {
 
   def createMariaDBInstance(definitions: Map[ContainerType, BasicContainerDefinition with SlickContainerDefinition] = defaultDefinitions): DatabaseAbstractionLayer = {
     val actor = system.actorOf(
-      MariaDB.props(
+      SlickDB.props(
         definitions,
+        slick.jdbc.MySQLProfile,
         StaticConfig.get.getConfig("database.mariadb")
       ),
       name = s"MariaDB_$getNewActorID"
