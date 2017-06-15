@@ -39,7 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param schema              the schema to be used for HTTP connections ["http" OR "https"] (clear and build only)
   * @param username            the Solr user to be used when authenticating each request
   * @param password            the password for the Solr user
-  * @param containerCompanions map with all registered container companion objects
+  * @param containerDefinitions map with all registered container companion objects
   * @param shardsCount         number of shards to create for each new collection (passed directly to Solr)
   * @param replicasCount       number of replicas to create for each new collection (passed directly to Solr)
   * @param maxCommitTime       maximum number of seconds to wait before committing updates (passed directly to Solr)
@@ -50,7 +50,7 @@ class Solr(
   private val schema: String,
   private val username: String,
   private val password: String,
-  private val containerCompanions: Map[ContainerType, SearchContainerCompanion],
+  private val containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SearchContainerDefinition],
   private val shardsCount: Int,
   private val replicasCount: Int,
   private val maxCommitTime: Int,
@@ -61,13 +61,13 @@ class Solr(
   /**
     * Creates a new instance with the supplied config or uses the default config location.
     *
-    * @param containerCompanions map with all registered container companion objects
+    * @param containerDefinitions map with all registered container companion objects
     * @param ws                  web service client
     * @param config              the config to use (if specified; default path is 'server.static.database.solr')
     * @return the new instance
     */
   def this(
-    containerCompanions: Map[ContainerType, SearchContainerCompanion],
+    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SearchContainerDefinition],
     ws: WSClient,
     config: Config = StaticConfig.get.getConfig("database.solr")
   )(implicit ec: ExecutionContext, timeout: Timeout) =
@@ -77,7 +77,7 @@ class Solr(
       config.getString("schema"),
       config.getString("username"),
       config.getString("password"),
-      containerCompanions,
+      containerDefinitions,
       config.getInt("shardsCount"),
       config.getInt("replicasCount"),
       config.getInt("maxCommitTime"),
@@ -105,8 +105,8 @@ class Solr(
     * @return the requested search fields
     */
   private def getSearchFields(objectType: ContainerType): Map[String, String] = {
-    assert(containerCompanions.contains(objectType))
-    containerCompanions(objectType).getSearchFields
+    assert(containerDefinitions.contains(objectType))
+    containerDefinitions(objectType).getSearchFields
   }
 
   /**
@@ -116,8 +116,8 @@ class Solr(
     * @return the requested collection name
     */
   private def getCollectionName(objectType: ContainerType): String = {
-    assert(containerCompanions.contains(objectType))
-    containerCompanions(objectType).getDatabaseName
+    assert(containerDefinitions.contains(objectType))
+    containerDefinitions(objectType).getDatabaseName
   }
 
   /**
@@ -127,8 +127,8 @@ class Solr(
     * @return the JSON data
     */
   private def getJSONDataFromContainer(container: Container): JsValue = {
-    assert(containerCompanions.contains(container.objectType))
-    val objectsCompanion = containerCompanions(container.objectType)
+    assert(containerDefinitions.contains(container.objectType))
+    val objectsCompanion = containerDefinitions(container.objectType)
     val searchFields = objectsCompanion.getSearchFields.keys.toSeq
     val filteredFields = objectsCompanion.toJsonData(container).as[JsObject].fields.filter {
       case (k, _) =>
@@ -160,7 +160,7 @@ class Solr(
 
   override protected def handle_GetDatabaseIdentifier: String = baseURL
 
-  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerCompanions.keys.toVector
+  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.keys.toVector
 
   override protected def handle_GetLayerType: LayerType = LayerType.SolrSearch
 
@@ -335,7 +335,7 @@ object Solr extends ComponentCompanion {
     schema: String,
     solrUser: String,
     solrUserPassword: String,
-    containerCompanions: Map[ContainerType, SearchContainerCompanion],
+    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SearchContainerDefinition],
     shardsCount: Int,
     replicasCount: Int,
     maxCommitTime: Int,
@@ -347,7 +347,7 @@ object Solr extends ComponentCompanion {
     schema,
     solrUser,
     solrUserPassword,
-    containerCompanions,
+    containerDefinitions,
     shardsCount,
     replicasCount,
     maxCommitTime,
@@ -357,12 +357,12 @@ object Solr extends ComponentCompanion {
   )
 
   def props(
-    containerCompanions: Map[ContainerType, SearchContainerCompanion],
+    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SearchContainerDefinition],
     ws: WSClient,
     config: Config
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[Solr],
-    containerCompanions,
+    containerDefinitions,
     ws,
     config,
     ec,
@@ -370,11 +370,11 @@ object Solr extends ComponentCompanion {
   )
 
   def props(
-    containerCompanions: Map[ContainerType, SearchContainerCompanion],
+    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SearchContainerDefinition],
     ws: WSClient
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[Solr],
-    containerCompanions,
+    containerDefinitions,
     ws,
     StaticConfig.get.getConfig("database.solr"),
     ec,

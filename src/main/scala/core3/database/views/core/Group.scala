@@ -65,14 +65,14 @@ object Group extends JSONContainerViewCompanion {
   private val writes = Writes[Group] {
     obj =>
       Json.obj(
-        "group" -> containers.core.Group.toJsonData(obj.core),
+        "group" -> JSONConverter.toJsonData(obj.core),
         "items" -> obj.items.map(c => JSONConverter.toJsonData(c))
       )
   }
 
   private val reads = Reads[Group] {
     json =>
-      val group = containers.core.Group.fromJsonData((json \ "group").get).asInstanceOf[containers.core.Group]
+      val group = JSONConverter.fromJsonData("Group", (json \ "group").get).asInstanceOf[containers.core.Group]
       JsSuccess(
         Group(
           group,

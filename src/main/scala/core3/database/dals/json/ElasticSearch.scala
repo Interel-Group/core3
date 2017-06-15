@@ -53,7 +53,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param hostname            the hostname for the ElasticSearch instance
   * @param port                the port for the instance
   * @param clusterName         the name of the ElasticSearch cluster
-  * @param containerCompanions map with all registered container companion objects
+  * @param containerDefinitions map with all registered container companion objects
   * @param searchOnly          set to false to enable using ES as a data store, instead of just search
   * @param coexist             set to true to enable the use of ES as both data and search store
   * @param refreshPolicy       the refresh policy to use when making updates
@@ -64,7 +64,7 @@ class ElasticSearch(
   private val hostname: String,
   private val port: Int,
   private val clusterName: String,
-  private val containerCompanions: Map[ContainerType, JsonContainerCompanion],
+  private val containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
   private val searchOnly: Boolean,
   private val coexist: Boolean,
   private val refreshPolicy: RefreshPolicy,
@@ -76,19 +76,19 @@ class ElasticSearch(
   /**
     * Creates a new instance with the supplied config or uses the default config location.
     *
-    * @param containerCompanions map with all registered container companion objects
+    * @param containerDefinitions map with all registered container companion objects
     * @param config              the config to use (if specified; default path is 'server.static.database.elastic')
     * @return the new instance
     */
   def this(
-            containerCompanions: Map[ContainerType, JsonContainerCompanion],
+            containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
             config: Config = StaticConfig.get.getConfig("database.elastic")
   )(implicit ec: ExecutionContext, timeout: Timeout) =
     this(
       config.getString("hostname"),
       config.getInt("port"),
       config.getString("clusterName"),
-      containerCompanions,
+      containerDefinitions,
       config.getBoolean("searchOnly"),
       config.getBoolean("coexist"),
       config.getString("refreshPolicy").toLowerCase match {
@@ -125,7 +125,7 @@ class ElasticSearch(
 
   override protected def handle_GetLayerType: LayerType = layerType
 
-  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerCompanions.keys.toVector
+  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.keys.toVector
 
   override def shutdown(): Unit = {
     client.close()
@@ -133,21 +133,21 @@ class ElasticSearch(
 
   override protected def handle_VerifyDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     assert(
-      containerCompanions.contains(objectsType),
+      containerDefinitions.contains(objectsType),
       s"core3.database.dals.json.ElasticSearch::handle_VerifyDatabaseStructure > Object type [$objectsType] is not supported."
     )
 
-    val indexName = containerCompanions(objectsType).getDatabaseName
+    val indexName = containerDefinitions(objectsType).getDatabaseName
     client.execute(indexExists(indexName)).map(_.isExists)
   }
 
   override protected def handle_BuildDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     assert(
-      containerCompanions.contains(objectsType),
+      containerDefinitions.contains(objectsType),
       s"core3.database.dals.json.ElasticSearch::handle_BuildDatabaseStructure > Object type [$objectsType] is not supported."
     )
 
-    val objectsCompanion = containerCompanions(objectsType)
+    val objectsCompanion = containerDefinitions(objectsType)
     val indexName = objectsCompanion.getDatabaseName
 
     if (coexist && searchOnly) {
@@ -166,7 +166,7 @@ class ElasticSearch(
           if (searchOnly) {
             client.execute {
               putMapping(indexName / docType) as {
-                objectsCompanion.asInstanceOf[SearchContainerCompanion].getSearchFields.map {
+                objectsCompanion.asInstanceOf[SearchContainerDefinition].getSearchFields.map {
                   case (name, fieldType) =>
                     fieldType match {
                       case "string" => textField(name)
@@ -201,7 +201,7 @@ class ElasticSearch(
 
   override protected def handle_ClearDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     assert(
-      containerCompanions.contains(objectsType),
+      containerDefinitions.contains(objectsType),
       s"core3.database.dals.json.ElasticSearch::handle_ClearDatabaseStructure > Object type [$objectsType] is not supported."
     )
 
@@ -209,7 +209,7 @@ class ElasticSearch(
       //skips the operation, when the search-only instance is expected to coexist with another one
       Future.successful(true)
     } else {
-      val objectsCompanion = containerCompanions(objectsType)
+      val objectsCompanion = containerDefinitions(objectsType)
       val indexName = objectsCompanion.getDatabaseName
 
       client.execute(indexExists(indexName)).flatMap {
@@ -251,7 +251,7 @@ class ElasticSearch(
     * @param companion   JSON companion object for the specified object type
     * @return the retrieved containers
     */
-  private def getAllContainers(objectsType: ContainerType, companion: JsonContainerCompanion): Future[Vector[Container]] = {
+  private def getAllContainers(objectsType: ContainerType, companion: BasicContainerDefinition with JsonContainerDefinition): Future[Vector[Container]] = {
     val indexName = companion.getDatabaseName
 
     for {
@@ -307,13 +307,13 @@ class ElasticSearch(
   override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     if (!searchOnly) {
       assert(
-        containerCompanions.contains(objectsType),
+        containerDefinitions.contains(objectsType),
         s"core3.database.dals.json.ElasticSearch::handle_GetGenericQueryResult > Object type [$objectsType] is not supported."
       )
 
       count_GenericQuery += 1
 
-      val companion = containerCompanions(objectsType)
+      val companion = containerDefinitions(objectsType)
 
       getAllContainers(objectsType, companion)
     } else {
@@ -325,13 +325,13 @@ class ElasticSearch(
   override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     if (!searchOnly) {
       assert(
-        containerCompanions.contains(objectsType),
+        containerDefinitions.contains(objectsType),
         s"core3.database.dals.json.ElasticSearch::handle_GetCustomQueryResult > Object type [$objectsType] is not supported."
       )
 
       count_CustomQuery += 1
 
-      val companion = containerCompanions(objectsType)
+      val companion = containerDefinitions(objectsType)
 
       getAllContainers(objectsType, companion).map {
         containers =>
@@ -351,13 +351,13 @@ class ElasticSearch(
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
     if (!searchOnly) {
       assert(
-        containerCompanions.contains(objectType),
+        containerDefinitions.contains(objectType),
         s"core3.database.dals.json.ElasticSearch::handle_GetObject > Object type [$objectType] is not supported."
       )
 
       count_Get += 1
 
-      val objectsCompanion = containerCompanions(objectType)
+      val objectsCompanion = containerDefinitions(objectType)
       val indexName = objectsCompanion.getDatabaseName
 
       for {
@@ -375,13 +375,13 @@ class ElasticSearch(
 
   override protected def handle_CreateObject(container: Container): Future[Boolean] = {
     assert(
-      containerCompanions.contains(container.objectType),
+      containerDefinitions.contains(container.objectType),
       s"core3.database.dals.json.ElasticSearch::handle_CreateObject > Object type [${container.objectType}] is not supported."
     )
 
     count_Create += 1
 
-    val objectsCompanion = containerCompanions(container.objectType)
+    val objectsCompanion = containerDefinitions(container.objectType)
     val indexName = objectsCompanion.getDatabaseName
 
     for {
@@ -389,7 +389,7 @@ class ElasticSearch(
         val jsonContainer = objectsCompanion.toJsonData(container)
 
         if(searchOnly) {
-          val searchFields = objectsCompanion.asInstanceOf[SearchContainerCompanion].getSearchFields.keys.toSeq
+          val searchFields = objectsCompanion.asInstanceOf[SearchContainerDefinition].getSearchFields.keys.toSeq
 
           val filteredFields = jsonContainer.as[JsObject].fields.filter {
             case (k, _) =>
@@ -415,13 +415,13 @@ class ElasticSearch(
 
   override protected def handle_UpdateObject(container: MutableContainer): Future[Boolean] = {
     assert(
-      containerCompanions.contains(container.objectType),
+      containerDefinitions.contains(container.objectType),
       s"core3.database.dals.json.ElasticSearch::handle_UpdateObject > Object type [${container.objectType}] is not supported."
     )
 
     count_Update += 1
 
-    val objectsCompanion = containerCompanions(container.objectType)
+    val objectsCompanion = containerDefinitions(container.objectType)
     val indexName = objectsCompanion.getDatabaseName
 
     for {
@@ -429,7 +429,7 @@ class ElasticSearch(
         val jsonContainer = objectsCompanion.toJsonData(container)
 
         if(searchOnly) {
-          val searchFields = objectsCompanion.asInstanceOf[SearchContainerCompanion].getSearchFields.keys.toSeq
+          val searchFields = objectsCompanion.asInstanceOf[SearchContainerDefinition].getSearchFields.keys.toSeq
 
           val filteredFields = jsonContainer.as[JsObject].fields.filter {
             case (k, _) =>
@@ -454,13 +454,13 @@ class ElasticSearch(
 
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
     assert(
-      containerCompanions.contains(objectType),
+      containerDefinitions.contains(objectType),
       s"core3.database.dals.json.ElasticSearch::handle_DeleteObject > Object type [$objectType] is not supported."
     )
 
     count_Delete += 1
 
-    val objectsCompanion =  containerCompanions(objectType)
+    val objectsCompanion =  containerDefinitions(objectType)
 
     for {
       container <- handle_GetObject(objectType, objectID)
@@ -485,7 +485,7 @@ object ElasticSearch extends ComponentCompanion {
     hostname: String,
     port: Int,
     clusterName: String,
-    containerCompanions: Map[ContainerType, JsonContainerCompanion],
+    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
     searchOnly: Boolean = true,
     coexist: Boolean = false,
     refreshPolicy: RefreshPolicy = RefreshPolicy.NONE,
@@ -496,7 +496,7 @@ object ElasticSearch extends ComponentCompanion {
     hostname,
     port,
     clusterName,
-    containerCompanions,
+    containerDefinitions,
     searchOnly,
     coexist,
     refreshPolicy,
@@ -507,21 +507,21 @@ object ElasticSearch extends ComponentCompanion {
   )
 
   def props(
-             containerCompanions: Map[ContainerType, JsonContainerCompanion],
+             containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
              config: Config
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[ElasticSearch],
-    containerCompanions,
+    containerDefinitions,
     config,
     ec,
     timeout
   )
 
   def props(
-    containerCompanions: Map[ContainerType, JsonContainerCompanion]
+    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition]
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[ElasticSearch],
-    containerCompanions,
+    containerDefinitions,
     StaticConfig.get.getConfig("database.elastic"),
     ec,
     timeout

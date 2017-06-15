@@ -37,7 +37,7 @@ object WorkflowEngineSpec extends PerformanceTimeSpec {
   private val db = fixtures.Database.createMemoryOnlyDBInstance()
   private val engine = fixtures.Workflows.createWorkflowEngine(db)
   private val authorizedUser = fixtures.Workflows.createAuthorizedUser()
-  if (!JSONConverter.isInitialized) JSONConverter.initialize(core3.test.fixtures.Database.defaultJsonCompanions)
+  if (!JSONConverter.isInitialized) JSONConverter.initialize(core3.test.fixtures.Database.defaultDefinitions)
 
   private val resultDirConfigPath = "testing.reports.time.dsvPath"
   private val resultDir = if (StaticConfig.get.hasPath(resultDirConfigPath)) {

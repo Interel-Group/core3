@@ -17,9 +17,11 @@ package core3.test.specs.unit.database.containers
 
 import akka.util.Timeout
 import core3.database._
-import core3.database.containers.{JsonContainerCompanion, SlickContainerCompanion}
+import core3.database.containers.{BasicContainerDefinition, JsonContainerDefinition, SlickContainerDefinition}
 import core3.test.fixtures.Database
 import core3.test.specs.unit.AsyncUnitSpec
+import slick.jdbc.JdbcProfile
+
 import scala.concurrent.duration._
 
 class ContainerSpec extends AsyncUnitSpec with ContainerBehaviours {
@@ -31,25 +33,26 @@ class ContainerSpec extends AsyncUnitSpec with ContainerBehaviours {
     withFixture(test.toNoArgAsyncTest(fixture))
   }
 
-  val jsonCompanions: Map[ContainerType, JsonContainerCompanion] = Map[ContainerType, JsonContainerCompanion](
-    "QueryableContainer" -> QueryableContainer,
-    "LargeContainer" -> LargeContainer
-  )
+  val queryableContainerDefinitions = new QueryableContainer.BasicDefinition with QueryableContainer.JsonDefinition with QueryableContainer.SlickDefinition with SlickContainerDefinition {
+    override protected def withProfile: JdbcProfile = slick.jdbc.MySQLProfile
+  }
 
-  val slickCompanions: Map[ContainerType, SlickContainerCompanion] = Map[ContainerType, SlickContainerCompanion](
-    "QueryableContainer" -> QueryableContainer,
-    "LargeContainer" -> LargeContainer
-  )
+  val largeContainerDefinitions = new LargeContainer.BasicDefinition with LargeContainer.JsonDefinition with LargeContainer.SlickDefinition with SlickContainerDefinition {
+    override protected def withProfile: JdbcProfile = slick.jdbc.MySQLProfile
+  }
 
-  val supportedContainers = Vector("QueryableContainer", "LargeContainer")
+  val definitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SlickContainerDefinition] = Map(
+    "QueryableContainer" -> queryableContainerDefinitions,
+    "LargeContainer" -> largeContainerDefinitions
+  )
 
   implicit val timeout = Timeout(15.seconds)
 
-  private val mariaDAL = Database.createMariaDBInstance(slickCompanions)
-  private val couchDAL = Database.createCouchDBInstance(jsonCompanions)
-  private val memoryDAL = Database.createMemoryOnlyDBInstance(supportedContainers)
-  private val redisDAL = Database.createRedisInstance(jsonCompanions)
-  private val elasticStoreDAL = Database.createElasticStoreInstance(jsonCompanions)
+  private val mariaDAL = Database.createMariaDBInstance(definitions)
+  private val couchDAL = Database.createCouchDBInstance(definitions)
+  private val memoryDAL = Database.createMemoryOnlyDBInstance(definitions)
+  private val redisDAL = Database.createRedisInstance(definitions)
+  private val elasticStoreDAL = Database.createElasticStoreInstance(definitions)
 
   val mariaDBMasterMap = Map(
     "QueryableContainer" -> Vector(mariaDAL.getRef, memoryDAL.getRef, couchDAL.getRef, redisDAL.getRef),

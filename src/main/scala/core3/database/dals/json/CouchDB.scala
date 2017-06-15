@@ -42,32 +42,32 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param schema              the schema to be used for HTTP connections ["http" OR "https"]
   * @param username            the DB user to be used when authenticating each request
   * @param password            the password for the DB user
-  * @param containerCompanions map with all registered container companion objects
+  * @param containerDefinitions map with all registered container companion objects
   * @param ws                  web service client
   */
 class CouchDB(
-               private val hostname: String,
-               private val port: Int,
-               private val schema: String,
-               private val username: String,
-               private val password: String,
-               private val containerCompanions: Map[ContainerType, JsonContainerCompanion],
-               ws: WSClient
+  private val hostname: String,
+  private val port: Int,
+  private val schema: String,
+  private val username: String,
+  private val password: String,
+  private val containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
+  ws: WSClient
 )(implicit ec: ExecutionContext, timeout: Timeout)
   extends DatabaseAbstractionLayerComponent {
 
   /**
     * Creates a new instance with the supplied config or uses the default config location.
     *
-    * @param containerCompanions map with all registered container companion objects
+    * @param containerDefinitions map with all registered container companion objects
     * @param ws                  web service client
     * @param config              the config to use (if specified; default path is 'server.static.database.couchdb')
     * @return the new instance
     */
   def this(
-            containerCompanions: Map[ContainerType, JsonContainerCompanion],
-            ws: WSClient,
-            config: Config = StaticConfig.get.getConfig("database.couchdb")
+    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
+    ws: WSClient,
+    config: Config = StaticConfig.get.getConfig("database.couchdb")
   )(implicit ec: ExecutionContext, timeout: Timeout) =
     this(
       config.getString("hostname"),
@@ -75,7 +75,7 @@ class CouchDB(
       config.getString("schema"),
       config.getString("username"),
       config.getString("password"),
-      containerCompanions,
+      containerDefinitions,
       ws
     )
 
@@ -102,8 +102,8 @@ class CouchDB(
     * @return the generated URL
     */
   private def getDatabaseURLFromType(objectType: ContainerType): String = {
-    assert(containerCompanions.contains(objectType))
-    baseURL + "/" + containerCompanions(objectType).getDatabaseName
+    assert(containerDefinitions.contains(objectType))
+    baseURL + "/" + containerDefinitions(objectType).getDatabaseName
   }
 
   /**
@@ -183,21 +183,21 @@ class CouchDB(
     * @return the new container
     */
   private def fromJsonData(objectType: ContainerType, parsedJson: JsValue): Container = {
-    assert(containerCompanions.contains(objectType))
-    containerCompanions(objectType).fromJsonData(parsedJson)
+    assert(containerDefinitions.contains(objectType))
+    containerDefinitions(objectType).fromJsonData(parsedJson)
   }
 
   override protected def shutdown(): Unit = {}
 
   override protected def handle_GetDatabaseIdentifier: String = baseURL
 
-  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerCompanions.keys.toVector
+  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.keys.toVector
 
   override protected def handle_GetLayerType: LayerType = LayerType.CouchDB
 
   override protected def handle_VerifyDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     assert(
-      containerCompanions.contains(objectsType),
+      containerDefinitions.contains(objectsType),
       s"core3.database.dals.json.CouchDB::verifyDatabaseStructure > Object type [$objectsType] is not supported."
     )
 
@@ -223,7 +223,7 @@ class CouchDB(
 
   override protected def handle_BuildDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     assert(
-      containerCompanions.contains(objectsType),
+      containerDefinitions.contains(objectsType),
       s"core3.database.dals.json.CouchDB::buildDatabaseStructure > Object type [$objectsType] is not supported."
     )
 
@@ -245,7 +245,7 @@ class CouchDB(
 
   override protected def handle_ClearDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     assert(
-      containerCompanions.contains(objectsType),
+      containerDefinitions.contains(objectsType),
       s"core3.database.dals.json.CouchDB::clearDatabaseStructure > Object type [$objectsType] is not supported."
     )
 
@@ -318,7 +318,7 @@ class CouchDB(
 
   override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     assert(
-      containerCompanions.contains(objectsType),
+      containerDefinitions.contains(objectsType),
       s"core3.database.dals.json.CouchDB::queryDatabase > Object type [$objectsType] is not supported."
     )
 
@@ -329,13 +329,13 @@ class CouchDB(
 
   override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     assert(
-      containerCompanions.contains(objectsType),
+      containerDefinitions.contains(objectsType),
       s"core3.database.dals.json.CouchDB::queryDatabase > Object type [$objectsType] is not supported."
     )
 
     count_CustomQuery += 1
 
-    val companion = containerCompanions(objectsType)
+    val companion = containerDefinitions(objectsType)
 
     getAllContainers(objectsType).map {
       containers =>
@@ -348,7 +348,7 @@ class CouchDB(
 
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
     assert(
-      containerCompanions.contains(objectType),
+      containerDefinitions.contains(objectType),
       s"core3.database.dals.json.CouchDB::getObject > Object type [$objectType] is not supported."
     )
 
@@ -367,13 +367,13 @@ class CouchDB(
 
   override protected def handle_CreateObject(container: Container): Future[Boolean] = {
     assert(
-      containerCompanions.contains(container.objectType),
+      containerDefinitions.contains(container.objectType),
       s"core3.database.dals.json.CouchDB::createObject > Object type [${container.objectType}] is not supported."
     )
 
     count_Create += 1
 
-    val jsonData = containerCompanions(container.objectType).toJsonData(container)
+    val jsonData = containerDefinitions(container.objectType).toJsonData(container)
 
     for {
       response <- ws.url(getRequestURLFromType(container.objectType, container.id))
@@ -388,13 +388,13 @@ class CouchDB(
 
   override protected def handle_UpdateObject(container: MutableContainer): Future[Boolean] = {
     assert(
-      containerCompanions.contains(container.objectType),
+      containerDefinitions.contains(container.objectType),
       s"core3.database.dals.json.CouchDB::updateObject > Object type [${container.objectType}] is not supported."
     )
 
     count_Update += 1
 
-    val jsonData = containerCompanions(container.objectType).toJsonData(container)
+    val jsonData = containerDefinitions(container.objectType).toJsonData(container)
 
     for {
       objectRevision <- getRevisionID(container.objectType, container.id)
@@ -411,7 +411,7 @@ class CouchDB(
 
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
     assert(
-      containerCompanions.contains(objectType),
+      containerDefinitions.contains(objectType),
       s"core3.database.dals.json.CouchDB::deleteObject > Object type [$objectType] is not supported."
     )
 
@@ -433,13 +433,13 @@ class CouchDB(
 
 object CouchDB extends ComponentCompanion {
   def props(
-             hostname: String,
-             port: Int,
-             schema: String,
-             dbUser: String,
-             dbUserPassword: String,
-             containerCompanions: Map[ContainerType, JsonContainerCompanion],
-             ws: WSClient
+    hostname: String,
+    port: Int,
+    schema: String,
+    dbUser: String,
+    dbUserPassword: String,
+    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
+    ws: WSClient
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[CouchDB],
     hostname,
@@ -447,19 +447,19 @@ object CouchDB extends ComponentCompanion {
     schema,
     dbUser,
     dbUserPassword,
-    containerCompanions,
+    containerDefinitions,
     ws,
     ec,
     timeout
   )
 
   def props(
-             containerCompanions: Map[ContainerType, JsonContainerCompanion],
-             ws: WSClient,
-             config: Config
+    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
+    ws: WSClient,
+    config: Config
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[CouchDB],
-    containerCompanions,
+    containerDefinitions,
     ws,
     config,
     ec,
@@ -467,11 +467,11 @@ object CouchDB extends ComponentCompanion {
   )
 
   def props(
-             containerCompanions: Map[ContainerType, JsonContainerCompanion],
-             ws: WSClient
+    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
+    ws: WSClient
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[CouchDB],
-    containerCompanions,
+    containerDefinitions,
     StaticConfig.get.getConfig("database.couchdb"),
     ws,
     ec,

@@ -19,7 +19,7 @@ import akka.actor.Props
 import akka.util.Timeout
 import core3.core.Component.{ActionDescriptor, ActionResult}
 import core3.core.ComponentCompanion
-import core3.database.containers.{BasicContainerCompanion, Container, MutableContainer}
+import core3.database.containers.{BasicContainerDefinition, Container, MutableContainer}
 import core3.database.dals.{DatabaseAbstractionLayerComponent, LayerType}
 import core3.database.{ContainerType, ObjectID}
 import play.api.libs.json.Json
@@ -37,9 +37,9 @@ import scala.util.control.NonFatal
   *   <li>The database offers NO persistence and all data is lost as soon the instance is destroyed.</li>
   * </ul>
   *
-  * @param supportedContainers a list of supported containers
+  * @param containerDefinitions a map of supported containers and their basic companion objects
   */
-class MemoryOnlyDB(private val supportedContainers: Vector[String])
+class MemoryOnlyDB(private val containerDefinitions: Map[ContainerType, BasicContainerDefinition])
   (implicit ec: ExecutionContext, timeout: Timeout) extends DatabaseAbstractionLayerComponent {
   private val instanceID = java.util.UUID.randomUUID()
   private val store = new mutable.HashMap[ContainerType, mutable.HashMap[ObjectID, Container]]
@@ -57,7 +57,7 @@ class MemoryOnlyDB(private val supportedContainers: Vector[String])
 
   override protected def handle_GetLayerType: LayerType = LayerType.MemoryOnlyDB
 
-  override protected def handle_GetSupportedContainers: Vector[ContainerType] = supportedContainers
+  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.keys.toVector
 
   override def shutdown(): Unit = {
     store.clear()
@@ -136,13 +136,12 @@ class MemoryOnlyDB(private val supportedContainers: Vector[String])
       val containers = store(objectsType).values.toVector
 
       if(containers.nonEmpty) {
-        val cls = Class.forName(containers.head.getClass.getName + "$")
-        val companion = cls.getField("MODULE$").get(cls)
+        val companion = containerDefinitions(objectsType)
 
         Future.successful(
           containers.filter {
             container =>
-              companion.asInstanceOf[BasicContainerCompanion].matchCustomQuery(customQueryName, queryParams, container)
+              companion.matchCustomQuery(customQueryName, queryParams, container)
           }
         )
       } else {
@@ -188,8 +187,8 @@ class MemoryOnlyDB(private val supportedContainers: Vector[String])
 }
 
 object MemoryOnlyDB extends ComponentCompanion {
-  def props(supportedContainers: Vector[String])(implicit ec: ExecutionContext, timeout: Timeout): Props =
-    Props(classOf[MemoryOnlyDB], supportedContainers, ec, timeout)
+  def props(containerDefinitions: Map[ContainerType, BasicContainerDefinition])(implicit ec: ExecutionContext, timeout: Timeout): Props =
+    Props(classOf[MemoryOnlyDB], containerDefinitions, ec, timeout)
 
   override def getActionDescriptors: Vector[ActionDescriptor] = {
     Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))

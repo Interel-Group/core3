@@ -40,7 +40,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * <ul>
   *
   * @param source                    the source DAL to use for data retrieval and updates
-  * @param containerCompanions       map with all registered container companion objects
+  * @param containerDefinitions       map with all registered container companion objects
   * @param containerTypeMaxCacheSize maximum cache size per container type
   * @param actionTimeout             the amount of time (in seconds) before an operation is considered as timed out
   * @param maxLoadAttempts           maximum number of times to attempt loading an object from the source
@@ -48,7 +48,7 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 class CacheStore(
   private val source: DatabaseAbstractionLayer,
-  private val containerCompanions: Map[ContainerType, BasicContainerCompanion],
+  private val containerDefinitions: Map[ContainerType, BasicContainerDefinition],
   private val containerTypeMaxCacheSize: Int,
   private val actionTimeout: Int,
   private val maxLoadAttempts: Int,
@@ -414,7 +414,7 @@ class CacheStore(
     customQueryName: String,
     queryParams: Map[String, String]
   ): Future[Vector[Container]] = {
-    val companion = containerCompanions(objectsType)
+    val companion = containerDefinitions(objectsType)
     (self ? CacheStore.GetAllContainers(objectsType)).mapTo[Vector[Container]].map {
       containers =>
         containers.filter {
@@ -457,7 +457,7 @@ object CacheStore {
     * Creates a new config object for the [[core3.database.dals.memory.utils.CacheStore]] actor.
     *
     * @param source                    the source DAL to use for data retrieval and updates
-    * @param companions                map with all registered container companion objects
+    * @param definitions                map with all registered container companion objects
     * @param containerTypeMaxCacheSize maximum cache size per container type
     * @param actionTimeout             the amount of time (in seconds) before an operation is considered as timed out
     * @param maxLoadAttempts           maximum number of times to attempt loading an object from the source
@@ -466,13 +466,13 @@ object CacheStore {
     */
   def props(
     source: DatabaseAbstractionLayer,
-    companions: Map[ContainerType, BasicContainerCompanion],
+    definitions: Map[ContainerType, BasicContainerDefinition],
     containerTypeMaxCacheSize: Int,
     actionTimeout: Int,
     maxLoadAttempts: Int,
     preload: Boolean
   )(implicit ec: ExecutionContext): Props = Props(
-    classOf[CacheStore], source, companions, containerTypeMaxCacheSize, actionTimeout, maxLoadAttempts, preload, ec
+    classOf[CacheStore], source, definitions, containerTypeMaxCacheSize, actionTimeout, maxLoadAttempts, preload, ec
   )
 
   /**

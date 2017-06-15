@@ -19,23 +19,23 @@ import core3.database.ContainerType
 import play.api.libs.json.JsValue
 
 object JSONConverter {
-  private var jsonCompanions: Option[Map[ContainerType, JsonContainerCompanion]] = None
+  private var jsonDefinitions: Option[Map[ContainerType, JsonContainerDefinition]] = None
 
-  def isInitialized: Boolean = jsonCompanions.isDefined
+  def isInitialized: Boolean = jsonDefinitions.isDefined
 
-  def initialize(jsonContainerCompanions: Map[ContainerType, JsonContainerCompanion]): Unit = {
-    if (jsonCompanions.isEmpty) {
-      jsonCompanions = Some(jsonContainerCompanions)
+  def initialize(jsonContainerDefinitions: Map[ContainerType, JsonContainerDefinition]): Unit = {
+    if (jsonDefinitions.isEmpty) {
+      jsonDefinitions = Some(jsonContainerDefinitions)
     } else {
       throw new IllegalStateException(s"core3.database.containers.JSONConverter::initialize > Cannot initialize converter more than once.")
     }
   }
 
   def toJsonData(container: Container): JsValue = {
-    jsonCompanions match {
-      case Some(companions) =>
-        if (companions.contains(container.objectType)) {
-          companions(container.objectType).toJsonData(container)
+    jsonDefinitions match {
+      case Some(definitions) =>
+        if (definitions.contains(container.objectType)) {
+          definitions(container.objectType).toJsonData(container)
         } else {
           throw new IllegalArgumentException(s"core3.database.containers.JSONConverter::toJsonData > Container type [${container.objectType}] not found.")
         }
@@ -46,10 +46,10 @@ object JSONConverter {
   }
 
   def fromJsonData(objectType: ContainerType, data: JsValue): Container = {
-    jsonCompanions match {
-      case Some(companions) =>
-        if (companions.contains(objectType)) {
-          companions(objectType).fromJsonData(data)
+    jsonDefinitions match {
+      case Some(definitions) =>
+        if (definitions.contains(objectType)) {
+          definitions(objectType).fromJsonData(data)
         } else {
           throw new IllegalArgumentException(s"core3.database.containers.JSONConverter::fromJsonData > Container type [$objectType] not found.")
         }
