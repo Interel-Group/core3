@@ -13,7 +13,7 @@
   * See the License for the specific language governing permissions and
   * limitations under the License.
   */
-package core3.database.dals.sql
+package core3.database.dals.jdbc
 
 import akka.actor.Props
 import akka.util.Timeout
@@ -25,50 +25,32 @@ import core3.database.containers._
 import core3.database.dals.{DatabaseAbstractionLayerComponent, LayerType}
 import core3.database.{ContainerType, ObjectID}
 import play.api.libs.json.Json
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.JdbcProfile
 import slick.jdbc.meta.MTable
 
-import scala.concurrent._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 /**
-  * A Database Abstraction Layer for accessing a MariaDB database.
+  * A Database Abstraction Layer for accessing JDBC-based Slick databases.
   *
-  * @constructor creates a new MariaDB DAL
-  * @param databaseName        the name of the database to be used
-  * @param username            the DB user to be used for authentication
-  * @param password            the password for the DB user
   * @param containerDefinitions all configured container definitions
+  * @param jdbcURL              JDBC URL for the database to be used
+  * @param username             (optional) the DB user to be used for authentication
+  * @param password             (optional) the DB user password
   */
-@deprecated("Use class `core3.database.dals.jdbc.SlickDB` instead", "2.0.0")
-class MariaDB(
-  private val databaseName: String,
-  private val username: String,
-  private val password: String,
-  private val containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition]
+abstract class SlickDB(
+  private val containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition],
+  private val jdbcURL: String,
+  private val username: Option[String],
+  private val password: Option[String]
 )(implicit ec: ExecutionContext, timeout: Timeout)
   extends DatabaseAbstractionLayerComponent {
+  protected def withProfile: JdbcProfile
+  protected lazy val profile: JdbcProfile = withProfile
 
-  /**
-    * Creates a new instance with the supplied config or uses the default config location.
-    *
-    * @param containerDefinitions all configured container definitions
-    * @param config              the config to use (if specified; default path is 'server.static.database.mariadb')
-    * @return the new instance
-    */
-  def this(
-    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition],
-    config: Config = StaticConfig.get.getConfig("database.mariadb")
-  )(implicit ec: ExecutionContext, timeout: Timeout) =
-    this(
-      config.getString("databaseName"),
-      config.getString("username"),
-      config.getString("password"),
-      containerDefinitions
-    )
-
-  private val jdbcURL = s"jdbc:mariadb://localhost:3306/$databaseName"
-  private val db = Database.forURL(jdbcURL, username, password)
+  import profile.api._
+  private val db = Database.forURL(jdbcURL, username.orNull, password.orNull)
 
   //stats
   private var count_ExecuteAction: Long = 0
@@ -87,7 +69,7 @@ class MariaDB(
 
   override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.supportedContainers
 
-  override protected def handle_GetLayerType: LayerType = LayerType.MariaDB
+  override protected def handle_GetLayerType: LayerType = LayerType.SlickDB
 
   /**
     * Retrieves the database name for the specified container type.
@@ -178,6 +160,7 @@ class MariaDB(
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
     try {
       count_Get += 1
+
       db.run(containerDefinitions(objectType).getAction(objectID)).map(_.head)
     } catch {
       case NonFatal(e) => Future.failed(e)
@@ -215,45 +198,31 @@ class MariaDB(
   }
 }
 
-@deprecated("Use class `core3.database.dals.jdbc.SlickDB` instead", "2.0.0")
-object MariaDB extends ComponentCompanion {
-  @deprecated("Use class `core3.database.dals.jdbc.SlickDB` instead", "2.0.0")
+object SlickDB extends ComponentCompanion {
   def props(
-    databaseName: String,
-    dbUser: String,
-    dbUserPassword: String,
-    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition]
+    definitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition],
+    jdbcProfile: JdbcProfile,
+    jdbcURL: String,
+    username: Option[String],
+    password: Option[String]
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
-    classOf[MariaDB],
-    databaseName,
-    dbUser,
-    dbUserPassword,
-    containerDefinitions,
-    ec,
-    timeout
+    new SlickDB(definitions, jdbcURL, username, password) {
+      override protected def withProfile: JdbcProfile = jdbcProfile
+    }
   )
 
-  @deprecated("Use class `core3.database.dals.jdbc.SlickDB` instead", "2.0.0")
   def props(
-    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition],
-    config: Config
+    definitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition],
+    jdbcProfile: JdbcProfile,
+    config: Config = StaticConfig.get.getConfig("database.slick")
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
-    classOf[MariaDB],
-    containerDefinitions,
-    config,
-    ec,
-    timeout
-  )
-
-  @deprecated("Use class `core3.database.dals.jdbc.SlickDB` instead", "2.0.0")
-  def props(
-    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition]
-  )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
-    classOf[MariaDB],
-    containerDefinitions,
-    StaticConfig.get.getConfig("database.mariadb"),
-    ec,
-    timeout
+    new SlickDB(definitions,
+      config.getString("url"),
+      if (config.hasPath("username")) Some(config.getString("username")) else None,
+      if (config.hasPath("password")) Some(config.getString("password")) else None
+    ) {
+      override protected def withProfile: JdbcProfile = jdbcProfile
+    }
   )
 
   override def getActionDescriptors: Vector[ActionDescriptor] = {

@@ -150,10 +150,10 @@ package object workflows {
       *
       * @return the converted data
       */
-    def asJson: JsValue = Json.obj(
-      "add" -> add.map(JSONConverter.toJsonData),
-      "update" -> update.map(JSONConverter.toJsonData),
-      "delete" -> delete.map(JSONConverter.toJsonData)
+    def asJson(implicit definitions: ContainerDefinitions[JsonContainerDefinition]): JsValue = Json.obj(
+      "add" -> add.map(container => definitions(container.objectType).toJsonData(container)),
+      "update" -> update.map(container => definitions(container.objectType).toJsonData(container)),
+      "delete" -> delete.map(container => definitions(container.objectType).toJsonData(container))
     )
   }
 

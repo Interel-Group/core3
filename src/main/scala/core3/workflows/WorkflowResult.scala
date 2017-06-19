@@ -15,7 +15,7 @@
   */
 package core3.workflows
 
-import core3.database.containers.JSONConverter
+import core3.database.containers.{ContainerDefinitions, JsonContainerDefinition}
 import core3.http.responses.ServiceResponse
 import play.api.libs.json._
 
@@ -30,12 +30,12 @@ import play.api.libs.json._
 case class WorkflowResult(wasSuccessful: Boolean, requestID: RequestID, message: Option[String] = None, data: Option[JsValue] = None) extends ServiceResponse {
   override def asJson: JsValue = Json.toJson(this)
 
-  def withData(data: OutputData): WorkflowResult = {
+  def withData(data: OutputData)(implicit definitions: ContainerDefinitions[JsonContainerDefinition]): WorkflowResult = {
     this.copy(
       data = Some(
         Json.obj(
-          "add" -> data.add.map(JSONConverter.toJsonData),
-          "update" -> data.update.map(JSONConverter.toJsonData)
+          "add" -> data.add.map(container => definitions(container.objectType).toJsonData(container)),
+          "update" -> data.update.map(container => definitions(container.objectType).toJsonData(container))
         )
       )
     )

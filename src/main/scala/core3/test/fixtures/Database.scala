@@ -20,37 +20,43 @@ import akka.pattern.ask
 import core3.config.StaticConfig
 import core3.database._
 import core3.database.containers._
+import core3.database.containers.core
 import core3.database.dals._
 import core3.database.dals.json.{CouchDB, ElasticSearch, Redis, Solr}
 import core3.database.dals.memory.{DistributedCache, MemoryOnlyDB}
-import core3.database.dals.sql.MariaDB
+import core3.database.dals.jdbc.SlickDB
 import core3.test.fixtures.TestSystem._
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy
 import play.api.libs.ws.ahc.AhcWSClient
+import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 
 object Database {
-  val defaultJsonCompanions: Map[ContainerType, JsonContainerCompanion] = Map[ContainerType, JsonContainerCompanion](
-    "Group" -> core.Group,
-    "TransactionLog" -> core.TransactionLog,
-    "LocalUser" -> core.LocalUser
-  )
+  val groupDefinitions = new core.Group.BasicDefinition with core.Group.JsonDefinition with core.Group.SlickDefinition with SlickContainerDefinition {
+    override protected def withProfile: JdbcProfile = slick.jdbc.MySQLProfile
+  }
 
-  val defaultSlickCompanions: Map[ContainerType, SlickContainerCompanion] = Map[ContainerType, SlickContainerCompanion](
-    "Group" -> core.Group,
-    "TransactionLog" -> core.TransactionLog,
-    "LocalUser" -> core.LocalUser
-  )
+  val transactionLogDefinitions = new core.TransactionLog.BasicDefinition with core.TransactionLog.JsonDefinition with core.TransactionLog.SlickDefinition with SlickContainerDefinition {
+    override protected def withProfile: JdbcProfile = slick.jdbc.MySQLProfile
+  }
 
-  val defaultSearchCompanions: Map[ContainerType, SearchContainerCompanion] = Map[ContainerType, SearchContainerCompanion]()
+  val localUserDefinitions = new core.LocalUser.BasicDefinition with core.LocalUser.JsonDefinition with core.LocalUser.SlickDefinition with SlickContainerDefinition {
+    override protected def withProfile: JdbcProfile = slick.jdbc.MySQLProfile
+  }
 
-  val defaultSupportedContainers: Vector[String] = Vector("Group", "TransactionLog", "LocalUser")
+  val defaultDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SlickContainerDefinition] =
+    Map(
+      "Group" -> groupDefinitions,
+      "TransactionLog" -> transactionLogDefinitions,
+      "LocalUser" -> localUserDefinitions
+    )
 
-  def createCouchDBInstance(companions: Map[ContainerType, JsonContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
-    if (!JSONConverter.isInitialized) JSONConverter.initialize(companions)
+  val defaultSearchDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SearchContainerDefinition] = Map.empty
+
+  def createCouchDBInstance(definitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition] = defaultDefinitions): DatabaseAbstractionLayer = {
     val config = StaticConfig.get.getConfig("database.couchdb")
 
     val actor = system.actorOf(
@@ -60,7 +66,7 @@ object Database {
         config.getString("schema"),
         config.getString("username"),
         config.getString("password"),
-        companions,
+        definitions,
         AhcWSClient()
       ),
       name = s"CouchDB_$getNewActorID"
@@ -69,10 +75,11 @@ object Database {
     new DatabaseAbstractionLayer(actor)
   }
 
-  def createMariaDBInstance(companions: Map[ContainerType, SlickContainerCompanion] = defaultSlickCompanions): DatabaseAbstractionLayer = {
+  def createMariaDBInstance(definitions: Map[ContainerType, BasicContainerDefinition with SlickContainerDefinition] = defaultDefinitions): DatabaseAbstractionLayer = {
     val actor = system.actorOf(
-      MariaDB.props(
-        companions,
+      SlickDB.props(
+        definitions,
+        slick.jdbc.MySQLProfile,
         StaticConfig.get.getConfig("database.mariadb")
       ),
       name = s"MariaDB_$getNewActorID"
@@ -81,24 +88,23 @@ object Database {
     new DatabaseAbstractionLayer(actor)
   }
 
-  def createSolrInstance(companions: Map[ContainerType, SearchContainerCompanion] = defaultSearchCompanions): DatabaseAbstractionLayer = {
-    if (!JSONConverter.isInitialized) JSONConverter.initialize(companions)
+  def createSolrInstance(definitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SearchContainerDefinition] = defaultSearchDefinitions): DatabaseAbstractionLayer = {
     val actor = system.actorOf(
-      Solr.props(containerCompanions = companions, AhcWSClient()),
+      Solr.props(containerDefinitions = definitions, AhcWSClient()),
       name = s"Solr_$getNewActorID"
     )
 
     new DatabaseAbstractionLayer(actor)
   }
 
-  def createMemoryOnlyDBInstance(supportedContainers: Vector[String] = defaultSupportedContainers): DatabaseAbstractionLayer = {
-    val actor = system.actorOf(MemoryOnlyDB.props(supportedContainers), name = s"MemoryOnlyDB_$getNewActorID")
+  def createMemoryOnlyDBInstance(definitions: Map[ContainerType, BasicContainerDefinition] = defaultDefinitions): DatabaseAbstractionLayer = {
+    val actor = system.actorOf(MemoryOnlyDB.props(definitions), name = s"MemoryOnlyDB_$getNewActorID")
     new DatabaseAbstractionLayer(actor)
   }
 
-  def createRedisInstance(companions: Map[ContainerType, JsonContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
+  def createRedisInstance(definitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition] = defaultDefinitions): DatabaseAbstractionLayer = {
     val actor = system.actorOf(
-      Redis.props(companions),
+      Redis.props(definitions),
       name = s"Redis_$getNewActorID"
     )
 
@@ -107,9 +113,8 @@ object Database {
 
   def createElasticSearchInstance(
     coexist: Boolean = false,
-    companions: Map[ContainerType, JsonContainerCompanion] = defaultSearchCompanions
+    definitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition] = defaultSearchDefinitions
   ): DatabaseAbstractionLayer = {
-    if (!JSONConverter.isInitialized) JSONConverter.initialize(companions)
     val config = StaticConfig.get.getConfig("database.elastic-search")
 
     val actor = system.actorOf(
@@ -117,7 +122,7 @@ object Database {
         config.getString("hostname"),
         config.getInt("port"),
         config.getString("clusterName"),
-        companions,
+        definitions,
         searchOnly = true,
         coexist,
         RefreshPolicy.NONE,
@@ -130,12 +135,11 @@ object Database {
     new DatabaseAbstractionLayer(actor)
   }
 
-  def createElasticStoreInstance(companions: Map[ContainerType, JsonContainerCompanion] = defaultJsonCompanions): DatabaseAbstractionLayer = {
-    if (!JSONConverter.isInitialized) JSONConverter.initialize(companions)
+  def createElasticStoreInstance(definitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition] = defaultDefinitions): DatabaseAbstractionLayer = {
     val config = StaticConfig.get.getConfig("database.elastic-store")
 
     val actor = system.actorOf(
-      ElasticSearch.props(companions, config),
+      ElasticSearch.props(definitions, config),
       name = s"ElasticSearch_no_searchOnly_no_coexist_$getNewActorID"
     )
 
@@ -144,7 +148,7 @@ object Database {
 
   def createDistributedCacheInstance(
     source: DatabaseAbstractionLayer = createMariaDBInstance(),
-    companions: Map[ContainerType, BasicContainerCompanion] = defaultJsonCompanions,
+    definitions: Map[ContainerType, BasicContainerDefinition] = defaultDefinitions,
     clusterPort: Int = 0,
     localPort: Int = 0,
     preload: Boolean = true
@@ -157,7 +161,7 @@ object Database {
         source,
         preload,
         actionTimeout = 5,
-        companions,
+        definitions,
         1000,
         syncInterval = 5
       ),

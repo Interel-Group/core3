@@ -38,73 +38,8 @@ case class TransactionLog(
   override val objectType: ContainerType = "TransactionLog"
 }
 
-object TransactionLog extends JsonContainerCompanion with SlickContainerCompanion {
-
-  import slick.jdbc.MySQLProfile.api._
-  import core3.database.dals.sql.conversions.ForMySQLProfile._
-  import shapeless._
-  import slickless._
-
-  //
-  //SlickContainerCompanion Definitions
-  //
-  private class TableDef(tag: Tag)
-    extends Table[TransactionLog](tag, "core_transaction_logs") {
-    def workflowName = column[String]("WORKFLOW_NAME")
-
-    def requestID = column[RequestID]("REQUEST_ID")
-
-    def readOnlyWorkflow = column[Boolean]("READ_ONLY_WORKFLOW")
-
-    def parameters = column[JsValue]("PARAMETERS")
-
-    def data = column[JsValue]("DATA")
-
-    def initiatingUser = column[String]("INITIATING_USER")
-
-    def workflowResult = column[Boolean]("WORKFLOW_RESULT")
-
-    def workflowState = column[String]("WORKFLOW_STATE")
-
-    def timestamp = column[Timestamp]("TIMESTAMP", O.SqlType("DATETIME(3)"))
-
-    def id = column[ObjectID]("ID", O.PrimaryKey)
-
-    def * = (workflowName :: requestID :: readOnlyWorkflow :: parameters :: data :: initiatingUser :: workflowResult :: workflowState :: timestamp :: id :: HNil).mappedWith(Generic[TransactionLog])
-  }
-
-  private val query = TableQuery[TableDef]
-  private val compiledGetByID = Compiled((objectID: Rep[ObjectID]) => query.filter(_.id === objectID))
-  private val compiledGetBetweenTimestamps = Compiled((start: Rep[Timestamp], end: Rep[Timestamp]) => query.filter(_.timestamp between(start, end)))
-
-  override def createSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.create
-  override def dropSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.drop
-  override def genericQueryAction: DBIOAction[Seq[Container], NoStream, Effect.Read] = query.result
-  override def getAction(objectID: ObjectID): DBIOAction[Seq[Container], NoStream, Effect.Read] = compiledGetByID(objectID).result
-  override def createAction(container: Container): DBIOAction[Int, NoStream, Effect.Write] = query += container.asInstanceOf[TransactionLog]
-
-  override def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write] =
-    throw new IllegalStateException("core3.database.containers.core.TransactionLog::runUpdate > Cannot update 'TransactionLog' data.")
-
-  override def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write] =
-    throw new IllegalStateException("core3.database.containers.core.TransactionLog::runUpdate > Cannot delete 'TransactionLog' data.")
-
-  override def customQueryAction(queryName: String, queryParams: Map[String, String]): DBIOAction[Seq[Container], NoStream, Effect.Read] = {
-    queryName match {
-      case "getBetweenTimestamps" =>
-        compiledGetBetweenTimestamps((
-          queryParams("start").toTimestamp(TimestampFormat.DefaultTimestamp),
-          queryParams("end").toTimestamp(TimestampFormat.DefaultTimestamp)
-        )).result
-
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::runCustomQuery > Query [$queryName] is not supported.")
-    }
-  }
-
-  //
-  //JsonContainerCompanion Definitions
-  //
-  private val writes = Writes[TransactionLog] {
+object TransactionLog {
+  implicit val writes: Writes[TransactionLog] = Writes[TransactionLog] {
     obj =>
       Json.obj(
         "workflowName" -> obj.workflowName,
@@ -120,7 +55,7 @@ object TransactionLog extends JsonContainerCompanion with SlickContainerCompanio
       )
   }
 
-  private val reads = Reads[TransactionLog] {
+  implicit val reads: Reads[TransactionLog] = Reads[TransactionLog] {
     json =>
       JsSuccess(
         new TransactionLog(
@@ -138,26 +73,93 @@ object TransactionLog extends JsonContainerCompanion with SlickContainerCompanio
       )
   }
 
-  override def toJsonData(container: Container): JsValue = {
-    Json.toJson(container.asInstanceOf[TransactionLog])(writes)
+  trait BasicDefinition extends BasicContainerDefinition {
+    override def getDatabaseName: String = "core-transaction-logs"
+
+    override def matchCustomQuery(queryName: String, queryParams: Map[String, String], container: Container): Boolean = {
+      queryName match {
+        case "getBetweenTimestamps" =>
+          val log = container.asInstanceOf[TransactionLog]
+          queryParams("start").toTimestamp(TimestampFormat.DefaultTimestamp).isBefore(log.timestamp) && queryParams("end").toTimestamp(TimestampFormat.DefaultTimestamp).isAfter(log.timestamp)
+
+        case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::matchCustomQuery > Query [$queryName] is not supported.")
+      }
+    }
   }
 
-  override def fromJsonData(data: JsValue): Container = {
-    data.as[TransactionLog](reads)
+  trait JsonDefinition extends JsonContainerDefinition {
+    override def toJsonData(container: Container): JsValue = {
+      Json.toJson(container.asInstanceOf[TransactionLog])
+    }
+
+    override def fromJsonData(data: JsValue): Container = {
+      data.as[TransactionLog]
+    }
   }
 
-  //
-  //BasicContainerCompanion Definitions
-  //
-  override def getDatabaseName: String = "core-transaction-logs"
+  trait SlickDefinition { this: SlickContainerDefinition =>
 
-  override def matchCustomQuery(queryName: String, queryParams: Map[String, String], container: Container): Boolean = {
-    queryName match {
-      case "getBetweenTimestamps" =>
-        val log = container.asInstanceOf[TransactionLog]
-        queryParams("start").toTimestamp(TimestampFormat.DefaultTimestamp).isBefore(log.timestamp) && queryParams("end").toTimestamp(TimestampFormat.DefaultTimestamp).isAfter(log.timestamp)
+    import profile.api._
+    import shapeless._
+    import slickless._
 
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::matchCustomQuery > Query [$queryName] is not supported.")
+    private class TableDef(tag: Tag)
+      extends Table[TransactionLog](tag, "core_transaction_logs") {
+      def workflowName = column[String]("WORKFLOW_NAME")
+
+      def requestID = column[RequestID]("REQUEST_ID")
+
+      def readOnlyWorkflow = column[Boolean]("READ_ONLY_WORKFLOW")
+
+      def parameters = column[JsValue]("PARAMETERS")
+
+      def data = column[JsValue]("DATA")
+
+      def initiatingUser = column[String]("INITIATING_USER")
+
+      def workflowResult = column[Boolean]("WORKFLOW_RESULT")
+
+      def workflowState = column[String]("WORKFLOW_STATE")
+
+      def timestamp = column[Timestamp]("TIMESTAMP", O.SqlType("DATETIME(3)"))
+
+      def id = column[ObjectID]("ID", O.PrimaryKey)
+
+      def * = (workflowName :: requestID :: readOnlyWorkflow :: parameters :: data :: initiatingUser :: workflowResult :: workflowState :: timestamp :: id :: HNil).mappedWith(Generic[TransactionLog])
+    }
+
+    private def query = TableQuery[TableDef]
+
+    private def compiledGetByID = Compiled((objectID: Rep[ObjectID]) => query.filter(_.id === objectID))
+
+    private def compiledGetBetweenTimestamps = Compiled((start: Rep[Timestamp], end: Rep[Timestamp]) => query.filter(_.timestamp between(start, end)))
+
+    override def createSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.create
+
+    override def dropSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.drop
+
+    override def genericQueryAction: DBIOAction[Seq[Container], NoStream, Effect.Read] = query.result
+
+    override def getAction(objectID: ObjectID): DBIOAction[Seq[Container], NoStream, Effect.Read] = compiledGetByID(objectID).result
+
+    override def createAction(container: Container): DBIOAction[Int, NoStream, Effect.Write] = query += container.asInstanceOf[TransactionLog]
+
+    override def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write] =
+      throw new IllegalStateException("core3.database.containers.core.TransactionLog::runUpdate > Cannot update 'TransactionLog' data.")
+
+    override def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write] =
+      throw new IllegalStateException("core3.database.containers.core.TransactionLog::runUpdate > Cannot delete 'TransactionLog' data.")
+
+    override def customQueryAction(queryName: String, queryParams: Map[String, String]): DBIOAction[Seq[Container], NoStream, Effect.Read] = {
+      queryName match {
+        case "getBetweenTimestamps" =>
+          compiledGetBetweenTimestamps((
+            queryParams("start").toTimestamp(TimestampFormat.DefaultTimestamp),
+            queryParams("end").toTimestamp(TimestampFormat.DefaultTimestamp)
+          )).result
+
+        case _ => throw new IllegalArgumentException(s"core3.database.containers.core.TransactionLog::runCustomQuery > Query [$queryName] is not supported.")
+      }
     }
   }
 

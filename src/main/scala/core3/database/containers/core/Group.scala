@@ -37,67 +37,8 @@ case class Group(
   override val objectType: ContainerType = "Group"
 }
 
-object Group extends JsonContainerCompanion with SlickContainerCompanion {
-
-  import slick.jdbc.MySQLProfile.api._
-  import core3.database.dals.sql.conversions.ForMySQLProfile._
-  import shapeless._
-  import slickless._
-
-  //
-  //SlickContainerCompanion Definitions
-  //
-  private class TableDef(tag: Tag)
-    extends Table[Group](tag, "core_groups") {
-
-    def shortName = column[String]("SHORT_NAME", O.Length(32))
-
-    def name = column[String]("NAME")
-
-    def items = column[Vector[ObjectID]]("ITEMS")
-
-    def itemsType = column[ContainerType]("ITEMS_TYPE")
-
-    def created = column[Timestamp]("CREATED", O.SqlType("DATETIME(3)"))
-
-    def updated = column[Timestamp]("UPDATED", O.SqlType("DATETIME(3)"))
-
-    def updatedBy = column[String]("UPDATED_BY")
-
-    def id = column[ObjectID]("ID", O.PrimaryKey)
-
-    def revision = column[RevisionID]("REVISION")
-
-    def revisionNumber = column[RevisionSequenceNumber]("REVISION_NUMBER")
-
-    def * = (shortName :: name :: items :: itemsType :: created :: updated :: updatedBy :: id :: revision :: revisionNumber :: HNil).mappedWith(Generic[Group])
-
-    def idx = index("idx_sn", shortName, unique = true)
-  }
-
-  private val query = TableQuery[TableDef]
-  private val compiledGetByID = Compiled((objectID: Rep[ObjectID]) => query.filter(_.id === objectID))
-  private val compiledGetByShortName = Compiled((shortName: Rep[String]) => query.filter(_.shortName === shortName))
-
-  override def createSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.create
-  override def dropSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.drop
-  override def genericQueryAction: DBIOAction[Seq[Container], NoStream, Effect.Read] = query.result
-  override def getAction(objectID: ObjectID): DBIOAction[Seq[Container], NoStream, Effect.Read] = compiledGetByID(objectID).result
-  override def createAction(container: Container): DBIOAction[Int, NoStream, Effect.Write] = query += container.asInstanceOf[Group]
-  override def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(container.id).update(container.asInstanceOf[Group])
-  override def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(objectID).delete
-
-  override def customQueryAction(queryName: String, queryParams: Map[String, String]): DBIOAction[Seq[Container], NoStream, Effect.Read] = {
-    queryName match {
-      case "getByShortName" => compiledGetByShortName(queryParams("shortName")).result
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Group::runCustomQuery > Query [$queryName] is not supported.")
-    }
-  }
-
-  //
-  //JsonContainerCompanion Definitions
-  //
-  private val writes = Writes[Group] {
+object Group {
+  implicit val writes: Writes[Group] = Writes[Group] {
     obj =>
       Json.obj(
         "shortName" -> obj.shortName,
@@ -113,7 +54,7 @@ object Group extends JsonContainerCompanion with SlickContainerCompanion {
       )
   }
 
-  private val reads = Reads[Group] {
+  implicit val reads: Reads[Group] = Reads[Group] {
     json =>
       JsSuccess(
         new Group(
@@ -131,23 +72,85 @@ object Group extends JsonContainerCompanion with SlickContainerCompanion {
       )
   }
 
-  override def toJsonData(container: Container): JsValue = {
-    Json.toJson(container.asInstanceOf[Group])(writes)
+  trait BasicDefinition extends BasicContainerDefinition {
+    override def getDatabaseName: String = "core-groups"
+
+    override def matchCustomQuery(queryName: String, queryParams: Map[String, String], container: Container): Boolean = {
+      queryName match {
+        case "getByShortName" => queryParams("shortName") == container.asInstanceOf[Group].shortName
+        case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Group::matchCustomQuery > Query [$queryName] is not supported.")
+      }
+    }
   }
 
-  override def fromJsonData(data: JsValue): Container = {
-    data.as[Group](reads)
+  trait JsonDefinition extends JsonContainerDefinition {
+    override def toJsonData(container: Container): JsValue = {
+      Json.toJson(container.asInstanceOf[Group])
+    }
+
+    override def fromJsonData(data: JsValue): Container = {
+      data.as[Group]
+    }
   }
 
-  //
-  //BasicContainerCompanion Definitions
-  //
-  override def getDatabaseName: String = "core-groups"
+  trait SlickDefinition { this: SlickContainerDefinition =>
 
-  override def matchCustomQuery(queryName: String, queryParams: Map[String, String], container: Container): Boolean = {
-    queryName match {
-      case "getByShortName" => queryParams("shortName") == container.asInstanceOf[Group].shortName
-      case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Group::matchCustomQuery > Query [$queryName] is not supported.")
+    import profile.api._
+    import shapeless._
+    import slickless._
+
+    private class TableDef(tag: Tag) extends Table[Group](tag, "core_groups") {
+
+      def shortName = column[String]("SHORT_NAME", O.Length(32))
+
+      def name = column[String]("NAME")
+
+      def items = column[Vector[ObjectID]]("ITEMS")
+
+      def itemsType = column[ContainerType]("ITEMS_TYPE")
+
+      def created = column[Timestamp]("CREATED", O.SqlType("DATETIME(3)"))
+
+      def updated = column[Timestamp]("UPDATED", O.SqlType("DATETIME(3)"))
+
+      def updatedBy = column[String]("UPDATED_BY")
+
+      def id = column[ObjectID]("ID", O.PrimaryKey)
+
+      def revision = column[RevisionID]("REVISION")
+
+      def revisionNumber = column[RevisionSequenceNumber]("REVISION_NUMBER")
+
+      def * = (shortName :: name :: items :: itemsType :: created :: updated :: updatedBy :: id :: revision :: revisionNumber :: HNil).mappedWith(Generic[Group])
+
+      def idx = index("idx_sn", shortName, unique = true)
+    }
+
+    private def query = TableQuery[TableDef]
+
+    private def compiledGetByID = Compiled((objectID: Rep[ObjectID]) => query.filter(_.id === objectID))
+
+    private def compiledGetByShortName = Compiled((shortName: Rep[String]) => query.filter(_.shortName === shortName))
+
+    override def createSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.create
+
+    override def dropSchemaAction(): DBIOAction[Unit, NoStream, Effect.Schema] = query.schema.drop
+
+    override def genericQueryAction: DBIOAction[Seq[Container], NoStream, Effect.Read] = query.result
+
+    override def getAction(objectID: ObjectID): DBIOAction[Seq[Container], NoStream, Effect.Read] = compiledGetByID(objectID).result
+
+    override def createAction(container: Container): DBIOAction[Int, NoStream, Effect.Write] = query += container.asInstanceOf[Group]
+
+    override def updateAction(container: MutableContainer): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(container.id).update(container.asInstanceOf[Group])
+
+    override def deleteAction(objectID: ObjectID): DBIOAction[Int, NoStream, Effect.Write] = compiledGetByID(objectID).delete
+
+    override def customQueryAction(queryName: String, queryParams: Map[String, String]): DBIOAction[Seq[Container], NoStream, Effect.Read] = {
+      queryName match {
+        case "getByShortName" => compiledGetByShortName(queryParams("shortName")).result
+        case _ => throw new IllegalArgumentException(s"core3.database.containers.core.Group::runCustomQuery > Query [$queryName] is not supported.")
+      }
     }
   }
 

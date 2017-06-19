@@ -17,7 +17,7 @@ package core3.test.specs.unit.workflows.definitions
 
 import akka.actor.ActorRef
 import akka.pattern.ask
-import core3.database.containers.{JSONConverter, core}
+import core3.database.containers.core
 import core3.database.dals.Core.{BuildAllDatabases, ClearAllDatabases, VerifyAllDatabases}
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.security.Auth0UserToken
@@ -27,7 +27,7 @@ import core3.test.specs.unit.AsyncUnitSpec
 import core3.workflows.WorkflowEngineComponent.ExecuteWorkflow
 import core3.workflows.WorkflowResult
 import core3.workflows.definitions._
-import play.api.libs.json.{JsArray, Json}
+import play.api.libs.json.Json
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -71,7 +71,7 @@ class WorkflowUnitSpec_SystemQueryGroups extends AsyncUnitSpec {
         result.wasSuccessful should be(true)
         result.data should not be None
 
-        val workflowGroups = (result.data.get \ "groups").as[JsArray].value.map(c => JSONConverter.fromJsonData("Group", c).asInstanceOf[core.Group]).toVector
+        val workflowGroups = (result.data.get \ "groups").as[Vector[core.Group]]
         workflowGroups should be(dbGroups)
       }
   }

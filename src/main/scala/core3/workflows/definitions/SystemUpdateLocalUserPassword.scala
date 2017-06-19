@@ -15,7 +15,7 @@
   */
 package core3.workflows.definitions
 
-import core3.database.containers.{JSONConverter, core}
+import core3.database.containers.core
 import core3.database.{ObjectID, RevisionID, RevisionSequenceNumber}
 import core3.security.UserTokenBase
 import core3.workflows._
@@ -43,7 +43,7 @@ object SystemUpdateLocalUserPassword extends WorkflowBase {
 
   case class SystemUpdateLocalUserPasswordInputData(user: core.LocalUser) extends InputData {
     override def asJson: JsValue = Json.obj(
-      "user" -> JSONConverter.toJsonData(user)
+      "user" -> user
     )
   }
 

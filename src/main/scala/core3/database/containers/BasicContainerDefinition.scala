@@ -1,9 +1,9 @@
 package core3.database.containers
 
 /**
-  * Basic implementation & usage trait for containers.
+  * Basic definition trait for containers.
   */
-trait BasicContainerCompanion {
+trait BasicContainerDefinition extends ContainerDefinition {
   /**
     * Retrieves the container's database name.
     *

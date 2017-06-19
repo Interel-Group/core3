@@ -25,7 +25,10 @@ package object dals {
 
     case object Core extends LayerType
 
+    @deprecated("Use class `core3.database.dals.jdbc.SlickDB` instead", "2.0.0")
     case object MariaDB extends LayerType
+
+    case object SlickDB extends LayerType
 
     case object CouchDB extends LayerType
 
@@ -47,6 +50,7 @@ package object dals {
       value match {
         case "Core" => LayerType.Core
         case "MariaDB" => LayerType.MariaDB
+        case "SlickDB" => LayerType.SlickDB
         case "CouchDB" => LayerType.CouchDB
         case "CouchDBCache" => LayerType.CouchDBCache
         case "SolrSearch" => LayerType.SolrSearch

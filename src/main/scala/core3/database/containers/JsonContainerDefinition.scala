@@ -3,9 +3,9 @@ package core3.database.containers
 import play.api.libs.json.JsValue
 
 /**
-  * Implementation & usage trait for containers supporting JSON data handling.
+  * Definition trait for containers supporting JSON data handling.
   */
-trait JsonContainerCompanion extends BasicContainerCompanion {
+trait JsonContainerDefinition extends ContainerDefinition {
   /**
     * Converts the supplied container to a JSON value.
     *

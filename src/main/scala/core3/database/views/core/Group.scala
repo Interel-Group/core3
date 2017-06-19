@@ -15,7 +15,7 @@
   */
 package core3.database.views.core
 
-import core3.database.containers.{Container, JSONConverter}
+import core3.database.containers.Container
 import core3.database.views.{ContainerQueryData, ContainerView, JSONContainerViewCompanion}
 import core3.database.{ContainerType, ContainerViewType, ObjectID, containers}
 import play.api.libs.json._
@@ -62,24 +62,9 @@ case class Group(private val core: containers.core.Group) extends ContainerView 
 object Group extends JSONContainerViewCompanion {
   def apply(core: containers.core.Group, items: Vector[Container]) = new Group(core, items)
 
-  private val writes = Writes[Group] {
-    obj =>
-      Json.obj(
-        "group" -> containers.core.Group.toJsonData(obj.core),
-        "items" -> obj.items.map(c => JSONConverter.toJsonData(c))
-      )
-  }
+  private val writes = Json.writes[Group]
 
-  private val reads = Reads[Group] {
-    json =>
-      val group = containers.core.Group.fromJsonData((json \ "group").get).asInstanceOf[containers.core.Group]
-      JsSuccess(
-        Group(
-          group,
-          (json \ "items").as[JsArray].value.map(c => JSONConverter.fromJsonData(group.itemsType, c)).toVector
-        )
-      )
-  }
+  private val reads = Json.reads[Group]
 
   def toJsonData(container: ContainerView): JsValue = Json.toJson(container.asInstanceOf[Group])(writes)
 
