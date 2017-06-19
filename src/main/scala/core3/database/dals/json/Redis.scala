@@ -38,7 +38,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param port                the Redis service port
   * @param secret              the Redis instance secret
   * @param connectTimeout      the maximum amount of time to wait when establishing a connection (in seconds)
-  * @param containerDefinitions map with all registered container companion objects
+  * @param containerDefinitions all configured container definitions
   * @param databaseID          the ID of the database to be used
   * @param scanCount           the minimum number of items to wait for when performing a Redis SCAN
   */
@@ -47,7 +47,7 @@ class Redis(
   private val port: Int,
   private val secret: String,
   private val connectTimeout: Int,
-  private val containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
+  private val containerDefinitions: ContainerDefinitions[BasicContainerDefinition with JsonContainerDefinition],
   private val databaseID: Int,
   private val scanCount: Int
 )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem)
@@ -56,12 +56,12 @@ class Redis(
   /**
     * Creates a new instance with the supplied config or uses the default config location.
     *
-    * @param containerDefinitions map with all registered container companion objects
+    * @param containerDefinitions all configured container definitions
     * @param config              the config to use (if specified; default path is 'server.static.database.redis')
     * @return the new instance
     */
   def this(
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with JsonContainerDefinition],
     config: Config = StaticConfig.get.getConfig("database.redis")
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem) =
     this(
@@ -103,40 +103,25 @@ class Redis(
 
   override protected def handle_GetLayerType: LayerType = LayerType.Redis
 
-  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.keys.toVector
+  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.supportedContainers
 
   override protected def shutdown(): Unit = {
     client.stop()
   }
 
   override protected def handle_VerifyDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
-    assert(
-      containerDefinitions.contains(objectsType),
-      s"core3.database.dals.json.Redis::handle_VerifyDatabaseStructure > Object type [$objectsType] is not supported."
-    )
-
     client.ping().map {
       c => c.toLowerCase() == "pong"
     }
   }
 
   override protected def handle_BuildDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
-    assert(
-      containerDefinitions.contains(objectsType),
-      s"core3.database.dals.json.Redis::handle_BuildDatabaseStructure > Object type [$objectsType] is not supported."
-    )
-
     client.ping().map {
       c => c.toLowerCase() == "pong"
     }
   }
 
   override protected def handle_ClearDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
-    assert(
-      containerDefinitions.contains(objectsType),
-      s"core3.database.dals.json.Redis::handle_ClearDatabaseStructure > Object type [$objectsType] is not supported."
-    )
-
     for {
       keys <- client.keys(s"${getKeyPrefix(objectsType)}*")
       _ <- if (keys.nonEmpty) client.del(keys: _*) else Future.successful(0L)
@@ -219,11 +204,6 @@ class Redis(
   }
 
   override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
-    assert(
-      containerDefinitions.contains(objectsType),
-      s"core3.database.dals.json.Redis::handle_GetGenericQueryResult > Object type [$objectsType] is not supported."
-    )
-
     count_GenericQuery += 1
 
     val companion = containerDefinitions(objectsType)
@@ -232,11 +212,6 @@ class Redis(
   }
 
   override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
-    assert(
-      containerDefinitions.contains(objectsType),
-      s"core3.database.dals.json.Redis::handle_GetCustomQueryResult > Object type [$objectsType] is not supported."
-    )
-
     count_CustomQuery += 1
 
     val companion = containerDefinitions(objectsType)
@@ -251,11 +226,6 @@ class Redis(
   }
 
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
-    assert(
-      containerDefinitions.contains(objectType),
-      s"core3.database.dals.json.Redis::handle_GetObject > Object type [$objectType] is not supported."
-    )
-
     count_Get += 1
 
     for {
@@ -272,11 +242,6 @@ class Redis(
   }
 
   override protected def handle_CreateObject(container: Container): Future[Boolean] = {
-    assert(
-      containerDefinitions.contains(container.objectType),
-      s"core3.database.dals.json.Redis::handle_CreateObject > Object type [${container.objectType}] is not supported."
-    )
-
     count_Create += 1
 
     for {
@@ -291,11 +256,6 @@ class Redis(
   }
 
   override protected def handle_UpdateObject(container: MutableContainer): Future[Boolean] = {
-    assert(
-      containerDefinitions.contains(container.objectType),
-      s"core3.database.dals.json.Redis::handle_UpdateObject > Object type [${container.objectType}] is not supported."
-    )
-
     count_Update += 1
 
     for {
@@ -310,11 +270,6 @@ class Redis(
   }
 
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
-    assert(
-      containerDefinitions.contains(objectType),
-      s"core3.database.dals.json.Redis::handle_DeleteObject > Object type [$objectType] is not supported."
-    )
-
     count_Delete += 1
 
     for {
@@ -337,7 +292,7 @@ object Redis extends ComponentCompanion {
     port: Int,
     secret: String,
     connectTimeout: Int,
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with JsonContainerDefinition],
     databaseID: Int,
     scanCount: Int
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem): Props = Props(
@@ -355,7 +310,7 @@ object Redis extends ComponentCompanion {
   )
 
   def props(
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition],
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with JsonContainerDefinition],
     config: Config
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem): Props = Props(
     classOf[Redis],
@@ -367,7 +322,7 @@ object Redis extends ComponentCompanion {
   )
 
   def props(
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition]
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with JsonContainerDefinition]
   )(implicit ec: ExecutionContext, timeout: Timeout, system: ActorSystem): Props = Props(
     classOf[Redis],
     containerDefinitions,

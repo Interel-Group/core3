@@ -57,7 +57,6 @@ object Database {
   val defaultSearchDefinitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SearchContainerDefinition] = Map.empty
 
   def createCouchDBInstance(definitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition] = defaultDefinitions): DatabaseAbstractionLayer = {
-    if (!JSONConverter.isInitialized) JSONConverter.initialize(definitions)
     val config = StaticConfig.get.getConfig("database.couchdb")
 
     val actor = system.actorOf(
@@ -90,7 +89,6 @@ object Database {
   }
 
   def createSolrInstance(definitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition with SearchContainerDefinition] = defaultSearchDefinitions): DatabaseAbstractionLayer = {
-    if (!JSONConverter.isInitialized) JSONConverter.initialize(definitions)
     val actor = system.actorOf(
       Solr.props(containerDefinitions = definitions, AhcWSClient()),
       name = s"Solr_$getNewActorID"
@@ -117,7 +115,6 @@ object Database {
     coexist: Boolean = false,
     definitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition] = defaultSearchDefinitions
   ): DatabaseAbstractionLayer = {
-    if (!JSONConverter.isInitialized) JSONConverter.initialize(definitions)
     val config = StaticConfig.get.getConfig("database.elastic-search")
 
     val actor = system.actorOf(
@@ -139,7 +136,6 @@ object Database {
   }
 
   def createElasticStoreInstance(definitions: Map[ContainerType, BasicContainerDefinition with JsonContainerDefinition] = defaultDefinitions): DatabaseAbstractionLayer = {
-    if (!JSONConverter.isInitialized) JSONConverter.initialize(definitions)
     val config = StaticConfig.get.getConfig("database.elastic-store")
 
     val actor = system.actorOf(

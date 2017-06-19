@@ -40,7 +40,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * <ul>
   *
   * @param source                    the source DAL to use for data retrieval and updates
-  * @param containerDefinitions       map with all registered container companion objects
+  * @param containerDefinitions      all configured container definitions
   * @param containerTypeMaxCacheSize maximum cache size per container type
   * @param actionTimeout             the amount of time (in seconds) before an operation is considered as timed out
   * @param maxLoadAttempts           maximum number of times to attempt loading an object from the source
@@ -48,7 +48,7 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 class CacheStore(
   private val source: DatabaseAbstractionLayer,
-  private val containerDefinitions: Map[ContainerType, BasicContainerDefinition],
+  private val containerDefinitions: ContainerDefinitions[BasicContainerDefinition],
   private val containerTypeMaxCacheSize: Int,
   private val actionTimeout: Int,
   private val maxLoadAttempts: Int,
@@ -457,7 +457,7 @@ object CacheStore {
     * Creates a new config object for the [[core3.database.dals.memory.utils.CacheStore]] actor.
     *
     * @param source                    the source DAL to use for data retrieval and updates
-    * @param definitions                map with all registered container companion objects
+    * @param definitions               all configured container definitions
     * @param containerTypeMaxCacheSize maximum cache size per container type
     * @param actionTimeout             the amount of time (in seconds) before an operation is considered as timed out
     * @param maxLoadAttempts           maximum number of times to attempt loading an object from the source
@@ -466,7 +466,7 @@ object CacheStore {
     */
   def props(
     source: DatabaseAbstractionLayer,
-    definitions: Map[ContainerType, BasicContainerDefinition],
+    definitions: ContainerDefinitions[BasicContainerDefinition],
     containerTypeMaxCacheSize: Int,
     actionTimeout: Int,
     maxLoadAttempts: Int,

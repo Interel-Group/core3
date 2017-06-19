@@ -18,13 +18,15 @@ package core3.test.fixtures
 import akka.actor.ActorRef
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.security.Auth0UserToken
+import core3.test.fixtures
 import core3.test.fixtures.TestSystem._
 import core3.test.fixtures.workflows._
 import core3.workflows.{StoreTransactionLogs, TransactionLogContent, WorkflowBase, WorkflowEngineComponent}
 import play.api.libs.json.{JsArray, Json}
 
 object Workflows {
-  val defaultWorkflows: Vector[WorkflowBase] = Vector(AddGroups, IncorrectGroupUpdate, QueryTransactionLogs, UpdateGroups)
+  private val defaultWorkflows: Vector[WorkflowBase] = Vector(AddGroups, IncorrectGroupUpdate, QueryTransactionLogs, UpdateGroups)
+  implicit private val definitions = fixtures.Database.defaultDefinitions
 
   def createWorkflowEngine(
     db: DatabaseAbstractionLayer,
@@ -41,7 +43,7 @@ object Workflows {
         },
         TransactionLogContent.WithDataAndParams,
         TransactionLogContent.WithDataAndParams
-      ),
+      )(implicitly, definitions),
       name = s"mail_Service_${TestSystem.getNewActorID}"
     )
   }

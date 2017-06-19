@@ -5,7 +5,7 @@ import play.api.libs.json.JsValue
 /**
   * Definition trait for containers supporting JSON data handling.
   */
-trait JsonContainerDefinition {
+trait JsonContainerDefinition extends ContainerDefinition {
   /**
     * Converts the supplied container to a JSON value.
     *

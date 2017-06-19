@@ -17,7 +17,7 @@ package core3.test.specs.unit.workflows
 
 import akka.actor.ActorRef
 import akka.pattern.ask
-import core3.database.containers.{JSONConverter, core}
+import core3.database.containers.core
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.security.Auth0UserToken
 import core3.test.fixtures.workflows._
@@ -72,7 +72,7 @@ class WorkflowEngineSpec extends AsyncUnitSpec {
         actualGroupsAfterUpdate should not be empty
         actualTransactionLogs should not be empty
 
-        val transactionLogs = (getTransactionLogs.data.get \ "logs").as[JsArray].value.map(c => JSONConverter.fromJsonData("TransactionLog", c).asInstanceOf[core.TransactionLog])
+        val transactionLogs = (getTransactionLogs.data.get \ "logs").as[Vector[core.TransactionLog]]
 
         actualGroupsBeforeUpdate.size should be(AddGroups.testGroupsCount)
         actualGroupsAfterUpdate.size should be(AddGroups.testGroupsCount)

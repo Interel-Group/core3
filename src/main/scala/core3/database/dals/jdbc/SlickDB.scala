@@ -34,13 +34,13 @@ import scala.util.control.NonFatal
 /**
   * A Database Abstraction Layer for accessing JDBC-based Slick databases.
   *
-  * @param containerDefinitions map with all registered container companion objects
+  * @param containerDefinitions all configured container definitions
   * @param jdbcURL              JDBC URL for the database to be used
   * @param username             (optional) the DB user to be used for authentication
   * @param password             (optional) the DB user password
   */
 abstract class SlickDB(
-  private val containerDefinitions: Map[ContainerType, BasicContainerDefinition with SlickContainerDefinition],
+  private val containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition],
   private val jdbcURL: String,
   private val username: Option[String],
   private val password: Option[String]
@@ -67,7 +67,7 @@ abstract class SlickDB(
 
   override protected def handle_GetDatabaseIdentifier: String = jdbcURL
 
-  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.keys.toVector
+  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.supportedContainers
 
   override protected def handle_GetLayerType: LayerType = LayerType.SlickDB
 
@@ -78,7 +78,6 @@ abstract class SlickDB(
     * @return the requested database name
     */
   private def getDatabaseName(objectType: ContainerType): String = {
-    assert(containerDefinitions.contains(objectType), s"core3.database.dals.jdbc.SlickDB::getDatabaseName > Object type [$objectType] is not supported.")
     containerDefinitions(objectType).getDatabaseName.replaceAll("[^A-Za-z0-9]", "_")
   }
 
@@ -94,7 +93,6 @@ abstract class SlickDB(
 
   override protected def handle_BuildDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     try {
-      assert(containerDefinitions.contains(objectsType), s"core3.database.dals.jdbc.SlickDB::buildDatabaseStructure > Object type [$objectsType] is not supported.")
       db.run(containerDefinitions(objectsType).createSchemaAction()).map(_ => true)
     } catch {
       case NonFatal(e) => Future.failed(e)
@@ -103,7 +101,6 @@ abstract class SlickDB(
 
   override protected def handle_ClearDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     try {
-      assert(containerDefinitions.contains(objectsType), s"core3.database.dals.jdbc.SlickDB::handle_ClearDatabaseStructure > Object type [$objectsType] is not supported.")
       db.run(containerDefinitions(objectsType).dropSchemaAction()).map(_ => true)
     } catch {
       case NonFatal(e) => Future.failed(e)
@@ -142,8 +139,6 @@ abstract class SlickDB(
 
   override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     try {
-      assert(containerDefinitions.contains(objectsType), s"core3.database.dals.jdbc.SlickDB::handle_GetGenericQueryResult > Object type [$objectsType] is not supported.")
-
       count_GenericQuery += 1
 
       db.run(containerDefinitions(objectsType).genericQueryAction).map(_.toVector)
@@ -154,8 +149,6 @@ abstract class SlickDB(
 
   override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     try {
-      assert(containerDefinitions.contains(objectsType), s"core3.database.dals.jdbc.SlickDB::handle_GetCustomQueryResult > Object type [$objectsType] is not supported.")
-
       count_CustomQuery += 1
 
       db.run(containerDefinitions(objectsType).customQueryAction(customQueryName, queryParams)).map(_.toVector)
@@ -166,8 +159,6 @@ abstract class SlickDB(
 
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
     try {
-      assert(containerDefinitions.contains(objectType), s"core3.database.dals.jdbc.SlickDB::handle_GetObject > Object type [$objectType] is not supported.")
-
       count_Get += 1
 
       db.run(containerDefinitions(objectType).getAction(objectID)).map(_.head)
@@ -178,8 +169,6 @@ abstract class SlickDB(
 
   override protected def handle_CreateObject(container: Container): Future[Boolean] = {
     try {
-      assert(containerDefinitions.contains(container.objectType), s"core3.database.dals.jdbc.SlickDB::handle_CreateObject > Object type [${container.objectType}] is not supported.")
-
       count_Create += 1
 
       db.run(containerDefinitions(container.objectType).createAction(container)).map(_ == 1)
@@ -190,8 +179,6 @@ abstract class SlickDB(
 
   override protected def handle_UpdateObject(container: MutableContainer): Future[Boolean] = {
     try {
-      assert(containerDefinitions.contains(container.objectType), s"core3.database.dals.jdbc.SlickDB::handle_UpdateObject > Object type [${container.objectType}] is not supported.")
-
       count_Update += 1
 
       db.run(containerDefinitions(container.objectType).updateAction(container)).map(_ == 1)
@@ -202,8 +189,6 @@ abstract class SlickDB(
 
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
     try {
-      assert(containerDefinitions.contains(objectType), s"core3.database.dals.jdbc.SlickDB::handle_DeleteObject > Object type [$objectType] is not supported.")
-
       count_Delete += 1
 
       db.run(containerDefinitions(objectType).deleteAction(objectID)).map(_ == 1)
@@ -215,7 +200,7 @@ abstract class SlickDB(
 
 object SlickDB extends ComponentCompanion {
   def props(
-    definitions: Map[ContainerType, BasicContainerDefinition with SlickContainerDefinition],
+    definitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition],
     jdbcProfile: JdbcProfile,
     jdbcURL: String,
     username: Option[String],
@@ -227,14 +212,14 @@ object SlickDB extends ComponentCompanion {
   )
 
   def props(
-    definitions: Map[ContainerType, BasicContainerDefinition with SlickContainerDefinition],
+    definitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition],
     jdbcProfile: JdbcProfile,
     config: Config = StaticConfig.get.getConfig("database.slick")
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     new SlickDB(definitions,
       config.getString("url"),
-      if(config.hasPath("username")) Some(config.getString("username")) else None,
-      if(config.hasPath("password")) Some(config.getString("password")) else None
+      if (config.hasPath("username")) Some(config.getString("username")) else None,
+      if (config.hasPath("password")) Some(config.getString("password")) else None
     ) {
       override protected def withProfile: JdbcProfile = jdbcProfile
     }

@@ -15,12 +15,12 @@
   */
 package core3.workflows.definitions
 
-import core3.database.containers.{JSONConverter, core}
+import core3.database.containers.core
 import core3.security.UserTokenBase
 import core3.utils.Time._
 import core3.utils.{Timestamp, TimestampFormat}
 import core3.workflows._
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,7 +34,7 @@ object SystemQueryTransactionLogs extends WorkflowBase {
 
   case class SystemQueryTransactionLogsInputData(logs: Vector[core.TransactionLog]) extends InputData {
     override def asJson: JsValue = Json.obj(
-      "logs" -> logs.map(JSONConverter.toJsonData)
+      "logs" -> logs
     )
   }
 

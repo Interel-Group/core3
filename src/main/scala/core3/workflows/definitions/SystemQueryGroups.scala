@@ -15,7 +15,7 @@
   */
 package core3.workflows.definitions
 
-import core3.database.containers.{JSONConverter, core}
+import core3.database.containers.core
 import core3.security.UserTokenBase
 import core3.workflows._
 import play.api.libs.json.{JsArray, JsValue, Json}
@@ -26,7 +26,7 @@ object SystemQueryGroups extends WorkflowBase {
 
   case class SystemQueryGroupsInputData(groups: Vector[core.Group]) extends InputData {
     override def asJson: JsValue = Json.obj(
-      "groups" -> groups.map(JSONConverter.toJsonData)
+      "groups" -> groups
     )
   }
 

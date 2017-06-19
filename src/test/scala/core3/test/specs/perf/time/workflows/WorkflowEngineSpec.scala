@@ -17,7 +17,6 @@ package core3.test.specs.perf.time.workflows
 
 import akka.pattern.ask
 import core3.config.StaticConfig
-import core3.database.containers.JSONConverter
 import core3.test.fixtures
 import core3.test.fixtures.TestSystem._
 import core3.test.fixtures.workflows.AddGroups
@@ -30,14 +29,13 @@ import play.api.libs.json.Json
 import scala.concurrent.duration._
 
 object WorkflowEngineSpec extends PerformanceTimeSpec {
-  implicit val waitDuration: FiniteDuration = 15.seconds
-  val maxContainers = 1000
-  val workflowsCount: Gen[Int] = Gen.range("workflowsCount")(from = 0, upto = maxContainers, hop = 100)
+  implicit private val waitDuration: FiniteDuration = 15.seconds
+  private val maxContainers = 1000
+  private val workflowsCount: Gen[Int] = Gen.range("workflowsCount")(from = 0, upto = maxContainers, hop = 100)
 
   private val db = fixtures.Database.createMemoryOnlyDBInstance()
   private val engine = fixtures.Workflows.createWorkflowEngine(db)
   private val authorizedUser = fixtures.Workflows.createAuthorizedUser()
-  if (!JSONConverter.isInitialized) JSONConverter.initialize(core3.test.fixtures.Database.defaultDefinitions)
 
   private val resultDirConfigPath = "testing.reports.time.dsvPath"
   private val resultDir = if (StaticConfig.get.hasPath(resultDirConfigPath)) {

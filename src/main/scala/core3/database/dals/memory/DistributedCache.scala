@@ -56,7 +56,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
   *                                  the cache and not to the source directly
   * @param preload                   if set to true, the cache will attempt to load all data during initialization (see notes)
   * @param actionTimeout             the amount of time (in seconds) before an operation is considered as timed out
-  * @param containerDefinitions       map with all registered container companion objects
+  * @param containerDefinitions      all configured container definitions
   * @param containerTypeMaxCacheSize maximum cache size per container type
   * @param syncInterval              message sync broadcast interval; also used for initial sync delay (see notes)
   * @param maxLoadAttempts           maximum number of times to attempt loading an object from the source
@@ -70,7 +70,7 @@ class DistributedCache(
   private val source: DatabaseAbstractionLayer,
   private val preload: Boolean,
   private val actionTimeout: Int,
-  private val containerDefinitions: Map[ContainerType, BasicContainerDefinition],
+  private val containerDefinitions: ContainerDefinitions[BasicContainerDefinition],
   private val containerTypeMaxCacheSize: Int,
   private val syncInterval: Int,
   private val maxLoadAttempts: Int,
@@ -84,13 +84,13 @@ class DistributedCache(
     *
     * @param source              source DAL for retrieving and updating data; after the cache is created, all changes must be sent to
     *                            the cache and not to the source directly
-    * @param containerDefinitions map with all registered container companion objects
+    * @param containerDefinitions all configured container definitions
     * @param config              the config to use (if specified; default path is 'server.static.database.distributed-cache')
     * @return the new instance
     */
   def this(
     source: DatabaseAbstractionLayer,
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition],
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition],
     config: Config = StaticConfig.get.getConfig("database.distributed-cache")
   )(implicit ec: ExecutionContext, timeout: Timeout) =
     this(
@@ -320,7 +320,7 @@ object DistributedCache extends ComponentCompanion {
     source: DatabaseAbstractionLayer,
     preload: Boolean,
     actionTimeout: Int,
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition],
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition],
     containerTypeMaxCacheSize: Int,
     syncInterval: Int,
     maxLoadAttempts: Int = 5,
@@ -344,7 +344,7 @@ object DistributedCache extends ComponentCompanion {
 
   def props(
     source: DatabaseAbstractionLayer,
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition],
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition],
     config: Config
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[DistributedCache],
@@ -357,7 +357,7 @@ object DistributedCache extends ComponentCompanion {
 
   def props(
     source: DatabaseAbstractionLayer,
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition]
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition]
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[DistributedCache],
     source,

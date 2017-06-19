@@ -19,7 +19,7 @@ import akka.actor.Props
 import akka.util.Timeout
 import core3.core.Component.{ActionDescriptor, ActionResult}
 import core3.core.ComponentCompanion
-import core3.database.containers.{BasicContainerDefinition, Container, MutableContainer}
+import core3.database.containers.{BasicContainerDefinition, Container, ContainerDefinitions, MutableContainer}
 import core3.database.dals.{DatabaseAbstractionLayerComponent, LayerType}
 import core3.database.{ContainerType, ObjectID}
 import play.api.libs.json.Json
@@ -37,9 +37,9 @@ import scala.util.control.NonFatal
   *   <li>The database offers NO persistence and all data is lost as soon the instance is destroyed.</li>
   * </ul>
   *
-  * @param containerDefinitions a map of supported containers and their basic companion objects
+  * @param containerDefinitions all configured container definitions
   */
-class MemoryOnlyDB(private val containerDefinitions: Map[ContainerType, BasicContainerDefinition])
+class MemoryOnlyDB(private val containerDefinitions: ContainerDefinitions[BasicContainerDefinition])
   (implicit ec: ExecutionContext, timeout: Timeout) extends DatabaseAbstractionLayerComponent {
   private val instanceID = java.util.UUID.randomUUID()
   private val store = new mutable.HashMap[ContainerType, mutable.HashMap[ObjectID, Container]]
@@ -57,7 +57,7 @@ class MemoryOnlyDB(private val containerDefinitions: Map[ContainerType, BasicCon
 
   override protected def handle_GetLayerType: LayerType = LayerType.MemoryOnlyDB
 
-  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.keys.toVector
+  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.supportedContainers
 
   override def shutdown(): Unit = {
     store.clear()
@@ -187,7 +187,7 @@ class MemoryOnlyDB(private val containerDefinitions: Map[ContainerType, BasicCon
 }
 
 object MemoryOnlyDB extends ComponentCompanion {
-  def props(containerDefinitions: Map[ContainerType, BasicContainerDefinition])(implicit ec: ExecutionContext, timeout: Timeout): Props =
+  def props(containerDefinitions: ContainerDefinitions[BasicContainerDefinition])(implicit ec: ExecutionContext, timeout: Timeout): Props =
     Props(classOf[MemoryOnlyDB], containerDefinitions, ec, timeout)
 
   override def getActionDescriptors: Vector[ActionDescriptor] = {

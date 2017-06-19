@@ -38,26 +38,26 @@ import scala.util.control.NonFatal
   * @param databaseName        the name of the database to be used
   * @param username            the DB user to be used for authentication
   * @param password            the password for the DB user
-  * @param containerDefinitions map with all registered container companion objects
+  * @param containerDefinitions all configured container definitions
   */
 @deprecated("Use class `core3.database.dals.jdbc.SlickDB` instead", "2.0.0")
 class MariaDB(
   private val databaseName: String,
   private val username: String,
   private val password: String,
-  private val containerDefinitions: Map[ContainerType, BasicContainerDefinition with SlickContainerDefinition]
+  private val containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition]
 )(implicit ec: ExecutionContext, timeout: Timeout)
   extends DatabaseAbstractionLayerComponent {
 
   /**
     * Creates a new instance with the supplied config or uses the default config location.
     *
-    * @param containerDefinitions map with all registered container companion objects
+    * @param containerDefinitions all configured container definitions
     * @param config              the config to use (if specified; default path is 'server.static.database.mariadb')
     * @return the new instance
     */
   def this(
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition with SlickContainerDefinition],
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition],
     config: Config = StaticConfig.get.getConfig("database.mariadb")
   )(implicit ec: ExecutionContext, timeout: Timeout) =
     this(
@@ -85,7 +85,7 @@ class MariaDB(
 
   override protected def handle_GetDatabaseIdentifier: String = jdbcURL
 
-  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.keys.toVector
+  override protected def handle_GetSupportedContainers: Vector[ContainerType] = containerDefinitions.supportedContainers
 
   override protected def handle_GetLayerType: LayerType = LayerType.MariaDB
 
@@ -96,7 +96,6 @@ class MariaDB(
     * @return the requested database name
     */
   private def getDatabaseName(objectType: ContainerType): String = {
-    assert(containerDefinitions.contains(objectType), s"core3.database.dals.sql.MariaDB::getDatabaseName > Object type [$objectType] is not supported.")
     containerDefinitions(objectType).getDatabaseName.replaceAll("[^A-Za-z0-9]", "_")
   }
 
@@ -112,7 +111,6 @@ class MariaDB(
 
   override protected def handle_BuildDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     try {
-      assert(containerDefinitions.contains(objectsType), s"core3.database.dals.sql.MariaDB::buildDatabaseStructure > Object type [$objectsType] is not supported.")
       db.run(containerDefinitions(objectsType).createSchemaAction()).map(_ => true)
     } catch {
       case NonFatal(e) => Future.failed(e)
@@ -121,7 +119,6 @@ class MariaDB(
 
   override protected def handle_ClearDatabaseStructure(objectsType: ContainerType): Future[Boolean] = {
     try {
-      assert(containerDefinitions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_ClearDatabaseStructure > Object type [$objectsType] is not supported.")
       db.run(containerDefinitions(objectsType).dropSchemaAction()).map(_ => true)
     } catch {
       case NonFatal(e) => Future.failed(e)
@@ -160,8 +157,6 @@ class MariaDB(
 
   override protected def handle_GetGenericQueryResult(objectsType: ContainerType): Future[Vector[Container]] = {
     try {
-      assert(containerDefinitions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_GetGenericQueryResult > Object type [$objectsType] is not supported.")
-
       count_GenericQuery += 1
 
       db.run(containerDefinitions(objectsType).genericQueryAction).map(_.toVector)
@@ -172,8 +167,6 @@ class MariaDB(
 
   override protected def handle_GetCustomQueryResult(objectsType: ContainerType, customQueryName: String, queryParams: Map[String, String]): Future[Vector[Container]] = {
     try {
-      assert(containerDefinitions.contains(objectsType), s"core3.database.dals.sql.MariaDB::handle_GetCustomQueryResult > Object type [$objectsType] is not supported.")
-
       count_CustomQuery += 1
 
       db.run(containerDefinitions(objectsType).customQueryAction(customQueryName, queryParams)).map(_.toVector)
@@ -184,10 +177,7 @@ class MariaDB(
 
   override protected def handle_GetObject(objectType: ContainerType, objectID: ObjectID): Future[Container] = {
     try {
-      assert(containerDefinitions.contains(objectType), s"core3.database.dals.sql.MariaDB::handle_GetObject > Object type [$objectType] is not supported.")
-
       count_Get += 1
-
       db.run(containerDefinitions(objectType).getAction(objectID)).map(_.head)
     } catch {
       case NonFatal(e) => Future.failed(e)
@@ -196,8 +186,6 @@ class MariaDB(
 
   override protected def handle_CreateObject(container: Container): Future[Boolean] = {
     try {
-      assert(containerDefinitions.contains(container.objectType), s"core3.database.dals.sql.MariaDB::handle_CreateObject > Object type [${container.objectType}] is not supported.")
-
       count_Create += 1
 
       db.run(containerDefinitions(container.objectType).createAction(container)).map(_ == 1)
@@ -208,8 +196,6 @@ class MariaDB(
 
   override protected def handle_UpdateObject(container: MutableContainer): Future[Boolean] = {
     try {
-      assert(containerDefinitions.contains(container.objectType), s"core3.database.dals.sql.MariaDB::handle_UpdateObject > Object type [${container.objectType}] is not supported.")
-
       count_Update += 1
 
       db.run(containerDefinitions(container.objectType).updateAction(container)).map(_ == 1)
@@ -220,8 +206,6 @@ class MariaDB(
 
   override protected def handle_DeleteObject(objectType: ContainerType, objectID: ObjectID): Future[Boolean] = {
     try {
-      assert(containerDefinitions.contains(objectType), s"core3.database.dals.sql.MariaDB::handle_DeleteObject > Object type [$objectType] is not supported.")
-
       count_Delete += 1
 
       db.run(containerDefinitions(objectType).deleteAction(objectID)).map(_ == 1)
@@ -238,7 +222,7 @@ object MariaDB extends ComponentCompanion {
     databaseName: String,
     dbUser: String,
     dbUserPassword: String,
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition with SlickContainerDefinition]
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition]
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[MariaDB],
     databaseName,
@@ -251,7 +235,7 @@ object MariaDB extends ComponentCompanion {
 
   @deprecated("Use class `core3.database.dals.jdbc.SlickDB` instead", "2.0.0")
   def props(
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition with SlickContainerDefinition],
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition],
     config: Config
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[MariaDB],
@@ -263,7 +247,7 @@ object MariaDB extends ComponentCompanion {
 
   @deprecated("Use class `core3.database.dals.jdbc.SlickDB` instead", "2.0.0")
   def props(
-    containerDefinitions: Map[ContainerType, BasicContainerDefinition with SlickContainerDefinition]
+    containerDefinitions: ContainerDefinitions[BasicContainerDefinition with SlickContainerDefinition]
   )(implicit ec: ExecutionContext, timeout: Timeout): Props = Props(
     classOf[MariaDB],
     containerDefinitions,

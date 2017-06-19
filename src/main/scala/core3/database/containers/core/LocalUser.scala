@@ -57,7 +57,7 @@ object LocalUser {
       }
     }
 
-    implicit val userTypeReads = Reads {
+    implicit val userTypeReads: Reads[UserType] = Reads {
       json =>
         json.validate[String].map(UserType.fromString)
     }
@@ -66,6 +66,44 @@ object LocalUser {
       userType =>
         JsString(userType.toString)
     }
+  }
+
+  implicit val writes: Writes[LocalUser] = Writes[LocalUser] {
+    obj =>
+      Json.obj(
+        "userID" -> obj.userID,
+        "hashedPassword" -> obj.hashedPassword,
+        "passwordSalt" -> obj.passwordSalt,
+        "permissions" -> obj.permissions,
+        "userType" -> obj.userType,
+        "metadata" -> obj.metadata,
+        "created" -> obj.created,
+        "updated" -> obj.updated,
+        "updatedBy" -> obj.updatedBy,
+        "id" -> obj.id,
+        "revision" -> obj.revision,
+        "revisionNumber" -> obj.revisionNumber
+      )
+  }
+
+  implicit val reads: Reads[LocalUser] = Reads[LocalUser] {
+    json =>
+      JsSuccess(
+        new LocalUser(
+          (json \ "userID").as[String],
+          (json \ "hashedPassword").as[String],
+          (json \ "passwordSalt").as[String],
+          (json \ "permissions").as[Vector[String]],
+          (json \ "userType").as[UserType],
+          (json \ "metadata").as[JsValue],
+          (json \ "created").as[Timestamp],
+          (json \ "updated").as[Timestamp],
+          (json \ "updatedBy").as[String],
+          (json \ "id").as[ObjectID],
+          (json \ "revision").as[RevisionID],
+          (json \ "revisionNumber").as[RevisionSequenceNumber]
+        )
+      )
   }
 
   trait BasicDefinition extends BasicContainerDefinition {
@@ -80,50 +118,12 @@ object LocalUser {
   }
 
   trait JsonDefinition extends JsonContainerDefinition {
-    private val writes = Writes[LocalUser] {
-      obj =>
-        Json.obj(
-          "userID" -> obj.userID,
-          "hashedPassword" -> obj.hashedPassword,
-          "passwordSalt" -> obj.passwordSalt,
-          "permissions" -> obj.permissions,
-          "userType" -> obj.userType,
-          "metadata" -> obj.metadata,
-          "created" -> obj.created,
-          "updated" -> obj.updated,
-          "updatedBy" -> obj.updatedBy,
-          "id" -> obj.id,
-          "revision" -> obj.revision,
-          "revisionNumber" -> obj.revisionNumber
-        )
-    }
-
-    private val reads = Reads[LocalUser] {
-      json =>
-        JsSuccess(
-          new LocalUser(
-            (json \ "userID").as[String],
-            (json \ "hashedPassword").as[String],
-            (json \ "passwordSalt").as[String],
-            (json \ "permissions").as[Vector[String]],
-            (json \ "userType").as[UserType],
-            (json \ "metadata").as[JsValue],
-            (json \ "created").as[Timestamp],
-            (json \ "updated").as[Timestamp],
-            (json \ "updatedBy").as[String],
-            (json \ "id").as[ObjectID],
-            (json \ "revision").as[RevisionID],
-            (json \ "revisionNumber").as[RevisionSequenceNumber]
-          )
-        )
-    }
-
     override def toJsonData(container: Container): JsValue = {
-      Json.toJson(container.asInstanceOf[LocalUser])(writes)
+      Json.toJson(container.asInstanceOf[LocalUser])
     }
 
     override def fromJsonData(data: JsValue): Container = {
-      data.as[LocalUser](reads)
+      data.as[LocalUser]
     }
   }
 
@@ -132,7 +132,6 @@ object LocalUser {
     import profile.api._
     import shapeless._
     import slickless._
-
 
     implicit val columnType_userType = MappedColumnType.base[UserType, String](
       { tp => tp.toString }, { str => UserType.fromString(str) }

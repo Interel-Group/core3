@@ -39,6 +39,39 @@ case class TransactionLog(
 }
 
 object TransactionLog {
+  implicit val writes: Writes[TransactionLog] = Writes[TransactionLog] {
+    obj =>
+      Json.obj(
+        "workflowName" -> obj.workflowName,
+        "requestID" -> obj.requestID,
+        "readOnlyWorkflow" -> obj.readOnlyWorkflow,
+        "parameters" -> obj.parameters,
+        "data" -> obj.data,
+        "initiatingUser" -> obj.initiatingUser,
+        "workflowResult" -> obj.workflowResult,
+        "workflowState" -> obj.workflowState,
+        "timestamp" -> obj.timestamp,
+        "id" -> obj.id
+      )
+  }
+
+  implicit val reads: Reads[TransactionLog] = Reads[TransactionLog] {
+    json =>
+      JsSuccess(
+        new TransactionLog(
+          (json \ "workflowName").as[String],
+          (json \ "requestID").as[RequestID],
+          (json \ "readOnlyWorkflow").as[Boolean],
+          (json \ "parameters").as[JsValue],
+          (json \ "data").as[JsValue],
+          (json \ "initiatingUser").as[String],
+          (json \ "workflowResult").as[Boolean],
+          (json \ "workflowState").as[String],
+          (json \ "timestamp").as[Timestamp],
+          (json \ "id").as[ObjectID]
+        )
+      )
+  }
 
   trait BasicDefinition extends BasicContainerDefinition {
     override def getDatabaseName: String = "core-transaction-logs"
@@ -55,46 +88,12 @@ object TransactionLog {
   }
 
   trait JsonDefinition extends JsonContainerDefinition {
-    private val writes = Writes[TransactionLog] {
-      obj =>
-        Json.obj(
-          "workflowName" -> obj.workflowName,
-          "requestID" -> obj.requestID,
-          "readOnlyWorkflow" -> obj.readOnlyWorkflow,
-          "parameters" -> obj.parameters,
-          "data" -> obj.data,
-          "initiatingUser" -> obj.initiatingUser,
-          "workflowResult" -> obj.workflowResult,
-          "workflowState" -> obj.workflowState,
-          "timestamp" -> obj.timestamp,
-          "id" -> obj.id
-        )
-    }
-
-    private val reads = Reads[TransactionLog] {
-      json =>
-        JsSuccess(
-          new TransactionLog(
-            (json \ "workflowName").as[String],
-            (json \ "requestID").as[RequestID],
-            (json \ "readOnlyWorkflow").as[Boolean],
-            (json \ "parameters").as[JsValue],
-            (json \ "data").as[JsValue],
-            (json \ "initiatingUser").as[String],
-            (json \ "workflowResult").as[Boolean],
-            (json \ "workflowState").as[String],
-            (json \ "timestamp").as[Timestamp],
-            (json \ "id").as[ObjectID]
-          )
-        )
-    }
-
     override def toJsonData(container: Container): JsValue = {
-      Json.toJson(container.asInstanceOf[TransactionLog])(writes)
+      Json.toJson(container.asInstanceOf[TransactionLog])
     }
 
     override def fromJsonData(data: JsValue): Container = {
-      data.as[TransactionLog](reads)
+      data.as[TransactionLog]
     }
   }
 

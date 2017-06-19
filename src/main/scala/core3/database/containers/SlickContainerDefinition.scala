@@ -16,7 +16,7 @@ import slick.jdbc.JdbcProfile
   * database name and the slick table definition sets the table name as 'core_transaction_logs'.
   * </p>
   */
-trait SlickContainerDefinition {
+trait SlickContainerDefinition extends ContainerDefinition {
   protected def withProfile: JdbcProfile
   protected lazy val profile: JdbcProfile = withProfile
 

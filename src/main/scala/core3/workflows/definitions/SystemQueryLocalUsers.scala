@@ -15,10 +15,10 @@
   */
 package core3.workflows.definitions
 
-import core3.database.containers.{JSONConverter, core}
+import core3.database.containers.core
 import core3.security.UserTokenBase
 import core3.workflows._
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -26,7 +26,7 @@ object SystemQueryLocalUsers extends WorkflowBase {
 
   case class SystemQueryLocalUsersInputData(users: Vector[core.LocalUser]) extends InputData {
     override def asJson: JsValue = Json.obj(
-      "users" -> users.map(JSONConverter.toJsonData)
+      "users" -> users
     )
   }
 

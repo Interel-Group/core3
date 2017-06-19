@@ -19,7 +19,7 @@ import akka.actor.Props
 import akka.pattern.pipe
 import core3.core.Component.{ActionDescriptor, ActionResult}
 import core3.core.{Component, ComponentCompanion}
-import core3.database.containers.{Container, MutableContainer, core}
+import core3.database.containers._
 import core3.database.dals.DatabaseAbstractionLayer
 import core3.database.{ContainerType, ObjectID, RevisionID, RevisionSequenceNumber}
 import core3.security.UserTokenBase
@@ -44,7 +44,7 @@ class WorkflowEngineComponent(
   private val storeLogs: StoreTransactionLogs,
   private val readOnlyLogsContent: TransactionLogContent,
   private val writeLogsContent: TransactionLogContent
-)(implicit ec: ExecutionContext) extends Component {
+)(implicit ec: ExecutionContext, cd: ContainerDefinitions[JsonContainerDefinition]) extends Component {
 
   import WorkflowEngineComponent._
 
@@ -400,7 +400,7 @@ object WorkflowEngineComponent extends ComponentCompanion {
     storeLogs: StoreTransactionLogs,
     readOnlyLogsContent: TransactionLogContent,
     writeLogsContent: TransactionLogContent
-  )(implicit ec: ExecutionContext): Props =
+  )(implicit ec: ExecutionContext, cd: ContainerDefinitions[JsonContainerDefinition]): Props =
     Props(
       classOf[WorkflowEngineComponent],
       workflowList,
@@ -408,7 +408,9 @@ object WorkflowEngineComponent extends ComponentCompanion {
       storeLogs,
       readOnlyLogsContent,
       writeLogsContent,
-      ec)
+      ec,
+      cd
+    )
 
   override def getActionDescriptors: Vector[ActionDescriptor] = {
     Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))

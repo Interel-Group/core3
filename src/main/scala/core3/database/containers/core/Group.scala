@@ -38,6 +38,39 @@ case class Group(
 }
 
 object Group {
+  implicit val writes: Writes[Group] = Writes[Group] {
+    obj =>
+      Json.obj(
+        "shortName" -> obj.shortName,
+        "name" -> obj.name,
+        "items" -> obj.items,
+        "itemsType" -> obj.itemsType,
+        "created" -> obj.created,
+        "updated" -> obj.updated,
+        "updatedBy" -> obj.updatedBy,
+        "id" -> obj.id,
+        "revision" -> obj.revision,
+        "revisionNumber" -> obj.revisionNumber
+      )
+  }
+
+  implicit val reads: Reads[Group] = Reads[Group] {
+    json =>
+      JsSuccess(
+        new Group(
+          (json \ "shortName").as[String],
+          (json \ "name").as[String],
+          (json \ "items").as[Vector[ObjectID]],
+          (json \ "itemsType").as[ContainerType],
+          (json \ "created").as[Timestamp],
+          (json \ "updated").as[Timestamp],
+          (json \ "updatedBy").as[String],
+          (json \ "id").as[ObjectID],
+          (json \ "revision").as[RevisionID],
+          (json \ "revisionNumber").as[RevisionSequenceNumber]
+        )
+      )
+  }
 
   trait BasicDefinition extends BasicContainerDefinition {
     override def getDatabaseName: String = "core-groups"
@@ -51,46 +84,12 @@ object Group {
   }
 
   trait JsonDefinition extends JsonContainerDefinition {
-    private val writes = Writes[Group] {
-      obj =>
-        Json.obj(
-          "shortName" -> obj.shortName,
-          "name" -> obj.name,
-          "items" -> obj.items,
-          "itemsType" -> obj.itemsType,
-          "created" -> obj.created,
-          "updated" -> obj.updated,
-          "updatedBy" -> obj.updatedBy,
-          "id" -> obj.id,
-          "revision" -> obj.revision,
-          "revisionNumber" -> obj.revisionNumber
-        )
-    }
-
-    private val reads = Reads[Group] {
-      json =>
-        JsSuccess(
-          new Group(
-            (json \ "shortName").as[String],
-            (json \ "name").as[String],
-            (json \ "items").as[Vector[ObjectID]],
-            (json \ "itemsType").as[ContainerType],
-            (json \ "created").as[Timestamp],
-            (json \ "updated").as[Timestamp],
-            (json \ "updatedBy").as[String],
-            (json \ "id").as[ObjectID],
-            (json \ "revision").as[RevisionID],
-            (json \ "revisionNumber").as[RevisionSequenceNumber]
-          )
-        )
-    }
-
     override def toJsonData(container: Container): JsValue = {
-      Json.toJson(container.asInstanceOf[Group])(writes)
+      Json.toJson(container.asInstanceOf[Group])
     }
 
     override def fromJsonData(data: JsValue): Container = {
-      data.as[Group](reads)
+      data.as[Group]
     }
   }
 
