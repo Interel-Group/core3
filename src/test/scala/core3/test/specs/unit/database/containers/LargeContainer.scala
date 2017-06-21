@@ -151,7 +151,7 @@ object LargeContainer {
     }
   }
 
-  trait SlickDefinition { this: SlickContainerDefinition =>
+  trait SlickDefinition extends SlickContainerDefinition {
 
     import profile.api._
     import shapeless._

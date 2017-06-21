@@ -35,15 +35,15 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 
 object Database {
-  val groupDefinitions = new core.Group.BasicDefinition with core.Group.JsonDefinition with core.Group.SlickDefinition with SlickContainerDefinition {
+  val groupDefinitions = new core.Group.BasicDefinition with core.Group.JsonDefinition with core.Group.SlickDefinition {
     override protected def withProfile: JdbcProfile = slick.jdbc.MySQLProfile
   }
 
-  val transactionLogDefinitions = new core.TransactionLog.BasicDefinition with core.TransactionLog.JsonDefinition with core.TransactionLog.SlickDefinition with SlickContainerDefinition {
+  val transactionLogDefinitions = new core.TransactionLog.BasicDefinition with core.TransactionLog.JsonDefinition with core.TransactionLog.SlickDefinition {
     override protected def withProfile: JdbcProfile = slick.jdbc.MySQLProfile
   }
 
-  val localUserDefinitions = new core.LocalUser.BasicDefinition with core.LocalUser.JsonDefinition with core.LocalUser.SlickDefinition with SlickContainerDefinition {
+  val localUserDefinitions = new core.LocalUser.BasicDefinition with core.LocalUser.JsonDefinition with core.LocalUser.SlickDefinition {
     override protected def withProfile: JdbcProfile = slick.jdbc.MySQLProfile
   }
 
