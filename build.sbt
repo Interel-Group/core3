@@ -21,7 +21,7 @@ lazy val core3 = (project in file("."))
     ),
     libraryDependencies ++= Seq(
       dependencies_base,
-      dependencies_slick, //TODO - make optional
+      dependencies_slick,
       dependencies_cli              map (_ % Optional),
       dependencies_mariaDB          map (_ % Optional),
       dependencies_redis            map (_ % Optional),
@@ -30,8 +30,10 @@ lazy val core3 = (project in file("."))
       dependencies_distributedCache map (_ % Optional),
       dependencies_mariaDB          map (_ % MultiJvm),
       dependencies_distributedCache map (_ % MultiJvm),
+      dependencies_meta             map (_ % Test),
       dependencies_test             map (_ % Test)
     ).flatten,
+    macroSettings,
     dependencyOverrides ++= overrides_netty,
     compile in MultiJvm := ((compile in MultiJvm) triggeredBy (compile in Test)).value,
     executeTests in Test := {
@@ -53,8 +55,28 @@ lazy val core3 = (project in file("."))
     parallelExecution in Test := false
   )
   .configs(MultiJvm)
+  .dependsOn(meta % Test)
 
-// Dependency Definitions
+//Meta Settings
+lazy val macroSettings = Seq(
+  addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M9" cross CrossVersion.full),
+  scalacOptions += "-Xplugin-require:macroparadise",
+  scalacOptions in (Compile, console) := Seq()
+)
+
+lazy val meta = (project in file("meta"))
+  .settings(
+    libraryDependencies ++= Seq(
+      dependencies_meta       map (_ % Provided),
+      dependencies_test       map (_ % Test),
+      dependencies_meta_test  map (_ % Test)
+    ).flatten,
+    macroSettings,
+    logBuffered in Test := false,
+    parallelExecution in Test := false
+  )
+
+//Dependency Definitions
 lazy val akkaVersion = "2.4.17"
 lazy val nettyOverrideVersion = "4.0.41.Final"
 
@@ -69,6 +91,14 @@ lazy val dependencies_base = Seq(
   "com.pauldijou" %% "jwt-play-json" % "0.12.1",
   "com.roundeights" %% "hasher" % "1.2.0",
   "com.google.code.findbugs" % "jsr305" % "3.0.1" % Compile
+)
+
+lazy val dependencies_meta = Seq(
+  "org.scalameta" %% "scalameta" % "1.8.0"
+)
+
+lazy val dependencies_meta_test = Seq(
+  "org.scalameta" %% "testkit" % "1.8.0"
 )
 
 lazy val dependencies_slick = Seq(
