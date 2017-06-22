@@ -30,8 +30,10 @@ lazy val core3 = (project in file("."))
       dependencies_distributedCache map (_ % Optional),
       dependencies_mariaDB          map (_ % MultiJvm),
       dependencies_distributedCache map (_ % MultiJvm),
+      dependencies_meta             map (_ % Test),
       dependencies_test             map (_ % Test)
     ).flatten,
+    macroSettings,
     dependencyOverrides ++= overrides_netty,
     compile in MultiJvm := ((compile in MultiJvm) triggeredBy (compile in Test)).value,
     executeTests in Test := {
@@ -53,6 +55,7 @@ lazy val core3 = (project in file("."))
     parallelExecution in Test := false
   )
   .configs(MultiJvm)
+  .dependsOn(meta % Test)
 
 //Meta Settings
 lazy val macroSettings = Seq(

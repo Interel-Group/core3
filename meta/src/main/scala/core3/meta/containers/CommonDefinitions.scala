@@ -117,6 +117,7 @@ object CommonDefinitions {
     val fields = params.map {
       field =>
         field.decltpe match {
+          case Some(targ"Option[$fieldType]") => q"""(json \ ${field.name.value}).asOpt[${Type.Name(fieldType.syntax)}]"""
           case Some(fieldType) => q"""(json \ ${field.name.value}).as[${Type.Name(fieldType.syntax)}]"""
           case None => abort(s"core3.meta.containers.CommonDefinitions::jsonReads > Type for field [${field.name}] is missing from container [$containerType].")
         }
@@ -201,8 +202,8 @@ object CommonDefinitions {
             val columnName = field.name.value.split(camelCaseSplitRegex).map(_.toUpperCase).mkString("_")
             val columnOptions =
               if(field.name.value == "id") Some(q"""O.PrimaryKey""")
-              else if(fieldType.syntax.endsWith("Timestamp")) Some(q"""O.SqlType("DATETIME(3)")""")
-              else if(fieldType.syntax.endsWith("Time")) Some(q"""O.SqlType("TIME(3)")""")
+              else if(fieldType.syntax.matches("""(?:Option\[)?.*Timestamp\]?$""")) Some(q"""O.SqlType("DATETIME(3)")""")
+              else if(fieldType.syntax.matches("""(?:Option\[)?.*Time\]?$""")) Some(q"""O.SqlType("TIME(3)")""")
               else None
 
             columnOptions match {
