@@ -15,9 +15,6 @@
   */
 package core3.http.controllers.auth0
 
-import java.util.Base64
-import javax.crypto.spec.SecretKeySpec
-
 import com.typesafe.config.Config
 import core3.http.controllers.ServiceControllerBase
 import core3.http.handlers
@@ -52,10 +49,8 @@ class ServiceController(ws: WSClient, cache: CacheApi, serviceConfig: Config, au
   (implicit environment: Environment, ec: ExecutionContext) extends ServiceControllerBase[Auth0UserToken] {
   private val domain = authConfig.getString("domain")
   private val clientSecret = authConfig.getString("clientSecret")
-  private val clientSecretAlgo = authConfig.getString("clientSecretAlgo")
   private val clientJwtAlgo = authConfig.getString("jwtAlgo")
   private val serviceSecret = serviceConfig.getString("secret")
-  private val serviceSecretAlgo = serviceConfig.getString("secretAlgo")
   private val serviceJwtAlgo = serviceConfig.getString("jwtAlgo")
   private val localUserTokenExpiration = serviceConfig.getInt("localUserTokenExpiration").minutes
   private val auditLogger = Logger("audit")
@@ -81,26 +76,18 @@ class ServiceController(ws: WSClient, cache: CacheApi, serviceConfig: Config, au
     * Checks if the supplied token is valid.
     *
     * @param secret        the secret to be used for validating
-    * @param secretAlgo    the algorithm to be used for validating
     * @param token         the token to be validated
     * @param tokenAlgo     the algorithm used for generating the token
-    * @param secretEncoded set to true, if the secret is Base64 encoded (default is false)
     * @return true if the token is valid
     */
-  private def isTokenValid(secret: String, secretAlgo: String, token: String, tokenAlgo: String, secretEncoded: Boolean = false): Boolean = {
-    val claim = if (secretEncoded) {
-      JwtJson.decodeJson(
-        token,
-        new SecretKeySpec(Base64.getUrlDecoder.decode(secret), secretAlgo),
-        Seq(JwtAlgorithm.fromString(tokenAlgo).asInstanceOf[JwtHmacAlgorithm])
-      )
-    } else {
+  private def isTokenValid(secret: String, token: String, tokenAlgo: String): Boolean = {
+    val claim =
       JwtJson.decodeJson(
         token,
         secret,
         Seq(JwtAlgorithm.fromString(tokenAlgo).asInstanceOf[JwtHmacAlgorithm])
       )
-    }
+
     claim.isSuccess
   }
 
@@ -130,7 +117,7 @@ class ServiceController(ws: WSClient, cache: CacheApi, serviceConfig: Config, au
           callUnauthorizedHandler()
         } else {
           //all tokens are supplied
-          if (!isTokenValid(serviceSecret, serviceSecretAlgo, clientToken, serviceJwtAlgo)) {
+          if (!isTokenValid(serviceSecret, clientToken, serviceJwtAlgo)) {
             //client token is invalid
             auditLogger.error(s"core3.http.controllers.auth0.ServiceController::UserAwareAction > Action [${request.method}] @ [${request.uri}] " +
               s"requested with invalid client token from client [unknown] @ [${request.remoteAddress}] on behalf of user [unknown].")
@@ -152,7 +139,7 @@ class ServiceController(ws: WSClient, cache: CacheApi, serviceConfig: Config, au
               }
             } else {
               //client allowed to request action
-              if (!isTokenValid(clientSecret, clientSecretAlgo, delegationIdToken, clientJwtAlgo)) {
+              if (!isTokenValid(clientSecret, delegationIdToken, clientJwtAlgo)) {
                 //user delegation token is invalid
                 auditLogger.error(s"core3.http.controllers.auth0.ServiceController::UserAwareAction > Action [${request.method}] @ [${request.uri}] " +
                   s"requested with invalid user delegation token from client [$clientID] @ [${request.remoteAddress}] on behalf of user [unknown].")
@@ -234,7 +221,7 @@ class ServiceController(ws: WSClient, cache: CacheApi, serviceConfig: Config, au
           callUnauthorizedHandler()
         } else {
           //client token is supplied
-          if (!isTokenValid(serviceSecret, serviceSecretAlgo, clientToken, serviceJwtAlgo)) {
+          if (!isTokenValid(serviceSecret, clientToken, serviceJwtAlgo)) {
             //client token is invalid
             auditLogger.error(s"core3.http.controllers.auth0.ServiceController::ClientAwareAction > Action [${request.method}] @ [${request.uri}] " +
               s"requested with invalid client token from client [unknown] @ [${request.remoteAddress}].")
@@ -268,8 +255,11 @@ class ServiceController(ws: WSClient, cache: CacheApi, serviceConfig: Config, au
   override def PublicAction(okHandler: (Request[AnyContent], Option[String]) => Future[Result]): Action[AnyContent] = {
     Action.async {
       request =>
-        val clientToken = request.headers.get(HeaderNames.AUTHORIZATION).getOrElse("").split("Bearer ").last
-        val clientID = JwtJson.decodeJson(clientToken, JwtOptions(signature = false)).toOption.map {
+        val clientID = JwtJson.decodeJson(
+          request.headers.get(HeaderNames.AUTHORIZATION).getOrElse("").split("Bearer ").last,
+          serviceSecret,
+          Seq(JwtAlgorithm.fromString(serviceJwtAlgo).asInstanceOf[JwtHmacAlgorithm])
+        ).toOption.map {
           token =>
             (token \ "sub").getOrElse(JsString("unknown")).as[String]
         }

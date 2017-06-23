@@ -15,9 +15,6 @@
   */
 package core3.http.controllers.auth0
 
-import java.util.Base64
-import javax.crypto.spec.SecretKeySpec
-
 import com.typesafe.config.Config
 import core3.http.controllers.ClientControllerBase
 import core3.http.handlers.Default
@@ -53,7 +50,6 @@ class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
   private val clientID = authConfig.getString("clientId")
   private val backendClientID = authConfig.getString("backendClientID")
   private val clientSecret = authConfig.getString("clientSecret")
-  private val clientSecretAlgo = authConfig.getString("clientSecretAlgo")
   private val jwtAlgo = authConfig.getString("jwtAlgo")
   private val redirectURI = authConfig.getString("callbackURI")
   private val logoutReturnURI = authConfig.getString("logoutReturnURI")
@@ -73,23 +69,16 @@ class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
     * Checks if the supplied token is a valid and expected JWT.
     *
     * @param idToken       the token to be checked
-    * @param secretEncoded set to true, if the secret is Base64 encoded (default is false)
     * @return true, if the token is valid
     */
-  private def isIdTokenValid(idToken: String, secretEncoded: Boolean = false): Boolean = {
-    val claim = if (secretEncoded) {
-      JwtJson.decodeJson(
-        idToken,
-        new SecretKeySpec(Base64.getUrlDecoder.decode(clientSecret), clientSecretAlgo),
-        Seq(JwtAlgorithm.fromString(jwtAlgo).asInstanceOf[JwtHmacAlgorithm])
-      )
-    } else {
+  private def isIdTokenValid(idToken: String): Boolean = {
+    val claim =
       JwtJson.decodeJson(
         idToken,
         clientSecret,
         Seq(JwtAlgorithm.fromString(jwtAlgo).asInstanceOf[JwtHmacAlgorithm])
       )
-    }
+
     claim.isSuccess
   }
 

@@ -15,6 +15,8 @@
   */
 package core3.http.requests.msgraph
 
+import java.io.ByteArrayInputStream
+
 import akka.actor.Props
 import com.typesafe.config.Config
 import core3.core.Component.ActionDescriptor
@@ -28,6 +30,7 @@ import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 /**
@@ -47,11 +50,14 @@ class ServiceConnectionComponent(
   private val clientID = serviceConfig.getString("clientId")
   private val clientSecret = serviceConfig.getString("clientSecret")
   private val scope = serviceConfig.getString("scope")
+  private val jwksURI = serviceConfig.getString("jwksUri")
 
   private val authProviderURI = s"$authProvider/$tenantID/oauth2/v2.0/token"
   private val clientAccessTokenRenewalTimeBeforeExpiration: Long = 5000 //in ms
   private var clientAccessToken: Option[JsValue] = None
   private var rawClientAccessToken: Option[String] = None
+
+  private val certFactory = java.security.cert.CertificateFactory.getInstance("X.509")
   private val auditLogger = Logger("audit")
 
   /**
@@ -62,42 +68,89 @@ class ServiceConnectionComponent(
   private def getClientAccessToken: Future[(JsValue, String)] = {
     try {
       if (clientAccessToken.isEmpty || (((clientAccessToken.get \ "exp").as[Long] * 1000) + clientAccessTokenRenewalTimeBeforeExpiration) < System.currentTimeMillis()) {
-        val tokenResponse = ws.url(authProviderURI)
-          .withHeaders(HeaderNames.ACCEPT -> MimeTypes.FORM)
-          .post(
-            Map[String, Seq[String]](
-              "client_id" -> Seq(clientID),
-              "client_secret" -> Seq(clientSecret),
-              "grant_type" -> Seq("client_credentials"),
-              "scope" -> Seq(s"$serviceURI/$scope")
+        (for {
+          tokenResponse <- ws.url(authProviderURI)
+            .withHeaders(HeaderNames.ACCEPT -> MimeTypes.FORM)
+            .post(
+              Map[String, Seq[String]](
+                "client_id" -> Seq(clientID),
+                "client_secret" -> Seq(clientSecret),
+                "grant_type" -> Seq("client_credentials"),
+                "scope" -> Seq(s"$serviceURI/$scope")
+              )
             )
-          )
-
-        tokenResponse.flatMap {
-          response =>
-            (for {
-              encodedToken <- (response.json \ "access_token").asOpt[String]
-              token <- JwtJson.decodeJson(encodedToken, JwtOptions(signature = false)).toOption
-              audience <- (token \ "aud").asOpt[String]
-            } yield {
-              if (audience == serviceURI) {
-                auditLogger.info(s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > Successfully retrieved new client access token for client [$clientID] and service [$serviceURI].")
-                clientAccessToken = Some(token)
-                rawClientAccessToken = Some(encodedToken)
-                Future.successful(token, encodedToken)
-              } else {
-                val message = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > Invalid audience found in token; expected [$serviceURI] found [$audience]."
-                auditLogger.error(message)
-                Future.failed(new RuntimeException(message))
-              }
-            }).getOrElse {
-              val errorMessage = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > Client access token not sent by provider [$authProviderURI] for service [$serviceURI]."
-              val debugMessage = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > Token retrieval received response: [${response.body}]."
+          encodedToken <- (tokenResponse.json \ "access_token").asOpt[String] match {
+            case Some(token) => Future.successful(token)
+            case None =>
+              val errorMessage = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > " +
+                s"Client access token not sent by provider [$authProviderURI] for service [$serviceURI]."
+              val debugMessage = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > " +
+                s"Token retrieval received response: [${tokenResponse.body}]."
               auditLogger.error(errorMessage)
               auditLogger.debug(debugMessage)
               Future.failed(new RuntimeException(errorMessage))
+          }
+          verificationKeyID <- Future {
+            (for {
+              (header, payload, _) <- JwtJson.decodeJsonAll(encodedToken, JwtOptions(signature = false)).toOption
+              kid <- (header \ "kid").asOpt[String]
+              audience <- (payload \ "aud").asOpt[String]
+            } yield {
+              if (audience == serviceURI) {
+                kid
+              } else {
+                val message = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > " +
+                  s"Invalid audience found in token; expected [$serviceURI] found [$audience]."
+                auditLogger.error(message)
+                throw new RuntimeException(message)
+              }
+            }) match {
+              case Some(kid) => kid
+              case None =>
+                val errorMessage = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > " +
+                  s"Failed to retrieve verification key ID and/or token audience from token sent by provider [$authProviderURI] for service [$serviceURI]."
+                auditLogger.error(errorMessage)
+                throw new RuntimeException(errorMessage)
             }
-        }.recoverWith {
+          }
+          jwksResponse <- ws.url(jwksURI)
+            .withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
+            .get()
+            .map(_.json)
+          verificationKey <- Future {
+            (for {
+              keys <- (jwksResponse \ "keys").asOpt[Vector[JsObject]]
+              verificationKeyData <- keys.find { key => (key \ "kid").as[String] == verificationKeyID }
+              encodedVerificationKey <- (verificationKeyData \ "x5c").as[Vector[String]].headOption
+            } yield {
+              val cert = certFactory.generateCertificate(new ByteArrayInputStream(JwtBase64.decodeNonSafe(encodedVerificationKey)))
+              cert.getPublicKey
+            }) match {
+              case Some(key) => key
+              case None =>
+                val errorMessage = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > " +
+                  s"Failed to retrieve data for key [$verificationKeyID] from JWKs response: [$jwksResponse] for token sent by provider [$authProviderURI] for service [$serviceURI]."
+                auditLogger.error(errorMessage)
+                throw new RuntimeException(errorMessage)
+            }
+          }
+        } yield {
+          JwtJson.decodeJson(encodedToken, verificationKey) match {
+            case Success(token) =>
+              clientAccessToken = Some(token)
+              rawClientAccessToken = Some(encodedToken)
+              (token, encodedToken)
+
+            case Failure(e) =>
+              val errorMessage = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > " +
+                s"JWT verification failed with message [${e.getMessage}] for token sent by provider [$authProviderURI] for service [$serviceURI]."
+              val debugMessage = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > " +
+                s"JWT verification failed for token [$encodedToken] with key [$verificationKeyID] sent by provider [$authProviderURI] for service [$serviceURI]."
+              auditLogger.error(errorMessage)
+              auditLogger.debug(debugMessage)
+              throw new RuntimeException(errorMessage)
+          }
+        }).recoverWith {
           case NonFatal(e) =>
             val message = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > Client access token retrieval for service [$serviceURI] from provider [$authProviderURI] failed with message [${e.getMessage}]."
             auditLogger.error(message)
@@ -159,8 +212,8 @@ class ServiceConnectionComponent(
 }
 
 object ServiceConnectionComponent extends ComponentCompanion {
-  def props(ws: WSClient, serviceConfig: Config, authConfig: Config)(implicit ec: ExecutionContext): Props =
-    Props(classOf[ServiceConnectionComponent], ws, serviceConfig, authConfig, ec)
+  def props(ws: WSClient, serviceConfig: Config)(implicit ec: ExecutionContext): Props =
+    Props(classOf[ServiceConnectionComponent], ws, serviceConfig, ec)
 
   override def getActionDescriptors: Vector[ActionDescriptor] = {
     Vector(ActionDescriptor("stats", "Retrieves the latest component stats", arguments = None))

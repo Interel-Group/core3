@@ -21,13 +21,14 @@ import core3.core.Component.ActionDescriptor
 import core3.core.ComponentCompanion
 import core3.http.requests.ServiceConnectionComponentBase
 import core3.security.{Auth0UserToken, UserTokenBase}
-import pdi.jwt.{JwtJson, JwtOptions}
+import pdi.jwt.{JwtAlgorithm, JwtJson, JwtOptions}
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 /**
@@ -48,8 +49,8 @@ class ServiceConnectionComponent(
   private val clientID = authConfig.getString("clientId")
   private val clientSecret = authConfig.getString("clientSecret")
   private val serviceID = serviceConfig.getString("id")
-  private val clientAccessTokenRenewalTimeBeforeExpiration: Long = 5000
-  //in ms
+  private val serviceSecret = if(serviceConfig.hasPath("secret")) Some(serviceConfig.getString("secret")) else None
+  private val clientAccessTokenRenewalTimeBeforeExpiration: Long = 5000 //in ms
   private var clientAccessToken: Option[JsValue] = None
   private var rawClientAccessToken: Option[String] = None
   private val auditLogger = Logger("audit")
@@ -64,40 +65,63 @@ class ServiceConnectionComponent(
   private def getClientAccessToken: Future[(JsValue, String)] = {
     try {
       if (clientAccessToken.isEmpty || (((clientAccessToken.get \ "exp").as[Long] * 1000) + clientAccessTokenRenewalTimeBeforeExpiration) < System.currentTimeMillis()) {
-        val tokenResponse = ws.url(s"https://$domain/oauth/token")
-          .withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
-          .post(
-            Json.obj(
-              "audience" -> serviceURI,
-              "client_id" -> clientID,
-              "client_secret" -> clientSecret,
-              "grant_type" -> "client_credentials"
-            )
-          )
 
-        tokenResponse.flatMap {
-          response =>
-            (for {
-              encodedToken <- (response.json \ "access_token").asOpt[String]
-              token <- JwtJson.decodeJson(encodedToken, JwtOptions(signature = false)).toOption
-              audience <- (token \ "aud").asOpt[String]
-            } yield {
-              if (audience == serviceURI) {
-                auditLogger.info(s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > Successfully retrieved new client access token for client [$clientID] and service [$serviceURI].")
-                clientAccessToken = Some(token)
-                rawClientAccessToken = Some(encodedToken)
-                Future.successful(token, encodedToken)
-              } else {
-                val message = s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > Invalid audience found in token; expected [$serviceURI] found [$audience]."
-                auditLogger.error(message)
-                Future.failed(new RuntimeException(message))
-              }
-            }).getOrElse {
-              val message = s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > Client access token not sent by provider for service [$serviceID @ $serviceURI]."
-              auditLogger.error(message)
-              Future.failed(new RuntimeException(message))
+        (for {
+          tokenResponse <- ws.url(s"https://$domain/oauth/token")
+            .withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
+            .post(
+              Json.obj(
+                "audience" -> serviceURI,
+                "client_id" -> clientID,
+                "client_secret" -> clientSecret,
+                "grant_type" -> "client_credentials"
+              )
+            )
+          encodedToken <- (tokenResponse.json \ "access_token").asOpt[String] match {
+            case Some(token) => Future.successful(token)
+            case None =>
+              val errorMessage = s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > " +
+                s"Client access token not sent by provider for service [$serviceID @ $serviceURI]."
+              val debugMessage = s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > " +
+                s"Token retrieval received response: [${tokenResponse.body}]."
+              auditLogger.error(errorMessage)
+              auditLogger.debug(debugMessage)
+              Future.failed(new RuntimeException(errorMessage))
+          }
+          token <- Future {
+            (serviceSecret match {
+              case Some(secret) => JwtJson.decodeJson(encodedToken, secret, JwtAlgorithm.allHmac())
+              case None =>
+                val warningMessage = s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > " +
+                  s"Token verification skipped; client secret for service [$serviceID @ $serviceURI] is not set."
+                auditLogger.warn(warningMessage)
+                JwtJson.decodeJson(encodedToken, JwtOptions(signature = false))
+            }) match {
+              case Success(token) => token
+
+              case Failure(e) =>
+                val errorMessage = s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > " +
+                  s"JWT verification failed with message [${e.getMessage}] for token sent by provider for service [$serviceID @ $serviceURI]."
+                val debugMessage = s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > " +
+                  s"JWT verification failed for token [$encodedToken] sent by provider for service [$serviceID @ $serviceURI]."
+                auditLogger.error(errorMessage)
+                auditLogger.debug(debugMessage)
+                throw new RuntimeException(errorMessage)
             }
-        }.recoverWith {
+          }
+        } yield {
+          val audience = (token \ "aud").as[String]
+          if (audience == serviceURI) {
+            auditLogger.info(s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > Successfully retrieved new client access token for client [$clientID] and service [$serviceURI].")
+            clientAccessToken = Some(token)
+            rawClientAccessToken = Some(encodedToken)
+            (token, encodedToken)
+          } else {
+            val message = s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > Invalid audience found in token; expected [$serviceURI] found [$audience]."
+            auditLogger.error(message)
+            throw new RuntimeException(message)
+          }
+        }).recoverWith {
           case NonFatal(e) =>
             val message = s"core3.http.requests.auth0.ServiceConnectionComponent::getClientAccessToken > Client access token retrieval for service [$serviceURI] failed with message [${e.getMessage}]."
             auditLogger.error(message)
