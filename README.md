@@ -8,7 +8,7 @@ Scala framework for building web applications and services based on [Play](https
 
 ## Getting Started
 ```
-libraryDependencies += "com.interelgroup" %% "core3" % "1.1.1"
+libraryDependencies += "com.interelgroup" %% "core3" % "2.0.0"
 ```
 
 > See [Additional dependencies](https://github.com/Interel-Group/core3/wiki/Additional-Dependencies) for other libraries you may need.
@@ -113,12 +113,18 @@ Multi-JVM tests for the `core3.database.dals.memory.DistributedCache` data layer
 sbt "multi-jvm:test-only core3_multi_jvm.test.specs.DistributedCache  -- -Dserver.static.database.mariadb.username=<some user> -Dserver.static.database.mariadb.password=<some password>"
 ```
 
+### Scalameta tests
+```
+sbt "project meta" "testOnly core3.test.specs.unit.meta.*"
+```
+
 ## Built With
-* Scala 2.11.8
+* Scala 2.11.11
 * sbt 0.13.13
 * [Play 2.5.x](https://github.com/playframework/playframework) - Base framework
 * [Akka 2.4.x](https://github.com/akka/akka) - Core component actors and (optional) data layer clustering
 * [Slick](https://github.com/slick/slick) - SQL data layer support
+* [Scalameta](https://github.com/scalameta/scalameta) - Macro annotations support
 * [rediscala](https://github.com/etaty/rediscala) - (optional) Redis data layer support
 * [elastic4s](https://github.com/sksamuel/elastic4s) - (optional) Elasticsearch data layer support
 * [courier](https://github.com/softprops/courier) - (optional) E-mail support
@@ -130,9 +136,9 @@ We use [SemVer](http://semver.org/) for versioning.
 - [ ] Play 2.6 and Scala 2.12 support
 - [ ] Improve test coverage
 - [ ] Improve performance testing
-- [ ] Generate container boilerplate and data conversions with macros (and/or `scala.meta`)
-- [ ] Make `slick` dependency optional
-- [ ] Add / verify support for additional (No)SQL DBs
+- [x] Generate container boilerplate and data conversions with macros (and/or `scala.meta`)
+- [ ] __Make slick dependency optional__
+- [x] Add / verify support for additional (No)SQL DBs (now supports all Slick databases)
 
 ## License
 This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](LICENSE) file for details
