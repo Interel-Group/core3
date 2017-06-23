@@ -30,6 +30,7 @@ import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 /**
@@ -87,7 +88,7 @@ class ServiceConnectionComponent(
                 s"Token retrieval received response: [${tokenResponse.body}]."
               auditLogger.error(errorMessage)
               auditLogger.debug(debugMessage)
-              throw new RuntimeException(errorMessage)
+              Future.failed(new RuntimeException(errorMessage))
           }
           verificationKeyID <- Future {
             (for {
@@ -134,16 +135,19 @@ class ServiceConnectionComponent(
             }
           }
         } yield {
-          JwtJson.decodeJson(encodedToken, verificationKey).toOption match {
-            case Some(token) =>
+          JwtJson.decodeJson(encodedToken, verificationKey) match {
+            case Success(token) =>
               clientAccessToken = Some(token)
               rawClientAccessToken = Some(encodedToken)
               (token, encodedToken)
 
-            case None =>
+            case Failure(e) =>
               val errorMessage = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > " +
+                s"JWT verification failed with message [${e.getMessage}] for token sent by provider [$authProviderURI] for service [$serviceURI]."
+              val debugMessage = s"core3.http.requests.msgraph.ServiceConnectionComponent::getClientAccessToken > " +
                 s"JWT verification failed for token [$encodedToken] with key [$verificationKeyID] sent by provider [$authProviderURI] for service [$serviceURI]."
               auditLogger.error(errorMessage)
+              auditLogger.debug(debugMessage)
               throw new RuntimeException(errorMessage)
           }
         }).recoverWith {
