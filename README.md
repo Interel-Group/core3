@@ -137,7 +137,7 @@ We use [SemVer](http://semver.org/) for versioning.
 - [ ] Improve test coverage
 - [ ] Improve performance testing
 - [x] Generate container boilerplate and data conversions with macros (and/or `scala.meta`)
-- [ ] __Make slick dependency optional__
+- [ ] ~~Make slick dependency optional~~
 - [x] Add / verify support for additional (No)SQL DBs (now supports all Slick databases)
 
 ## License
