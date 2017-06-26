@@ -418,11 +418,16 @@ class ElasticSearch(
     val objectsCompanion =  containerDefinitions(objectType)
 
     for {
-      container <- handle_GetObject(objectType, objectID)
-      _ <- Future {
-        if(!container.isInstanceOf[MutableContainer]) {
-          throw new IllegalStateException(s"core3.database.dals.json.ElasticSearch::handle_DeleteObject > Objects of type [$objectType] cannot be deleted.")
+      _ <- if(!searchOnly) {
+        handle_GetObject(objectType, objectID).map {
+          container =>
+            if(!container.isInstanceOf[MutableContainer]) {
+              throw new IllegalStateException(s"core3.database.dals.json.ElasticSearch::handle_DeleteObject > Objects of type [$objectType] cannot be deleted.")
+            }
         }
+      } else {
+        //cannot load and check object when in search-only mode
+        Future.successful(())
       }
       response <- client.execute {
         delete(objectID.toString)
