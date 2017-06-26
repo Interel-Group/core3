@@ -184,10 +184,10 @@ releaseProcess := Seq[ReleaseStep](
 )
 
 //Publish Config
-pomIncludeRepository := { _ => false }
-publishMavenStyle := true
+pomIncludeRepository in ThisBuild := { _ => false }
+publishMavenStyle in ThisBuild := true
 publishArtifact in Test := false
-publishTo := {
+publishTo in ThisBuild := {
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value)
     Some("snapshots" at nexus + "content/repositories/snapshots")
@@ -195,14 +195,14 @@ publishTo := {
     Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
-scmInfo := Some(
+scmInfo in ThisBuild := Some(
   ScmInfo(
     url("https://github.com/Interel-Group/core3"),
     "scm:git@github.com:Interel-Group/core3"
   )
 )
 
-developers := List(
+developers in ThisBuild := List(
   Developer(
     id    = "jamesaddinall",
     name  = "James Addinall",
