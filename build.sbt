@@ -4,10 +4,10 @@ import sbt.Keys._
 import sbtrelease.{Version, versionFormatError}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
-organization := "com.interelgroup"
-name := "core3"
-licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
-homepage := Some(url("https://github.com/Interel-Group/core3"))
+organization in ThisBuild := "com.interelgroup"
+name in ThisBuild := "core3"
+licenses in ThisBuild := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
+homepage in ThisBuild := Some(url("https://github.com/Interel-Group/core3"))
 
 scalaVersion in ThisBuild := "2.11.11"
 
@@ -55,7 +55,8 @@ lazy val core3 = (project in file("."))
     parallelExecution in Test := false
   )
   .configs(MultiJvm)
-  .dependsOn(meta % Test)
+  .dependsOn(meta)
+  .aggregate(meta)
 
 //Meta Settings
 lazy val macroSettings = Seq(
