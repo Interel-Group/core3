@@ -8,7 +8,7 @@ Scala framework for building web applications and services based on [Play](https
 
 ## Getting Started
 ```
-libraryDependencies += "com.interelgroup" %% "core3" % "2.0.1"
+libraryDependencies += "com.interelgroup" %% "core3" % "2.0.2"
 ```
 
 > See [Additional dependencies](https://github.com/Interel-Group/core3/wiki/Additional-Dependencies) for other libraries you may need.
