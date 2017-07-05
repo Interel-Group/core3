@@ -23,7 +23,7 @@ import core3.http.requests.ServiceConnectionComponentBase
 import core3.security.{LocalAuthUserToken, UserTokenBase}
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.{WSAuthScheme, WSClient}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -90,7 +90,7 @@ class ServiceConnectionComponent(
           }
 
           auditLogger.info(s"core3.http.requests.local.LocalAuthServiceConnectionComponent::call > Call to service [$method @ $serviceURI] completed with status [${response.status} / ${response.statusText}].")
-          Future.successful((response.status, response.json))
+          Future.successful(response.status, if(response.body.isEmpty) Json.obj() else response.json)
         }
     }
   }

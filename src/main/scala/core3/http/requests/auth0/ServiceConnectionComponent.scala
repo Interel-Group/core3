@@ -168,7 +168,7 @@ class ServiceConnectionComponent(
         serviceResponse.flatMap {
           response =>
             auditLogger.info(s"core3.http.requests.auth0.ServiceConnectionComponent::call > Call to service [$method @ $serviceURI] completed with status [${response.status} / ${response.statusText}].")
-            Future.successful((response.status, response.json))
+            Future.successful(response.status, if(response.body.isEmpty) Json.obj() else response.json)
         }
     }.recoverWith {
       case NonFatal(e) =>

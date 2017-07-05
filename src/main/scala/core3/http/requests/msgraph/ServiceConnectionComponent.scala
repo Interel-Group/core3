@@ -26,7 +26,7 @@ import core3.security.UserTokenBase
 import pdi.jwt._
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -199,7 +199,7 @@ class ServiceConnectionComponent(
         serviceResponse.flatMap {
           response =>
             auditLogger.info(s"core3.http.requests.msgraph.ServiceConnectionComponent::call > Call to service [$method @ $serviceURI] completed with status [${response.status} / ${response.statusText}].")
-            Future.successful((response.status, response.json))
+            Future.successful(response.status, if(response.body.isEmpty) Json.obj() else response.json)
         }
     }.recoverWith {
       case NonFatal(e) =>
