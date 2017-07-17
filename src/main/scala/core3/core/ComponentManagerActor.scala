@@ -23,7 +23,8 @@ import core3.config.{DynamicConfig, RuntimeConfig, StaticConfig}
 import core3.core.Component.{ActionResult, ExecuteAction}
 import core3.utils.Time.getCurrentTimestamp
 import core3.utils.Timestamp
-import play.api.libs.json.{JsString, Json}
+import play.api.libs.json.Json
+import play.api.libs.json.JodaWrites._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal

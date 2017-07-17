@@ -25,6 +25,7 @@ import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.{WSAuthScheme, WSClient}
+import play.api.libs.ws.JsonBodyWritables._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -58,7 +59,7 @@ class ServiceConnectionComponent(
     */
   private def internal_call(user: Option[UserTokenBase], method: String, data: JsObject, shouldReAuthenticate: Boolean): Future[(Int, JsValue)] = {
     var serviceRequest = ws.url(serviceURI)
-      .withHeaders(
+      .addHttpHeaders(
         HeaderNames.ACCEPT -> MimeTypes.JSON,
         core3.http.HeaderNames.CLIENT_SESSION_TOKEN -> sessionID.getOrElse("None"),
         core3.http.HeaderNames.USER_DELEGATION_TOKEN -> user.map {
@@ -73,8 +74,8 @@ class ServiceConnectionComponent(
     }
 
     val serviceResponse = (method.toLowerCase match {
-      case "get" => serviceRequest.withQueryString(data.fields.map { case (field, value) => (field, value.toString) }: _*)
-      case "delete" => serviceRequest.withQueryString(data.fields.map { case (field, value) => (field, value.toString) }: _*)
+      case "get" => serviceRequest.addQueryStringParameters(data.fields.map { case (field, value) => (field, value.toString) }: _*)
+      case "delete" => serviceRequest.addQueryStringParameters(data.fields.map { case (field, value) => (field, value.toString) }: _*)
       case _ => serviceRequest.withBody(data)
     }).execute()
 

@@ -20,11 +20,11 @@ import core3.database.dals.DatabaseAbstractionLayer
 import core3.http.controllers.local.ServiceController
 import core3.http.responses.GenericResult
 import play.api.Environment
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TestServiceController(db: DatabaseAbstractionLayer, cache: CacheApi)(implicit environment: Environment, ec: ExecutionContext)
+class TestServiceController(db: DatabaseAbstractionLayer, cache: SyncCacheApi)(implicit environment: Environment, ec: ExecutionContext)
   extends ServiceController(cache, StaticConfig.get.getConfig("security.authentication.clients.LocalServiceController"), db) {
   def publicAction = PublicAction(
     okHandler = { (_, _) =>

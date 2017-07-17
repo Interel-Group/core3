@@ -19,7 +19,7 @@ import javax.inject._
 
 import core3.config.DynamicConfig
 import play.api.Logger
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
@@ -38,7 +38,7 @@ import scala.collection.JavaConversions._
   * @param cache the cache to use for storing the retrieved rates
   */
 @Singleton
-class ExchangeRates @Inject()(implicit ec: ExecutionContext, ws: WSClient, cache: CacheApi) {
+class ExchangeRates @Inject()(implicit ec: ExecutionContext, ws: WSClient, cache: SyncCacheApi) {
   def availableCurrencies: Vector[String] = DynamicConfig.get.getStringList("currencies.exchange.availableCurrencies").toVector
   def decimalScale: Int = DynamicConfig.get.getInt("currencies.exchange.decimalScale")
   def roundingMode: BigDecimal.RoundingMode.Value = BigDecimal.RoundingMode.withName(DynamicConfig.get.getString("currencies.exchange.roundingMode"))
@@ -59,7 +59,7 @@ class ExchangeRates @Inject()(implicit ec: ExecutionContext, ws: WSClient, cache
     */
   private def loadExchangeRates: Future[Map[String, BigDecimal]] = {
     val providerResponse = ws.url(providerURI)
-      .withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
+      .addHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
       .get()
 
     providerResponse.map {

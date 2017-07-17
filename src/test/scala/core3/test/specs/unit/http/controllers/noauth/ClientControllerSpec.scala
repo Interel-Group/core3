@@ -30,6 +30,7 @@ class ClientControllerSpec extends UnitSpec with WsScalaTestClient {
   "A no-auth ClientController" should "successfully handle public actions" in {
     _ =>
       val controller = new TestClientController()
+      controller.setControllerComponents(stubControllerComponents())
 
       val rawResult = controller.publicAction().apply(FakeRequest())
       val result = contentAsString(rawResult)
@@ -40,6 +41,7 @@ class ClientControllerSpec extends UnitSpec with WsScalaTestClient {
   it should "fail to process actions that require authentication" in {
     _ =>
       val controller = new TestClientController()
+      controller.setControllerComponents(stubControllerComponents())
 
       val authorizedActionRawResult = controller.authorizedAction().apply(FakeRequest())
       val authorizedActionResult = contentAsJson(authorizedActionRawResult).as[GenericResult]

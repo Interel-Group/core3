@@ -34,7 +34,6 @@ lazy val core3 = (project in file("."))
       dependencies_test             map (_ % Test)
     ).flatten,
     macroSettings,
-    dependencyOverrides ++= overrides_netty,
     compile in MultiJvm := ((compile in MultiJvm) triggeredBy (compile in Test)).value,
     executeTests in Test := {
       val testResults = (executeTests in Test).value
@@ -78,20 +77,20 @@ lazy val meta = (project in file("meta"))
   )
 
 //Dependency Definitions
-lazy val akkaVersion = "2.4.17"
-lazy val nettyOverrideVersion = "4.0.41.Final"
+lazy val akkaVersion = "2.5.3"
 
 lazy val dependencies_base = Seq(
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.7",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.7",
-  "com.typesafe.play" %% "play-logback" % "2.5.13",
-  cache,
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.9",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.9",
+  "com.typesafe.play" %% "play-logback" % "2.6.1",
+  "com.typesafe.play" %% "play-json" % "2.6.2",
+  "com.typesafe.play" %% "play-json-joda" % "2.6.2",
+  ehcache,
   ws,
   filters,
   "com.github.nscala-time" %% "nscala-time" % "2.16.0",
-  "com.pauldijou" %% "jwt-play-json" % "0.12.1",
-  "com.roundeights" %% "hasher" % "1.2.0",
-  "com.google.code.findbugs" % "jsr305" % "3.0.1" % Compile
+  "com.pauldijou" %% "jwt-play-json" % "0.14.0",
+  "com.roundeights" %% "hasher" % "1.2.0"
 )
 
 lazy val dependencies_meta = Seq(
@@ -115,7 +114,7 @@ lazy val dependencies_cli = Seq(
 )
 
 lazy val dependencies_mariaDB = Seq(
-  "org.mariadb.jdbc" % "mariadb-java-client" % "1.5.9"
+  "org.mariadb.jdbc" % "mariadb-java-client" % "2.0.3"
 )
 
 lazy val dependencies_redis = Seq(
@@ -123,8 +122,8 @@ lazy val dependencies_redis = Seq(
 )
 
 lazy val dependencies_elastic = Seq(
-  "com.sksamuel.elastic4s" %% "elastic4s-core" % "5.3.2",
-  "com.sksamuel.elastic4s" %% "elastic4s-tcp" % "5.3.2"
+  "com.sksamuel.elastic4s" %% "elastic4s-core" % "5.4.7",
+  "com.sksamuel.elastic4s" %% "elastic4s-tcp" % "5.4.7"
 )
 
 lazy val dependencies_mail = Seq(
@@ -134,26 +133,16 @@ lazy val dependencies_mail = Seq(
 lazy val dependencies_distributedCache = Seq(
   "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
-  "com.github.blemale" %% "scaffeine" % "2.0.0"
+  "com.github.blemale" %% "scaffeine" % "2.1.0"
 )
 
 lazy val dependencies_test = Seq(
   "org.scalacheck" %% "scalacheck" % "1.13.5",
-  "org.scalatest" %% "scalatest" % "3.0.0",
-  "com.storm-enroute" %% "scalameter" % "0.7",
+  "org.scalatest" %% "scalatest" % "3.0.3",
+  "com.storm-enroute" %% "scalameter" % "0.8.2",
   "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion,
   "org.jvnet.mock-javamail" % "mock-javamail" % "1.9",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0"
-)
-
-lazy val overrides_netty = Set(
-  "io.netty" % "netty-codec-http" % nettyOverrideVersion,
-  "io.netty" % "netty-handler" % nettyOverrideVersion,
-  "io.netty" % "netty-codec" % nettyOverrideVersion,
-  "io.netty" % "netty-transport" % nettyOverrideVersion,
-  "io.netty" % "netty-buffer" % nettyOverrideVersion,
-  "io.netty" % "netty-common" % nettyOverrideVersion,
-  "io.netty" % "netty-transport-native-epoll" % nettyOverrideVersion
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.0"
 )
 
 //Release Config

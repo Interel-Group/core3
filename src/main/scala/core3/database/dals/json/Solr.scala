@@ -27,6 +27,7 @@ import core3.database.{ContainerType, ObjectID}
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.libs.ws.{WSAuthScheme, WSClient, WSResponse}
+import play.api.libs.ws.JsonBodyWritables._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -159,8 +160,8 @@ class Solr(
     for {
       createResponse <- ws.url(s"$baseURL/solr/admin/collections")
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
-        .withQueryString(
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addQueryStringParameters(
           "action" -> "CREATE",
           "name" -> getCollectionName(objectsType),
           "numShards" -> numShards.toString,
@@ -182,7 +183,7 @@ class Solr(
       )
       buildResponse <- ws.url(s"$baseURL/solr/${getCollectionName(objectsType)}/schema")
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .post(requestData)
       _ <- checkResponse(buildResponse, 200, "handle_BuildDatabaseStructure")
     } yield {
@@ -194,8 +195,8 @@ class Solr(
     for {
       response <- ws.url(s"$baseURL/solr/admin/collections")
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
-        .withQueryString(
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addQueryStringParameters(
           "action" -> "DELETE",
           "name" -> getCollectionName(objectsType)
         )
@@ -262,7 +263,7 @@ class Solr(
     for {
       response <- ws.url(s"$baseURL/solr/${getCollectionName(container.objectType)}/update/json")
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .post(jsonData)
       _ <- checkResponse(response, 200, "handle_CreateObject")
     } yield {
@@ -284,7 +285,7 @@ class Solr(
     for {
       response <- ws.url(s"$baseURL/solr/${getCollectionName(container.objectType)}/update/json")
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .post(jsonData)
       _ <- checkResponse(response, 200, "handle_UpdateObject")
     } yield {
@@ -300,7 +301,7 @@ class Solr(
     for {
       response <- ws.url(s"$baseURL/solr/${getCollectionName(objectType)}/update/json")
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .post(jsonData)
       _ <- checkResponse(response, 200, "handle_DeleteObject")
     } yield {

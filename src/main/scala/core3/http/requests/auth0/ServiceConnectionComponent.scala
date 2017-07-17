@@ -26,6 +26,7 @@ import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSClient
+import play.api.libs.ws.JsonBodyWritables._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -68,7 +69,7 @@ class ServiceConnectionComponent(
 
         (for {
           tokenResponse <- ws.url(s"https://$domain/oauth/token")
-            .withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
+            .addHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
             .post(
               Json.obj(
                 "audience" -> serviceURI,
@@ -145,7 +146,7 @@ class ServiceConnectionComponent(
     getClientAccessToken.flatMap {
       case (_, rawToken) =>
         val serviceRequest = ws.url(serviceURI)
-          .withHeaders(
+          .addHttpHeaders(
             HeaderNames.AUTHORIZATION -> s"Bearer $rawToken",
             HeaderNames.ACCEPT -> MimeTypes.JSON,
             core3.http.HeaderNames.USER_DELEGATION_TOKEN -> user.map {
@@ -160,8 +161,8 @@ class ServiceConnectionComponent(
           .withMethod(method)
 
         val serviceResponse = (method.toLowerCase match {
-          case "get" => serviceRequest.withQueryString(data.fields.map { case (field, value) => (field, value.toString) }: _*)
-          case "delete" => serviceRequest.withQueryString(data.fields.map { case (field, value) => (field, value.toString) }: _*)
+          case "get" => serviceRequest.addQueryStringParameters(data.fields.map { case (field, value) => (field, value.toString) }: _*)
+          case "delete" => serviceRequest.addQueryStringParameters(data.fields.map { case (field, value) => (field, value.toString) }: _*)
           case _ => serviceRequest.withBody(data)
         }).execute()
 

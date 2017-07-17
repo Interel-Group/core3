@@ -22,12 +22,13 @@ import core3.security.Auth0UserToken
 import core3.utils.ActionGroup
 import pdi.jwt.algorithms.JwtHmacAlgorithm
 import pdi.jwt.{JwtAlgorithm, JwtJson}
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Environment, Logger}
+import play.api.libs.ws.JsonBodyWritables._
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,7 +45,7 @@ import scala.util.control.NonFatal
   * @param cache      the session cache to be used
   * @param authConfig authentication configuration
   */
-class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
+class ClientController(ws: WSClient, cache: SyncCacheApi, authConfig: Config)
   (implicit environment: Environment, ec: ExecutionContext) extends ClientControllerBase[Auth0UserToken] {
   private val domain = authConfig.getString("domain")
   private val clientID = authConfig.getString("clientId")
@@ -99,7 +100,7 @@ class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
     auditLogger.warn(s"core3.http.controllers.auth0.ClientController::getRawOverrideToken > Override token requested for user [$username] @ [$connection].")
 
     val tokenResponse = ws.url(s"https://$domain/oauth/ro")
-      .withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
+      .addHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
       .post(
         Json.obj(
           "client_id" -> clientID,
@@ -140,7 +141,7 @@ class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
     */
   private def getRawToken(code: String): Future[(String, String)] = {
     val tokenResponse = ws.url(s"https://$domain/oauth/token")
-      .withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
+      .addHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
       .post(
         Json.obj(
           "client_id" -> clientID,
@@ -182,10 +183,10 @@ class ClientController(ws: WSClient, cache: CacheApi, authConfig: Config)
   private def getUserToken(idToken: String, accessToken: String): Future[Auth0UserToken] = {
     for {
       userResponse <- ws.url(s"https://$domain/userinfo")
-        .withQueryString("access_token" -> accessToken)
+        .addQueryStringParameters("access_token" -> accessToken)
         .get()
       delegationResponse <- ws.url(s"https://$domain/delegation")
-        .withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
         .post(
           Json.obj(
             "client_id" -> clientID,

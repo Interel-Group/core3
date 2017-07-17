@@ -27,6 +27,7 @@ import core3.database.{ContainerType, ObjectID}
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.libs.ws.{WSAuthScheme, WSClient, WSResponse}
+import play.api.libs.ws.JsonBodyWritables._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -161,7 +162,7 @@ class CouchDB(
     for {
       response <- ws.url(getRequestURLFromType(objectType, objectID))
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .get()
       _ <- checkResponse(response, 200, "getRevisionID")
       response <- Future.successful(response.json)
@@ -197,7 +198,7 @@ class CouchDB(
     for {
       response <- ws.url(getDatabaseURLFromType(objectsType))
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .get()
       _ <- checkResponse(response, 200, "verifyDatabaseStructure")
     } yield {
@@ -218,12 +219,12 @@ class CouchDB(
     for {
       buildResponse <- ws.url(getDatabaseURLFromType(objectsType))
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .execute("PUT")
       _ <- checkResponse(buildResponse, 201, "buildDatabaseStructure")
       designResponse <- ws.url(s"${getDatabaseURLFromType(objectsType)}/_design/$queryDesignDocName")
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .put(getDesignDocString(objectsType))
       _ <- checkResponse(designResponse, 201, "buildDatabaseStructure")
     } yield {
@@ -235,7 +236,7 @@ class CouchDB(
     for {
       response <- ws.url(getDatabaseURLFromType(objectsType))
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .delete()
       _ <- checkResponse(response, 200, "clearDatabaseStructure")
     } yield {
@@ -285,7 +286,7 @@ class CouchDB(
     for {
       queryResponse <- ws.url(viewQueryURL)
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .get()
       _ <- checkResponse(queryResponse, 200, "getAllContainers")
       containers <- Future {
@@ -325,7 +326,7 @@ class CouchDB(
     for {
       response <- ws.url(getRequestURLFromType(objectType, objectID))
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .get()
       _ <- checkResponse(response, 200, "getObject")
     } yield {
@@ -341,7 +342,7 @@ class CouchDB(
     for {
       response <- ws.url(getRequestURLFromType(container.objectType, container.id))
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
         .put(jsonData)
       _ <- checkResponse(response, Vector(200, 201), "createObject")
     } yield {
@@ -358,8 +359,8 @@ class CouchDB(
       objectRevision <- getRevisionID(container.objectType, container.id)
       response <- ws.url(getRequestURLFromType(container.objectType, container.id))
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
-        .withQueryString("rev" -> objectRevision)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addQueryStringParameters("rev" -> objectRevision)
         .put(jsonData)
       _ <- checkResponse(response, 201, "updateObject")
     } yield {
@@ -374,8 +375,8 @@ class CouchDB(
       objectRevision <- getRevisionID(objectType, objectID)
       response <- ws.url(getRequestURLFromType(objectType, objectID))
         .withAuth(username, password, WSAuthScheme.BASIC)
-        .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
-        .withQueryString("rev" -> objectRevision)
+        .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
+        .addQueryStringParameters("rev" -> objectRevision)
         .delete()
       _ <- checkResponse(response, 200, "deleteObject")
     } yield {
