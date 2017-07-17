@@ -84,11 +84,9 @@ lazy val dependencies_base = Seq(
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.9",
   "com.typesafe.play" %% "play-logback" % "2.6.1",
   "com.typesafe.play" %% "play-json" % "2.6.2",
-  "com.typesafe.play" %% "play-json-joda" % "2.6.2",
   ehcache,
   ws,
   filters,
-  "com.github.nscala-time" %% "nscala-time" % "2.16.0",
   "com.pauldijou" %% "jwt-play-json" % "0.14.0",
   "com.roundeights" %% "hasher" % "1.2.0"
 )

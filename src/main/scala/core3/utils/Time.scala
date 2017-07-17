@@ -15,9 +15,10 @@
   */
 package core3.utils
 
-import com.github.nscala_time.time.Imports._
-import org.joda.time.Seconds
-import org.joda.time.format.{DateTimeFormatter, ISODateTimeFormat}
+import java.time._
+import java.time.format._
+import java.time.temporal.ChronoUnit
+
 import play.api.libs.json._
 
 //enables implicit conversions
@@ -43,14 +44,14 @@ object TimestampFormat {
 
   case object ReadableTime extends TimestampFormat
 
-  final val DefaultTimestampFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
-  final val ReadableTimestampFormatter: DateTimeFormatter = DateTimeFormat.forPattern("HH:mm (dd MMM yyyy)")
-  final val SortableTimestampFormatter: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
-  final val Html5TimestampFormatter: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm")
-  final val SqlTimestampFormatter: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
-  final val ReadableDateFormatter: DateTimeFormatter = DateTimeFormat.forPattern("dd MMM yyyy")
-  final val SortableDateFormatter: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
-  final val ReadableTimeFormatter: DateTimeFormatter = DateTimeFormat.forPattern("HH:mm")
+  final val DefaultTimestampFormatter: DateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
+  final val ReadableTimestampFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm (dd MMM yyyy)")
+  final val SortableTimestampFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+  final val Html5TimestampFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+  final val SqlTimestampFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+  final val ReadableDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+  final val SortableDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+  final val ReadableTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
   def getFormatter(format: TimestampFormat): DateTimeFormatter = {
     format match {
@@ -80,11 +81,11 @@ object DateFormat {
 
   case object SqlDate extends DateFormat
 
-  final val DefaultDateFormatter: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+  final val DefaultDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
   final val ReadableDateFormatter: DateTimeFormatter = TimestampFormat.ReadableDateFormatter
   final val SortableDateFormatter: DateTimeFormatter = TimestampFormat.SortableDateFormatter
-  final val Html5DateFormatter: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
-  final val SqlDateFormatter: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+  final val Html5DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+  final val SqlDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
   def getFormatter(format: DateFormat): DateTimeFormatter = {
     format match {
@@ -111,11 +112,11 @@ object TimeFormat {
 
   case object SqlTime extends TimeFormat
 
-  final val DefaultTimeFormatter: DateTimeFormatter = DateTimeFormat.forPattern("HH:mm:ss.SSS")
-  final val ReadableTimeFormatter: DateTimeFormatter = DateTimeFormat.forPattern("HH:mm")
-  final val SortableTimeFormatter: DateTimeFormatter = DateTimeFormat.forPattern("HH:mm:ss")
-  final val Html5TimeFormatter: DateTimeFormatter = DateTimeFormat.forPattern("HH:mm")
-  final val SqlTimeFormatter: DateTimeFormatter = DateTimeFormat.forPattern("HH:mm:ss")
+  final val DefaultTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
+  final val ReadableTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+  final val SortableTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+  final val Html5TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+  final val SqlTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
 
   def getFormatter(format: TimeFormat): DateTimeFormatter = {
     format match {
@@ -134,18 +135,18 @@ object TimeFormat {
 object Time {
 
   class ExtendedTimestamp(val self: Timestamp) {
-    def toFormattedString(format: TimestampFormat): String = self.toString(TimestampFormat.getFormatter(format))
+    def toFormattedString(format: TimestampFormat): String = self.format(TimestampFormat.getFormatter(format))
 
-    def toTimeZone(zone: DateTimeZone, keepFields: Boolean): Timestamp = {
+    def toTimeZone(zone: ZoneId, keepFields: Boolean): Timestamp = {
       if (keepFields) {
-        self.withZoneRetainFields(zone)
+        self.withZoneSameLocal(zone)
       }
       else {
-        self.withZone(zone)
+        self.withZoneSameInstant(zone)
       }
     }
 
-    def toTimeZone(zone: String, keepFields: Boolean = false): Timestamp = toTimeZone(DateTimeZone.forID(zone), keepFields)
+    def toTimeZone(zone: String, keepFields: Boolean = false): Timestamp = toTimeZone(ZoneId.of(zone), keepFields)
 
     /**
       * Calculates the difference between this and that timestamps.
@@ -159,9 +160,9 @@ object Time {
       * @return 0, if the timestamps are the same or the difference between them (in seconds)
       */
     def diff(that: Timestamp): Int = {
-      val absoluteDifference = Seconds.secondsBetween(self, that).getSeconds.abs
+      val absoluteDifference = Duration.between(self, that).getSeconds.abs.toInt
 
-      if (self > that) {
+      if (self isAfter that) {
         absoluteDifference
       } else {
         -absoluteDifference
@@ -170,11 +171,11 @@ object Time {
   }
 
   class ExtendedDate(val self: Date) {
-    def toFormattedString(format: DateFormat): String = self.toString(DateFormat.getFormatter(format))
+    def toFormattedString(format: DateFormat): String = self.format(DateFormat.getFormatter(format))
   }
 
   class ExtendedTime(val self: Time) {
-    def toFormattedString(format: TimeFormat): String = self.toString(TimeFormat.getFormatter(format))
+    def toFormattedString(format: TimeFormat): String = self.format(TimeFormat.getFormatter(format))
 
     /**
       * Calculates the difference between this and that time.
@@ -188,9 +189,9 @@ object Time {
       * @return 0, if the times are the same or the difference between them (in seconds)
       */
     def diff(that: Time): Int = {
-      val absoluteDifference = Seconds.secondsBetween(self, that).getSeconds.abs
+      val absoluteDifference = Duration.between(self, that).getSeconds.abs.toInt
 
-      if (self > that) {
+      if (self isAfter that) {
         absoluteDifference
       } else {
         -absoluteDifference
@@ -199,11 +200,11 @@ object Time {
   }
 
   class ConvertibleString(val self: String) {
-    def toTimestamp(from: TimestampFormat): Timestamp = TimestampFormat.getFormatter(from).parseDateTime(self)
+    def toTimestamp(from: TimestampFormat): Timestamp = ZonedDateTime.parse(self, TimestampFormat.getFormatter(from))
 
-    def toDate(from: DateFormat): Date = DateFormat.getFormatter(from).parseLocalDate(self)
+    def toDate(from: DateFormat): Date = LocalDate.parse(self, DateFormat.getFormatter(from))
 
-    def toTime(from: TimeFormat): Time = TimeFormat.getFormatter(from).parseLocalTime(self)
+    def toTime(from: TimeFormat): Time = LocalTime.parse(self, TimeFormat.getFormatter(from))
   }
 
   implicit def timestampToExtended(t: Timestamp): ExtendedTimestamp = new ExtendedTimestamp(t)
@@ -214,8 +215,9 @@ object Time {
 
   implicit def stringToConvertible(s: String): ConvertibleString = new ConvertibleString(s)
 
-  DateTimeZone.setDefault(DateTimeZone.UTC)
-  java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"))
+  //TODO - Is it needed to reset the JVM time zone to UTC?
+  //DateTimeZone.setDefault(DateTimeZone.UTC)
+  //java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"))
 
   /**
     * Retrieves the current UTC date & time.
@@ -223,7 +225,7 @@ object Time {
     * @return the current UTC date & time
     */
   def getCurrentTimestamp: Timestamp = {
-    DateTime.now(DateTimeZone.UTC)
+    ZonedDateTime.now(ZoneOffset.UTC)
   }
 
   /**
@@ -232,7 +234,7 @@ object Time {
     * @return the current UTC date
     */
   def getCurrentDate: Date = {
-    LocalDate.now(DateTimeZone.UTC)
+    LocalDate.now(ZoneOffset.UTC)
   }
 
   /**
@@ -241,7 +243,7 @@ object Time {
     * @return the current UTC time
     */
   def getCurrentTime: Time = {
-    LocalTime.now(DateTimeZone.UTC)
+    LocalTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS)
   }
 
   implicit val timestampReads: Reads[Timestamp] = Reads {
