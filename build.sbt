@@ -9,12 +9,12 @@ name in ThisBuild := "core3"
 licenses in ThisBuild := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage in ThisBuild := Some(url("https://github.com/Interel-Group/core3"))
 
-scalaVersion in ThisBuild := "2.11.11"
+scalaVersion in ThisBuild := "2.12.2"
 
 lazy val core3 = (project in file("."))
   .settings(SbtMultiJvm.multiJvmSettings)
   .settings(
-    crossScalaVersions := Seq("2.11.11"), //TODO - 2.12 support requires Play 2.6
+    crossScalaVersions := Seq("2.11.11", "2.12.2"),
     resolvers ++= Seq(
       "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/releases",
       "lightshed-maven" at "http://dl.bintray.com/content/lightshed/maven"
@@ -144,6 +144,8 @@ lazy val dependencies_test = Seq(
 )
 
 //Release Config
+releaseCrossBuild := true
+
 releaseVersion := {
   v =>
     Version(v).map {

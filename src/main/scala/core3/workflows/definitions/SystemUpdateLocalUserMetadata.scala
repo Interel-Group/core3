@@ -86,6 +86,12 @@ object SystemUpdateLocalUserMetadata extends WorkflowBase {
         actualData.user.metadata = actualParams.metadata
 
         Future.successful((WorkflowResult(wasSuccessful = true, requestID), OutputData(update = Vector(actualData.user))))
+
+      case _ =>
+        Future.failed(
+          new IllegalArgumentException(s"core3.workflows.definitions.SystemUpdateLocalUserMetadata::executeAction > " +
+            s"Unexpected params of type [${params.getClass.getName}] or data of type [${data.getClass.getName}] supplied.")
+        )
     }
   }
 }

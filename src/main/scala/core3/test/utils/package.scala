@@ -15,7 +15,6 @@
   */
 package core3.test
 
-import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -51,7 +50,7 @@ package object utils {
       *                   the stack trace is printed on the console
       * @return Some(result: T), if the future is successful or None if it is not
       */
-    def ignoreFailure(implicit printTrace: Boolean = true): Future[Option[T]] = {
+    def ignoreFailure(implicit ec: ExecutionContext, printTrace: Boolean = true): Future[Option[T]] = {
       self
         .map(result => Some(result))
         .recover {

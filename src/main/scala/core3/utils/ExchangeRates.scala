@@ -27,7 +27,7 @@ import play.api.libs.ws.WSClient
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 /**
   * Singleton class for handling exchange rate and currency operations.
@@ -39,7 +39,7 @@ import scala.collection.JavaConversions._
   */
 @Singleton
 class ExchangeRates @Inject()(implicit ec: ExecutionContext, ws: WSClient, cache: SyncCacheApi) {
-  def availableCurrencies: Vector[String] = DynamicConfig.get.getStringList("currencies.exchange.availableCurrencies").toVector
+  def availableCurrencies: Vector[String] = DynamicConfig.get.getStringList("currencies.exchange.availableCurrencies").asScala.toVector
   def decimalScale: Int = DynamicConfig.get.getInt("currencies.exchange.decimalScale")
   def roundingMode: BigDecimal.RoundingMode.Value = BigDecimal.RoundingMode.withName(DynamicConfig.get.getString("currencies.exchange.roundingMode"))
 

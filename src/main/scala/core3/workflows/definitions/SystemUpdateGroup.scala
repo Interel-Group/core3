@@ -86,6 +86,12 @@ object SystemUpdateGroup extends WorkflowBase {
         actualParams.items.foreach(items => actualData.group.items = items)
 
         Future.successful((WorkflowResult(wasSuccessful = true, requestID), OutputData(update = Vector(actualData.group))))
+
+      case _ =>
+        Future.failed(
+          new IllegalArgumentException(s"core3.workflows.definitions.SystemUpdateGroup::executeAction > " +
+            s"Unexpected params of type [${params.getClass.getName}] or data of type [${data.getClass.getName}] supplied.")
+        )
     }
   }
 }
