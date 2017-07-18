@@ -31,7 +31,6 @@ import play.api.libs.ws.ahc.AhcWSClient
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Await
-import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 
 object Database {

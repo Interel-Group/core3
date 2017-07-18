@@ -28,7 +28,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Environment
 import play.api.test.Helpers._
 import play.api.test._
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 import play.api.http.{HeaderNames, MimeTypes}
 
 import scala.concurrent.duration._
@@ -46,8 +46,9 @@ class ClientControllerSpec extends UnitSpec with WsScalaTestClient with GuiceOne
   implicit private val authConfig = StaticConfig.get.getConfig("security.authentication.clients.LocalServiceController")
   implicit private val random = new SecureRandom()
 
-  private val cache = fakeApplication().injector.instanceOf[CacheApi]
+  private val cache = fakeApplication().injector.instanceOf[SyncCacheApi]
   private val controller = new TestClientController(db, cache)
+  controller.setControllerComponents(stubControllerComponents())
 
   createUser("test-admin", "some-test-password!", Vector("test-group"), LocalUser.UserType.Client)
   createUser("test-user", "some-test-password@", Vector.empty, LocalUser.UserType.Client)

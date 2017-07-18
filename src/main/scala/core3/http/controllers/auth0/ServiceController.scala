@@ -22,7 +22,7 @@ import core3.security.Auth0UserToken
 import core3.utils.ActionScope
 import pdi.jwt.algorithms.JwtHmacAlgorithm
 import pdi.jwt.{JwtAlgorithm, JwtJson, JwtOptions}
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -45,7 +45,7 @@ import scala.util.control.NonFatal
   * @param serviceConfig service configuration
   * @param authConfig    authentication configuration
   */
-class ServiceController(ws: WSClient, cache: CacheApi, serviceConfig: Config, authConfig: Config)
+class ServiceController(ws: WSClient, cache: SyncCacheApi, serviceConfig: Config, authConfig: Config)
   (implicit environment: Environment, ec: ExecutionContext) extends ServiceControllerBase[Auth0UserToken] {
   private val domain = authConfig.getString("domain")
   private val clientSecret = authConfig.getString("clientSecret")
@@ -65,7 +65,7 @@ class ServiceController(ws: WSClient, cache: CacheApi, serviceConfig: Config, au
   private def getUserToken(idToken: String, accessToken: String): Future[Auth0UserToken] = {
     for {
       userResponse <- ws.url(s"https://$domain/userinfo")
-        .withQueryString("access_token" -> accessToken)
+        .addQueryStringParameters("access_token" -> accessToken)
         .get()
     } yield {
       new Auth0UserToken(idToken, accessToken, None, userResponse.json)

@@ -22,6 +22,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import core3.database.containers.core
 import core3.database.containers.core.TransactionLog
 import core3.database.{ObjectID, getNewRevisionID, getNewRevisionSequenceNumber}
+import core3.test.fixtures.TestSystem
 import core3.test.utils._
 import core3_multi_jvm.test.utils.ClusterInitNode
 import play.api.libs.json.Json
@@ -71,7 +72,7 @@ class DistributedCacheSpec extends MultiNodeSpec(DistributedCacheTestConfig) wit
   runOn(node1) {
     localSource.getSupportedContainers.foreach {
       objectType =>
-        localSource.clearDatabaseStructure(objectType).ignoreFailure(printTrace = false).await(15.seconds)
+        localSource.clearDatabaseStructure(objectType).ignoreFailure(ec = TestSystem.ec, printTrace = false).await(15.seconds)
         localSource.buildDatabaseStructure(objectType).await(15.seconds)
     }
 

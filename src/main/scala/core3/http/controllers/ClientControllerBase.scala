@@ -24,7 +24,7 @@ import scala.concurrent.Future
 /**
   * Play controller trait for implementing user-facing services.
   */
-trait ClientControllerBase[T <: UserTokenBase] extends Controller {
+trait ClientControllerBase[T <: UserTokenBase] extends InjectedController {
   /**
     * Authorized action generator, for implementing routes/services that require authentication and authorization.
     *

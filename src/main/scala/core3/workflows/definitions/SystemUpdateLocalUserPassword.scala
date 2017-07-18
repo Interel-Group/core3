@@ -90,6 +90,12 @@ object SystemUpdateLocalUserPassword extends WorkflowBase {
         actualData.user.passwordSalt = actualParams.passwordSalt
 
         Future.successful((WorkflowResult(wasSuccessful = true, requestID), OutputData(update = Vector(actualData.user))))
+
+      case _ =>
+        Future.failed(
+          new IllegalArgumentException(s"core3.workflows.definitions.SystemUpdateLocalUserPassword::executeAction > " +
+            s"Unexpected params of type [${params.getClass.getName}] or data of type [${data.getClass.getName}] supplied.")
+        )
     }
   }
 }

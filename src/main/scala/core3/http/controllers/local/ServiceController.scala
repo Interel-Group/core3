@@ -23,7 +23,7 @@ import core3.http.controllers.ServiceControllerBase
 import core3.http.handlers
 import core3.security.LocalAuthUserToken
 import core3.utils.ActionScope
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Environment, Logger}
 
@@ -42,7 +42,7 @@ import scala.util.control.NonFatal
   * @param authConfig authentication configuration
   * @param db         the database to be used for querying local users
   */
-class ServiceController(cache: CacheApi, authConfig: Config, db: DatabaseAbstractionLayer)
+class ServiceController(cache: SyncCacheApi, authConfig: Config, db: DatabaseAbstractionLayer)
   (implicit environment: Environment, ec: ExecutionContext) extends ServiceControllerBase[LocalAuthUserToken] {
   private val instanceSalt = authConfig.getString("instanceSalt")
   private val passwordIterations = authConfig.getInt("passwordIterations")

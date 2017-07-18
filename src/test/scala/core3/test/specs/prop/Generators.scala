@@ -58,7 +58,7 @@ object Generators {
     * Generator for [[core3.utils.Timestamp]]
     */
   val generateTimestamp: Gen[Timestamp] = {
-    Gen.resultOf[Int, Timestamp](ms => Time.getCurrentTimestamp.plusMillis(ms))
+    Gen.resultOf[Int, Timestamp](s => Time.getCurrentTimestamp.plusSeconds(s))
   }
 
   /**

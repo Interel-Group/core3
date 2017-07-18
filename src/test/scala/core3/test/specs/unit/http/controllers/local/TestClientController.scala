@@ -20,11 +20,11 @@ import core3.database.dals.DatabaseAbstractionLayer
 import core3.http.controllers.local.ClientController
 import core3.http.responses.GenericResult
 import play.api.Environment
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TestClientController(db: DatabaseAbstractionLayer, cache: CacheApi)(implicit environment: Environment, ec: ExecutionContext)
+class TestClientController(db: DatabaseAbstractionLayer, cache: SyncCacheApi)(implicit environment: Environment, ec: ExecutionContext)
   extends ClientController(cache, StaticConfig.get.getConfig("security.authentication.clients.LocalClientController"), db) {
   def authorizedAction1 = AuthorizedAction(
     requiredGroup = "test-group",

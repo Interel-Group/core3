@@ -15,11 +15,11 @@
   */
 package core3
 
-import com.github.nscala_time.time.Imports._
+import java.time._
 
 package object utils {
   // Time-related types
-  type Timestamp = DateTime
+  type Timestamp = ZonedDateTime
   type Date = LocalDate
   type Time = LocalTime
   type Hours = Float

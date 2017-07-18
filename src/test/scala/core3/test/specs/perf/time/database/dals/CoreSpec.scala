@@ -17,15 +17,17 @@ package core3.test.specs.perf.time.database.dals
 
 import core3.database.ContainerType
 import core3.database.dals.DatabaseAbstractionLayer
+import core3.test.fixtures.TestSystem
 import core3.test.specs.perf.{Generators, PerformanceTimeSpec}
 import core3.test.utils._
 import org.scalameter.api._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 trait CoreSpec extends PerformanceTimeSpec {
   implicit val waitDuration: FiniteDuration = 15.seconds
+  implicit val ec: ExecutionContext = TestSystem.ec
   val maxContainers = 100
   val containerCount: Gen[Int] = Gen.range("containerCount")(from = 0, upto = maxContainers, hop = 10)
 

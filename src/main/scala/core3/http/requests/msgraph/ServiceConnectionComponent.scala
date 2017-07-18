@@ -28,6 +28,7 @@ import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSClient
+import play.api.libs.ws.JsonBodyWritables._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -70,7 +71,7 @@ class ServiceConnectionComponent(
       if (clientAccessToken.isEmpty || (((clientAccessToken.get \ "exp").as[Long] * 1000) + clientAccessTokenRenewalTimeBeforeExpiration) < System.currentTimeMillis()) {
         (for {
           tokenResponse <- ws.url(authProviderURI)
-            .withHeaders(HeaderNames.ACCEPT -> MimeTypes.FORM)
+            .addHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.FORM)
             .post(
               Map[String, Seq[String]](
                 "client_id" -> Seq(clientID),
@@ -114,7 +115,7 @@ class ServiceConnectionComponent(
             }
           }
           jwksResponse <- ws.url(jwksURI)
-            .withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
+            .addHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON)
             .get()
             .map(_.json)
           verificationKey <- Future {
@@ -179,7 +180,7 @@ class ServiceConnectionComponent(
     getClientAccessToken.flatMap {
       case (_, rawToken) =>
         val serviceRequest = ws.url(s"$serviceURI/v1.0/$graphURI")
-          .withHeaders(
+          .addHttpHeaders(
             HeaderNames.AUTHORIZATION -> s"Bearer $rawToken",
             HeaderNames.ACCEPT -> MimeTypes.JSON,
             HeaderNames.CONTENT_TYPE -> MimeTypes.JSON
@@ -189,8 +190,8 @@ class ServiceConnectionComponent(
         val serviceResponse = graphParams match {
           case Some(params) =>
             (method.toLowerCase match {
-              case "get" => serviceRequest.withQueryString(params.fields.map { case (field, value) => (field, value.toString) }: _*)
-              case "delete" => serviceRequest.withQueryString(params.fields.map { case (field, value) => (field, value.toString) }: _*)
+              case "get" => serviceRequest.addQueryStringParameters(params.fields.map { case (field, value) => (field, value.toString) }: _*)
+              case "delete" => serviceRequest.addQueryStringParameters(params.fields.map { case (field, value) => (field, value.toString) }: _*)
               case _ => serviceRequest.withBody(params)
             }).execute()
           case None => serviceRequest.execute()

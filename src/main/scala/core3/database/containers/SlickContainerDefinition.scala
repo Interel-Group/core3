@@ -1,5 +1,7 @@
 package core3.database.containers
 
+import java.time.ZoneOffset
+
 import core3.database.ObjectID
 import core3.utils.{Date, Time, Timestamp}
 import play.api.libs.json.{JsValue, Json}
@@ -23,18 +25,18 @@ trait SlickContainerDefinition extends ContainerDefinition {
   import profile.api._
 
   implicit val columnType_timestamp = MappedColumnType.base[Timestamp, java.sql.Timestamp](
-    { jodaTimestamp => new java.sql.Timestamp(jodaTimestamp.getMillis) },
-    { javaTimestamp => new Timestamp(javaTimestamp) }
+    { javaTimestamp => java.sql.Timestamp.valueOf(javaTimestamp.toLocalDateTime) },
+    { sqlTimestamp => sqlTimestamp.toLocalDateTime.atZone(ZoneOffset.UTC) }
   )
 
   implicit val columnType_time = MappedColumnType.base[Time, java.sql.Time](
-    { jodaTime => new java.sql.Time(jodaTime.toDateTimeToday().getMillis) },
-    { javaTime => new Time(javaTime) }
+    { javaTime => java.sql.Time.valueOf(javaTime) },
+    { sqlTime => sqlTime.toLocalTime }
   )
 
   implicit val columnType_date = MappedColumnType.base[Date, java.sql.Date](
-    { jodaDate => new java.sql.Date(jodaDate.toDateTimeAtStartOfDay.getMillis) },
-    { javaDate => new Date(javaDate) }
+    { javaDate => java.sql.Date.valueOf(javaDate) },
+    { sqlDate => sqlDate.toLocalDate }
   )
 
   implicit val columnType_jsValue = MappedColumnType.base[JsValue, String](
