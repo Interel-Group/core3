@@ -8,8 +8,10 @@ Scala framework for building web applications and services based on [Play](https
 
 ## Getting Started
 ```
-libraryDependencies += "com.interelgroup" %% "core3" % "2.0.2"
+libraryDependencies += "com.interelgroup" %% "core3" % "2.1.0"
 ```
+
+> Released for Scala 2.11 and 2.12
 
 > See [Additional dependencies](https://github.com/Interel-Group/core3/wiki/Additional-Dependencies) for other libraries you may need.
 
@@ -119,10 +121,10 @@ sbt "project meta" "testOnly core3.test.specs.unit.meta.*"
 ```
 
 ## Built With
-* Scala 2.11.11
-* sbt 0.13.13
-* [Play 2.5.x](https://github.com/playframework/playframework) - Base framework
-* [Akka 2.4.x](https://github.com/akka/akka) - Core component actors and (optional) data layer clustering
+* Scala 2.12.2
+* sbt 0.13.15
+* [Play 2.6.x](https://github.com/playframework/playframework) - Base framework
+* [Akka 2.5.x](https://github.com/akka/akka) - Core component actors and (optional) data layer clustering
 * [Slick](https://github.com/slick/slick) - SQL data layer support
 * [Scalameta](https://github.com/scalameta/scalameta) - Macro annotations support
 * [rediscala](https://github.com/etaty/rediscala) - (optional) Redis data layer support
@@ -133,7 +135,7 @@ sbt "project meta" "testOnly core3.test.specs.unit.meta.*"
 We use [SemVer](http://semver.org/) for versioning.
 
 ## Future Goals
-- [ ] Play 2.6 and Scala 2.12 support
+- [X] Play 2.6 and Scala 2.12 support
 - [ ] Improve test coverage
 - [ ] Improve performance testing
 - [x] Generate container boilerplate and data conversions with macros (and/or `scala.meta`)
