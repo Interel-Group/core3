@@ -18,6 +18,7 @@ before_install:
 before_script:
   - sleep 10
   - curl -X PUT localhost:9200/core-transaction-logs2 -d '{ "mappings":{ "store":{ "dynamic_templates":[ { "data_not_analyzed":{ "path_match":"data", "mapping":{ "type":"object", "index":"not_analyzed" } } }, { "params_not_analyzed":{ "path_match":"parameters", "mapping":{ "type":"object", "index":"not_analyzed" } } } ] } } }'
+  - curl -s -X PUT http://localhost:5984/_config/admins/test-user -d '"passw0rd"'
 
 script:
   - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
