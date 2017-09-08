@@ -1,7 +1,6 @@
 language: scala
 
 scala:
-  - 2.11.11
   - 2.12.2
 
 branches:
@@ -26,8 +25,8 @@ before_script:
 
 script:
   - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
-  - sbt ++$TRAVIS_SCALA_VERSION "project meta" coverage "testOnly core3.test.specs.unit.meta.*
-  - sbt ++$TRAVIS_SCALA_VERSION "project meta" coverageReport"
+  - sbt ++$TRAVIS_SCALA_VERSION "project meta" coverage "testOnly core3.test.specs.unit.meta.*"
+  - sbt ++$TRAVIS_SCALA_VERSION "project meta" coverageReport
   - sbt ++$TRAVIS_SCALA_VERSION "project core3" coverage "testOnly core3.test.specs.unit.*"
   - sbt ++$TRAVIS_SCALA_VERSION "project core3" coverage "testOnly core3.test.specs.prop.*"
   - sbt ++$TRAVIS_SCALA_VERSION "project core3" coverage "multi-jvm:test-only core3_multi_jvm.test.specs.DistributedCache -- -Dserver.static.database.mariadb.username=root -Dserver.static.database.mariadb.password="
