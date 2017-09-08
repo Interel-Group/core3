@@ -4,6 +4,10 @@ scala:
   - 2.11.11
   - 2.12.2
 
+branches:
+  only:
+    - master
+
 services:
   - couchdb
   - redis-server
@@ -13,7 +17,7 @@ addons:
     mariadb: 10.1
 
 before_install:
-  - mysql -e 'CREATE DATABASE IF NOT EXISTS core3_test;'
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS core3_test CHARACTER SET = utf8 COLLATE = utf8_general_ci;'
 
 before_script:
   - sleep 10

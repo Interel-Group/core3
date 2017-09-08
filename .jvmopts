@@ -3,3 +3,5 @@
 -Dserver.static.database.redis.secret=
 -Dserver.static.database.couchdb.username=test-user
 -Dserver.static.database.couchdb.password=passw0rd
+-Dserver.static.database.elastic-search.clusterName=elasticsearch
+-Dserver.static.database.elastic-store.clusterName=elasticsearch
