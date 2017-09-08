@@ -1,0 +1,5 @@
+-Dserver.static.database.mariadb.username=root
+-Dserver.static.database.mariadb.password=
+-Dserver.static.database.redis.secret=
+-Dserver.static.database.couchdb.username=root
+-Dserver.static.database.couchdb.password=

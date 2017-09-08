@@ -1,0 +1,27 @@
+language: scala
+
+scala:
+  - 2.11.11
+  - 2.12.2
+
+services:
+  - couchdb
+  - redis-server
+  - elasticsearch
+
+addons:
+    mariadb: 10.1
+
+before_install:
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS core3_test;'
+
+before_script:
+  - sleep 10
+  - curl -X PUT localhost:9200/core-transaction-logs2 -d '{ "mappings":{ "store":{ "dynamic_templates":[ { "data_not_analyzed":{ "path_match":"data", "mapping":{ "type":"object", "index":"not_analyzed" } } }, { "params_not_analyzed":{ "path_match":"parameters", "mapping":{ "type":"object", "index":"not_analyzed" } } } ] } } }'
+
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
+  - sbt ++$TRAVIS_SCALA_VERSION "project meta" "testOnly core3.test.specs.unit.meta.*"
+  - sbt ++$TRAVIS_SCALA_VERSION "project core3" "testOnly core3.test.specs.unit.*"
+  - sbt ++$TRAVIS_SCALA_VERSION "project core3" "testOnly core3.test.specs.prop.*"
+  - sbt ++$TRAVIS_SCALA_VERSION "project core3" "multi-jvm:test-only core3_multi_jvm.test.specs.DistributedCache -- -Dserver.static.database.mariadb.username=root -Dserver.static.database.mariadb.password="
