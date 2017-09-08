@@ -1,8 +1,6 @@
 import com.typesafe.sbt.SbtMultiJvm
 import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
 import sbt.Keys._
-import sbtrelease.{Version, versionFormatError}
-import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 organization in ThisBuild := "com.interelgroup"
 name in ThisBuild := "core3"
@@ -141,67 +139,4 @@ lazy val dependencies_test = Seq(
   "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion,
   "org.jvnet.mock-javamail" % "mock-javamail" % "1.9",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.0"
-)
-
-//Release Config
-releaseCrossBuild := true
-
-releaseVersion := {
-  v =>
-    Version(v).map {
-      version =>
-        val next = System.getProperty("release-version-bump", "bugfix") match {
-          case "major" => version.withoutQualifier.bump(sbtrelease.Version.Bump.Major)
-          case "minor" => version.withoutQualifier.bump(sbtrelease.Version.Bump.Minor)
-          case "bugfix" => version.withoutQualifier
-        }
-
-        next.string
-    }.getOrElse(versionFormatError)
-}
-
-releaseProcess := Seq[ReleaseStep](
-  checkSnapshotDependencies,
-  inquireVersions,
-  setReleaseVersion,
-  commitReleaseVersion,
-  tagRelease,
-  publishArtifacts,
-  setNextVersion,
-  commitNextVersion,
-  pushChanges
-)
-
-//Publish Config
-pomIncludeRepository in ThisBuild := { _ => false }
-publishMavenStyle in ThisBuild := true
-publishArtifact in Test := false
-publishTo in ThisBuild := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-}
-
-scmInfo in ThisBuild := Some(
-  ScmInfo(
-    url("https://github.com/Interel-Group/core3"),
-    "scm:git@github.com:Interel-Group/core3"
-  )
-)
-
-developers in ThisBuild := List(
-  Developer(
-    id    = "jamesaddinall",
-    name  = "James Addinall",
-    email = "james.addinall@interelgroup.com",
-    url   = url("https://github.com/jamesaddinall")
-  ),
-  Developer(
-    id    = "sndnv",
-    name  = "Angel Sanadinov",
-    email = "angel.sanadinov@interelgroup.com",
-    url   = url("https://github.com/sndnv")
-  )
 )
