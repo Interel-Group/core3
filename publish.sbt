@@ -30,3 +30,11 @@ developers in ThisBuild := List(
     url   = url("https://github.com/sndnv")
   )
 )
+
+credentials ++=
+  (for {
+    username <- Option(System.getenv().get("NEXUS_USERNAME"))
+    password <- Option(System.getenv().get("NEXUS_PASSWORD"))
+  } yield {
+    Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)
+  }).toSeq
