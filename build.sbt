@@ -7,12 +7,12 @@ name in ThisBuild := "core3"
 licenses in ThisBuild := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 homepage in ThisBuild := Some(url("https://github.com/Interel-Group/core3"))
 
-scalaVersion in ThisBuild := "2.12.2"
+scalaVersion in ThisBuild := "2.12.3"
 
 lazy val core3 = (project in file("."))
   .settings(SbtMultiJvm.multiJvmSettings)
   .settings(
-    crossScalaVersions := Seq("2.11.11", "2.12.2"),
+    crossScalaVersions := Seq("2.11.11", "2.12.3"),
     resolvers ++= Seq(
       "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/releases",
       "lightshed-maven" at "http://dl.bintray.com/content/lightshed/maven"
@@ -57,7 +57,7 @@ lazy val core3 = (project in file("."))
 
 //Meta Settings
 lazy val macroSettings = Seq(
-  addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M9" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M10" cross CrossVersion.full),
   scalacOptions += "-Xplugin-require:macroparadise",
   scalacOptions in (Compile, console) := Seq()
 )
@@ -75,13 +75,13 @@ lazy val meta = (project in file("meta"))
   )
 
 //Dependency Definitions
-lazy val akkaVersion = "2.5.3"
+lazy val akkaVersion = "2.5.4"
 
 lazy val dependencies_base = Seq(
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.9",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.9",
-  "com.typesafe.play" %% "play-logback" % "2.6.1",
-  "com.typesafe.play" %% "play-json" % "2.6.2",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.1",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.0",
+  "com.typesafe.play" %% "play-logback" % "2.6.3",
+  "com.typesafe.play" %% "play-json" % "2.6.3",
   ehcache,
   ws,
   filters,
@@ -100,8 +100,8 @@ lazy val dependencies_meta_test = Seq(
 lazy val dependencies_slick = Seq(
   jdbc,
   "com.chuusai" %% "shapeless" % "2.3.2",
-  "com.typesafe.slick" %% "slick" % "3.2.0",
-  "io.underscore"      %% "slickless" % "0.3.2"
+  "com.typesafe.slick" %% "slick" % "3.2.1",
+  "io.underscore" %% "slickless" % "0.3.2"
 )
 
 lazy val dependencies_cli = Seq(
@@ -110,7 +110,7 @@ lazy val dependencies_cli = Seq(
 )
 
 lazy val dependencies_mariaDB = Seq(
-  "org.mariadb.jdbc" % "mariadb-java-client" % "2.0.3"
+  "org.mariadb.jdbc" % "mariadb-java-client" % "2.1.1"
 )
 
 lazy val dependencies_redis = Seq(
@@ -118,8 +118,8 @@ lazy val dependencies_redis = Seq(
 )
 
 lazy val dependencies_elastic = Seq(
-  "com.sksamuel.elastic4s" %% "elastic4s-core" % "5.4.7",
-  "com.sksamuel.elastic4s" %% "elastic4s-tcp" % "5.4.7"
+  "com.sksamuel.elastic4s" %% "elastic4s-core" % "5.5.3",
+  "com.sksamuel.elastic4s" %% "elastic4s-tcp" % "5.5.3"
 )
 
 lazy val dependencies_mail = Seq(
@@ -129,14 +129,14 @@ lazy val dependencies_mail = Seq(
 lazy val dependencies_distributedCache = Seq(
   "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
-  "com.github.blemale" %% "scaffeine" % "2.1.0"
+  "com.github.blemale" %% "scaffeine" % "2.2.0"
 )
 
 lazy val dependencies_test = Seq(
   "org.scalacheck" %% "scalacheck" % "1.13.5",
-  "org.scalatest" %% "scalatest" % "3.0.3",
+  "org.scalatest" %% "scalatest" % "3.0.4",
   "com.storm-enroute" %% "scalameter" % "0.8.2",
   "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion,
   "org.jvnet.mock-javamail" % "mock-javamail" % "1.9",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.0"
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.1"
 )
