@@ -8,7 +8,7 @@ Scala framework for building web applications and services based on [Play](https
 
 ## Getting Started
 ```
-libraryDependencies += "com.interelgroup" %% "core3" % "2.1.0"
+libraryDependencies += "com.interelgroup" %% "core3" % "2.2.0"
 ```
 
 > Released for Scala 2.11 and 2.12
@@ -121,8 +121,8 @@ sbt "project meta" "testOnly core3.test.specs.unit.meta.*"
 ```
 
 ## Built With
-* Scala 2.12.2
-* sbt 0.13.15
+* Scala 2.12.3
+* sbt 0.13.16
 * [Play 2.6.x](https://github.com/playframework/playframework) - Base framework
 * [Akka 2.5.x](https://github.com/akka/akka) - Core component actors and (optional) data layer clustering
 * [Slick](https://github.com/slick/slick) - SQL data layer support
