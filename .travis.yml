@@ -22,11 +22,6 @@ before_script:
   - sleep 10
   - curl -X PUT localhost:9200/core-transaction-logs2 -d '{ "mappings":{ "store":{ "dynamic_templates":[ { "data_not_analyzed":{ "path_match":"data", "mapping":{ "type":"object", "index":"not_analyzed" } } }, { "params_not_analyzed":{ "path_match":"parameters", "mapping":{ "type":"object", "index":"not_analyzed" } } } ] } } }'
   - curl -s -X PUT http://localhost:5984/_config/admins/test-user -d '"passw0rd"'
-  - mkdir -p $HOME/.ssh
-  - openssl aes-256-cbc -K $encrypted_4c8f4534481a_key -iv $encrypted_4c8f4534481a_iv -in .travis/github_deploy_key.enc -out $HOME/.ssh/id_rsa -d
-  - chmod 0600 $HOME/.ssh/id_rsa
-  - git config user.name "Travis CI"
-  - git config user.email "ci@interelgroup.com"
 
 script:
   - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
@@ -39,8 +34,3 @@ script:
 
 after_success:
   - sbt coveralls
-
-env:
-  global:
-  - secure: ZX30OPt9SL3o5rsP3hXmc3VDgX45S+N0E8cn47XUILW4j/dzOegUHnXWE/y9iq//mRdQbOFIEGGyDkIcS59k6mbGhPyWjSfC20h/yz/5T9EBfX6FZ4e2vO1pjGJBowd3fhVVlZzaKcKSMRCBmFYYjE6bXFuuZQysto2Bvo0LJr+TGLHtuQteUlxhsZRJQH3Gt0Shi2pzhqrc1T4DWR1QJ7w8JwzY95jlUcXUGlQ7eKC6lFAvDz1ugKrRIFoEVWIJ9yhcVMqZLfWE8+syXJfo/F/y/Jvizb4qLRuRd0iiTjT4JjN40vybW2peDBAvJn8NQHROVylF7PuLKIOwFIpF+QYV+EzdfFpO0AqJpLRGtJ5wTq6iNCQ2yLVmk85goBcn2sUpqV+D/Vb3CLFH70HuJjPzoklKWKTH5cPVRusy4i0DoMIGyH3k/vTXQan0AqhP6H978hNlWxAgbpkfHbuTQeRe+G28hbFSxbz8C6nqMca81golaekYKAzMext1dxrEQlsV/Jdui3mz8qLOaSJ5uXeMQa1RPxm/oCso0GJk5dvIwoW5tSgRjZUCC8iBCCImnUitnaqjtLHIa4U+yZaQvbcqAof3OvgY655RpCw8tpWFZ5SIRy64u4cOiu/zz9TE71kCrSk/wSQ24f7HTAkzVUGkSGsvg6LlkNKQx7MPLsA=
-  - secure: ZEyblkwGvLM3gqJuVISLBguQDOg/wAF45v5mC47JiAgRFLYIt5HEO0X/tBTVIvjV40w/mwMcgRzgty+JtPSkDByidOMO9TjrQ2ypM/o2TF2ZkyNTdtVj58kNVd54UfGwJI2Uw+L3UHhU43zDnndISR2NY94piSa3AiupYWueMukvxv4ttjpYuDw83lwX6D8rbVBXFLVhlx4Q3B4JbJPl+VQjFyZ5RCxOxRkZI1H9c5JFaA3S2bW8BrrtfKfz0U472IWsPveGDDSs4wM/nw2YjcEIEC2ujrV9Jzmq/AzCqgTD0o4y+XBopYzONfWkWWn8PfG+NWJznJ8pcnPnYxdSr14TtKxv5SWWPueNEgyVCurd8flcp1tU4BbFONyVsPzY3nA3oBCdLRZMFVmsZu5VBChakcSw+qeYawFRPkX/W/k6ekTMNwkBqqh/8+6Yj/xdEDppTz8PdnfTozMtFkYi7AREVx96gNTIi4m8/KEMxtlrS9nj7pZiFHw6C2VbTVH6k8GlxgiQq/jitDZkoPeVbLEHDJnZZ0PVCZkH/EN9Uq5zWOpFeMzJH5/nc6jKS3Uju03hNXhXEOo+uPrN8Yt+ACg2vpjFu/21RhuGOC1tW/W5pBvv3eMbFrCh4vfcLFtX3/keIs9J7cPj9lFLXDQImOFW186PZ1o5nLWTKb7iQuo=
