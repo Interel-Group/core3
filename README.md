@@ -21,6 +21,7 @@ For more information, check the wiki and the example projects:
 * [Wiki](https://github.com/Interel-Group/core3/wiki)
 * [Example Engine](https://github.com/Interel-Group/core3-example-engine) - Example backend web service
 * [Example UI](https://github.com/Interel-Group/core3-example-ui) - Example user interface application, utilizing the example backend service
+* [Example Engine + UI](https://github.com/Interel-Group/core3-example-combined) - Example backend and frontend service
 
 ## Supported data sources
 * [MariaDB](https://mariadb.org/) (tested on `10.0`, `10.1`)
